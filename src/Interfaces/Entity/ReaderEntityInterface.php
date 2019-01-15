@@ -6,23 +6,6 @@ use Symplicity\Outlook\Entities\Location;
 use Symplicity\Outlook\Entities\Organizer;
 use Symplicity\Outlook\Utilities\EventTypes;
 
-/**
- * Interface ReaderInterface
- * @property-read string $id
- * @property-read string $webLink
- * @property-read ?string $title
- * @property-read string $description
- * @property-read ResponseBodyInterface $body
- * @property-read DateEntityInterface $date
- * @property-read bool $allDay
- * @property-read Location $location
- * @property-read string $eTag
- * @property-read Organizer $organizer
- * @property-read string $private
- * @property-read string $visibility
- * @property-read EventTypes $eventType
- * @property-read RecurrenceEntityInterface $recurrence
- */
 interface ReaderEntityInterface
 {
     public function getId() : string;
@@ -39,4 +22,5 @@ interface ReaderEntityInterface
     public function getRecurrence() : ?RecurrenceEntityInterface;
     public function getOrganizer() : ?Organizer;
     public function getEventType() : EventTypes;
+    public function getSeriesMasterId(): ?string;
 }

@@ -26,6 +26,7 @@ class Reader implements ReaderEntityInterface
     protected $private;
     protected $organizer;
     protected $eventType;
+    protected $seriesMasterId;
 
     public function hydrate(array $data = []) : self
     {
@@ -51,6 +52,7 @@ class Reader implements ReaderEntityInterface
         $this->setRecurrence($data);
         $this->setPrivate($data['Sensitivity']);
         $this->setOrganizer($data['Organizer']);
+        $this->setSeriesMasterId($data['SeriesMasterId'] ?? null);
 
         return $this;
     }
@@ -131,6 +133,11 @@ class Reader implements ReaderEntityInterface
         return $this->eventType;
     }
 
+    public function getSeriesMasterId(): ?string
+    {
+        return $this->seriesMasterId;
+    }
+
     // Mark: Setters
     protected function setId(string $id): void
     {
@@ -206,5 +213,10 @@ class Reader implements ReaderEntityInterface
         if ($value = EventTypes::search($eventType)) {
             $this->eventType = EventTypes::$value();
         }
+    }
+
+    public function setSeriesMasterId(?string $seriesMasterId): void
+    {
+        $this->seriesMasterId = $seriesMasterId;
     }
 }

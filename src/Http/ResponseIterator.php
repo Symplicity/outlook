@@ -43,9 +43,6 @@ class ResponseIterator
     public function each()
     {
         $page = $this->firstPage;
-        for ($i = 0; $i < count($page[static::ItemsKey]); $i++) {
-            yield $page[static::ItemsKey][$i];
-        }
 
         if (isset($page[static::DeltaLink])) {
             $page[static::NextPageLink] = $page[static::DeltaLink];
