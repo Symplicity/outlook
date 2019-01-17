@@ -15,6 +15,8 @@ use Symplicity\Outlook\Utilities\RequestType;
 
 abstract class Calendar implements CalendarInterface
 {
+    protected const EVENT_DELETED = 'deleted';
+
     private $token;
 
     protected $usePool = false;
@@ -55,6 +57,11 @@ abstract class Calendar implements CalendarInterface
             foreach ($this->requestHandler->getReponseIterator()->each() as $event) {
                 if (isset($params['skipOccurrences'], $event['Type'])
                     && $event['Type'] == EventTypes::Occurrence) {
+                    continue;
+                }
+
+                if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
+                    $this->deleteEventLocal($this->getReader()->deleted($event));
                     continue;
                 }
 

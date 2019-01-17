@@ -57,6 +57,12 @@ class Reader implements ReaderEntityInterface
         return $this;
     }
 
+    public function deleted(array $data = []) : self
+    {
+        $this->setId($data['id']);
+        return $this;
+    }
+
     public function toArray()
     {
         return get_object_vars($this);
