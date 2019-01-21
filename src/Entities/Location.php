@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
-class Location
+use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
+
+class Location implements LocationInterface
 {
     protected $displayName;
 
@@ -13,7 +15,7 @@ class Location
         $this->displayName = $location['DisplayName'];
     }
 
-    public function getLocationDisplayName()
+    public function getLocationDisplayName() : string
     {
         return $this->displayName;
     }

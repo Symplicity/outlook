@@ -6,6 +6,8 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 
 interface CalendarInterface
 {
+    public function isBatchRequest(): CalendarInterface;
+
     /**
      * Once event has been accessed from outlook, use the method to save event to your db
      * @param ReaderEntityInterface $reader
@@ -24,7 +26,7 @@ interface CalendarInterface
      * Gets all the events to be sent to outlook
      * @return array Return array of Write Entities, example [Write(....), Write(....)]
      */
-    public function getEventsLocal() : array;
+    public function getLocalEvents() : array;
 
     /**
      * Passed by handler fulfillment
@@ -37,10 +39,4 @@ interface CalendarInterface
      * @param $failedToWrite
      */
     public function handleResponse(array $failedToWrite = []) : void;
-
-    /**
-     * Get user associated with the sync
-     * @return string
-     */
-    public function getUserId() : string;
 }

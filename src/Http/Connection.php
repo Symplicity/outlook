@@ -11,12 +11,14 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Psr\Log\LoggerInterface;
+use Symplicity\Outlook\Entities\Writer;
 use Symplicity\Outlook\Interfaces\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
+use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class Connection implements ConnectionInterface
@@ -24,6 +26,7 @@ class Connection implements ConnectionInterface
     public const MAX_RETRIES = 3;
 
     private $logger;
+    protected $responses;
 
     public function __construct(?LoggerInterface $logger)
     {
@@ -42,18 +45,36 @@ class Connection implements ConnectionInterface
         }
     }
 
-    protected function pool()
+    public function batch(RequestOptionsInterface $requestOptions)
     {
-        $poolConfig = [
-            'fulfilled' => function (Response $response, $index) {
-            },
-            'rejected' => function ($reason, $index) {
-            }
-        ];
+        /** @var Client $client */
+        $client = $this->createClient();
+        $promises = [];
+        $rootUrl = \Symplicity\Outlook\Http\Request::getRootApi();
 
-        $pool = new Pool($this->createClient(), $requests(), $poolConfig);
-        $promise = $pool->promise();
-        $promise->wait();
+        /** @var WriterInterface $writer */
+        foreach ($requestOptions->getBody() as $writer) {
+            $promises[$writer->getId()] = $client->requestAsync(
+                $writer->getMethod(),
+                $rootUrl . $writer->url(),
+                [
+                    'headers' => $requestOptions->getHeaders(),
+                    'json' => $writer->jsonSerialize(),
+                    'delay' => 0.9 * 1000
+                ]
+            );
+        }
+
+        $responses = \GuzzleHttp\Promise\settle($promises)->wait();
+        $this->setResponses($responses);
+        return $this->responses;
+    }
+
+    public function setResponses(array $responses)
+    {
+        foreach ($responses as $key => $response) {
+            $this->responses[$key] = new BatchResponse($response);
+        }
     }
 
     protected function createClient() : ClientInterface

@@ -11,6 +11,8 @@ use Symplicity\Outlook\Utilities\RequestType;
 class RequestOptions implements RequestOptionsInterface
 {
     protected const AUTHENTICATION_SCHEME = 'Bearer';
+    protected const BATCH_SCHEME = 'batch';
+
     public const DEFAULT_TIMEZONE = 'Eastern Standard Time';
 
     protected $url;
@@ -20,6 +22,7 @@ class RequestOptions implements RequestOptionsInterface
     protected $body = [];
     protected $token;
     protected $timezone;
+    protected $batchId;
 
     public function __construct(string $url, RequestType $methodType, array $args = [])
     {
@@ -43,6 +46,18 @@ class RequestOptions implements RequestOptionsInterface
         $this->addHeader('User-Agent', 'php-symplicity');
         $this->addHeader('Authorization', $this->getAccessToken());
         $this->addHeader('Accept', 'application/json');
+        $this->addHeader('return-client-request-id', true);
+    }
+
+    public function addBatchHeaders()
+    {
+        if ($this->token == null) {
+            throw new \InvalidArgumentException('Missing Token');
+        }
+
+        $this->resetUUID();
+        $this->addHeader('Host', 'outlook.office.com');
+        $this->addHeader('Authorization', $this->getAccessToken());
         $this->addHeader('return-client-request-id', true);
     }
 
@@ -132,5 +147,15 @@ class RequestOptions implements RequestOptionsInterface
     private function getAccessToken()
     {
         return sprintf('%s %s', static::AUTHENTICATION_SCHEME, $this->token);
+    }
+
+    public function getBatchId()
+    {
+        return static::BATCH_SCHEME . '_' . $this->batchId;
+    }
+
+    public function getMethod() : RequestType
+    {
+        return $this->method;
     }
 }

@@ -10,8 +10,8 @@ use Symplicity\Outlook\Utilities\RequestType;
 
 class Request
 {
-    protected const OUTLOOK_ROOT_URL = 'https://outlook.office.com/api/';
-    protected const OUTLOOK_VERSION = 'v2.0';
+    public const OUTLOOK_VERSION = 'v2.0';
+    public const OUTLOOK_ROOT_URL = 'https://outlook.office.com/api/';
 
     private $rootUrl;
 
@@ -56,6 +56,22 @@ class Request
         return $this;
     }
 
+    public function batch(array $events, array $params = []) : self
+    {
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, '', RequestType::Post(), [
+            'headers' => $params['headers'] ?? [],
+            'queryParams' => $params['queryParams'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'token' => $this->accessToken
+        ]);
+
+        $requestOptions->addBatchHeaders();
+        $requestOptions->addBody($events);
+        $this->response = $this->connection->batch($requestOptions);
+        return $this;
+    }
+
     public function getConnection() : Closure
     {
         return $this->connection;
@@ -79,5 +95,15 @@ class Request
     private function setConnection(ConnectionInterface $connection): void
     {
         $this->connection = $connection;
+    }
+
+    public function getResponseFromBatch()
+    {
+        return $this->response;
+    }
+
+    public function getRootApi()
+    {
+        return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION;
     }
 }
