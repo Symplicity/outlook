@@ -52,7 +52,8 @@ class Writer implements WriterInterface, \JsonSerializable
             'End' => $this->endDate->toArray(),
             'Location' => [
                 'DisplayName' => $this->location->getLocationDisplayName()
-            ]
+            ],
+            'Recurrence' => $this->recurrence
         ];
     }
 
@@ -131,7 +132,7 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
-    public function setRecurrence(RecurrenceEntityInterface $recurrence): WriterInterface
+    public function setRecurrence(array $recurrence): WriterInterface
     {
         $this->recurrence = $recurrence;
         return $this;

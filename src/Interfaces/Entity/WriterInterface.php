@@ -17,7 +17,7 @@ interface WriterInterface
     public function setEndDate(ODateTimeInterface $endDate): WriterInterface;
     public function setCancelled(bool $cancelled): WriterInterface;
     public function setIsAllDay(bool $isAllDay): WriterInterface;
-    public function setRecurrence(RecurrenceEntityInterface $recurrence): WriterInterface;
+    public function setRecurrence(array $recurrence): WriterInterface;
     public function setLocation(LocationInterface $location): WriterInterface;
     public function method(RequestType $requestType) : WriterInterface;
 

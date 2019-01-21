@@ -82,7 +82,7 @@ class Request
         return $this->requestOptions;
     }
 
-    public function getReponseIterator() : ResponseIterator
+    public function getResponseIterator() : ResponseIterator
     {
         return $this->responseIterator;
     }
