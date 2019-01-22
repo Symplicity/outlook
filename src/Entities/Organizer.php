@@ -14,4 +14,14 @@ class Organizer
         $this->name = $data['EmailAddress']['Name'];
         $this->email = $data['EmailAddress']['Address'];
     }
+
+    public function getName() : string
+    {
+        return $this->name;
+    }
+
+    public function getEmail() : string
+    {
+        return $this->email;
+    }
 }

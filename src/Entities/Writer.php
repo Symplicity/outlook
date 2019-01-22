@@ -66,7 +66,7 @@ class Writer implements WriterInterface, \JsonSerializable
     public function url() : string
     {
         $this->url = '/Me/events';
-        if ($this->getMethod() == RequestType::Patch) {
+        if ($this->getMethod() === RequestType::Patch) {
             $this->url = $this->url . '/' . $this->guid;
         }
 
