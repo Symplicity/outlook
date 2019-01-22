@@ -6,15 +6,13 @@ namespace Symplicity\Outlook\Http;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Handler\CurlHandler;
+use GuzzleHttp\Handler\CurlMultiHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Psr\Log\LoggerInterface;
-use Symplicity\Outlook\Entities\Writer;
 use Symplicity\Outlook\Interfaces\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
@@ -33,7 +31,7 @@ class Connection implements ConnectionInterface
         $this->logger = $logger;
     }
 
-    public function get(string $url, RequestOptionsInterface $requestOptions) : ClientInterface
+    public function get(string $url, RequestOptionsInterface $requestOptions) : Response
     {
         $client = $this->createClient();
         try {
@@ -79,7 +77,7 @@ class Connection implements ConnectionInterface
 
     protected function createClient() : ClientInterface
     {
-        $stack = HandlerStack::create(new CurlHandler());
+        $stack = HandlerStack::create(new CurlMultiHandler());
         $stack->push(Middleware::retry($this->createRetryHandler($this->logger)));
         $client = new Client([
             'handler' => $stack
@@ -95,23 +93,37 @@ class Connection implements ConnectionInterface
             Response $response = null,
             RequestException $exception = null
         ) use ($logger) {
-            if ($retries >= MAX_RETRIES) {
+            if ($retries >= static::MAX_RETRIES) {
                 return false;
             }
 
-            if ($response->getStatusCode() >= 500
-                || $exception instanceof ConnectException) {
+            if ($response->getStatusCode() < 400) {
                 return false;
             }
 
-            $logger->warning(sprintf(
-                'Retrying %s %s %s/%s, %s',
-                $request->getMethod(),
-                $request->getUri(),
-                $retries + 1,
-                MAX_RETRIES,
-                $response ? 'status code: ' . $response->getStatusCode() : $exception->getMessage()
-            ), [$request->getHeader('Host')[0]]);
+            $message = \GuzzleHttp\json_decode($response->getBody()->getContents());
+
+            $statusCode = 0;
+            $reasonPhrase = '';
+
+            if ($response instanceof Response) {
+                $statusCode = $response->getStatusCode();
+                $reasonPhrase = $response->getReasonPhrase();
+            } elseif ($exception instanceof RequestException) {
+                $statusCode = $exception->getCode();
+                $reasonPhrase = $exception->getMessage();
+            }
+
+            $logger->warning('Retrying', [
+                'method' => $request->getMethod(),
+                'uri' => $request->getUri(),
+                'retries' => $retries + 1,
+                'total' => static::MAX_RETRIES,
+                'responseCode' => $statusCode,
+                'message' => $reasonPhrase,
+                'exceptionMessage' => $retries === 0 ? $message->error->message : ''
+            ]);
+
             return true;
         };
     }

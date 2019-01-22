@@ -69,7 +69,7 @@ class Writer implements WriterInterface, \JsonSerializable
     public function getUrl() : string
     {
         $this->url = static::DefaultPostRequest;
-        if ($this->getMethod() === RequestType::Patch) {
+        if ($this->getMethod()->equals(RequestType::Patch())) {
             $this->url = $this->url . '/' . $this->guid;
         }
 
@@ -85,6 +85,7 @@ class Writer implements WriterInterface, \JsonSerializable
     public function setGuid(?string $guid): WriterInterface
     {
         $this->guid = $guid;
+        $this->method(RequestType::Patch());
         return $this;
     }
 
