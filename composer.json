@@ -16,6 +16,10 @@
         "monolog/monolog" : "^1.17",
 		"myclabs/php-enum": "^1.6.0"
     },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^2.5",
+        "phpunit/phpunit": "^5.7"
+    },
     "minimum-stability": "stable",
     "config": {
         "optimize-autoloader": true,
