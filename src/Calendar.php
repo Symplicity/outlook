@@ -10,16 +10,20 @@ use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
+use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
 use Symplicity\Outlook\Utilities\RequestType;
 
 abstract class Calendar implements CalendarInterface
 {
     protected const EVENT_DELETED = 'deleted';
+    protected const BATCH_BY = 20;
 
     private $token;
 
-    protected $usePool = false;
+    /** @var bool $batch */
+    protected $batch = false;
+
     /** @var Request $requestHandler */
     protected $requestHandler;
 
@@ -39,13 +43,40 @@ abstract class Calendar implements CalendarInterface
 
     public function sync(array $params = [])
     {
-//        if (!empty($params['batch'])) {
-//            $this->batch($params);
-//        } else {
-//            $this->pool($params);
-//        }
-
+        $this->push($params);
         $this->pull($params);
+    }
+
+    public function push(array $params = [])
+    {
+        if ($this->batch) {
+            $this->batch($params);
+        } else {
+            $this->push($params);
+        }
+    }
+
+    protected function batch(array $params = [])
+    {
+        $batch = [];
+
+        $eventsToWrite = $this->getLocalEvents();
+
+        $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
+
+        foreach ($chunks as $chunk) {
+            /** @var WriterInterface $event */
+            foreach ($chunk as $event) {
+                if (!$event instanceof WriterInterface) {
+                    continue;
+                }
+
+                $batch[] = $event;
+            }
+
+            $this->requestHandler->batch($batch, $params);
+            $this->handlePoolResponses($this->requestHandler->getResponseFromBatch());
+        }
     }
 
     protected function pull(array $params = [])
@@ -54,7 +85,7 @@ abstract class Calendar implements CalendarInterface
             $url = $params['endPoint'];
             /** @var ResponseIteratorInterface $events */
             $this->requestHandler->getEvents($url, $params);
-            foreach ($this->requestHandler->getReponseIterator()->each() as $event) {
+            foreach ($this->requestHandler->getResponseIterator()->each() as $event) {
                 if (isset($params['skipOccurrences'], $event['Type'])
                     && $event['Type'] == EventTypes::Occurrence) {
                     continue;
@@ -90,5 +121,11 @@ abstract class Calendar implements CalendarInterface
     public function getReader(): Reader
     {
         return $this->reader instanceof Reader ? $this->reader : new Reader;
+    }
+
+    public function isBatchRequest(): CalendarInterface
+    {
+        $this->batch = true;
+        return $this;
     }
 }

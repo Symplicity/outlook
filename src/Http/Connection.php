@@ -33,7 +33,7 @@ class Connection implements ConnectionInterface
         $this->logger = $logger;
     }
 
-    public function get(string $url, RequestOptionsInterface $requestOptions)
+    public function get(string $url, RequestOptionsInterface $requestOptions) : ClientInterface
     {
         $client = $this->createClient();
         try {

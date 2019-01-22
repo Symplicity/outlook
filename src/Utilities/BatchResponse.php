@@ -25,6 +25,10 @@ class BatchResponse
             $this->setStatus();
             $this->setReason($oResponse->getReasonPhrase());
             $this->setResponse($oResponse->getBody()->getContents());
+        } elseif (isset($response['reason']) && ($oResponse = $response['reason']) instanceof \Exception) {
+            $this->setStatusCode($oResponse->getCode());
+            $this->setReason($oResponse->getMessage());
+            $this->status = PromiseInterface::REJECTED;
         }
     }
 
