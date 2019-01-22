@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Http;
 
+use Generator;
 use Symplicity\Outlook\Interfaces\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\ResponseHandler;
 
-class ResponseIterator
+class ResponseIterator implements ResponseIteratorInterface
 {
     public const NextPageLink = '@odata.nextLink';
     public const DeltaLink = '@odata.deltaLink';
@@ -27,7 +29,7 @@ class ResponseIterator
         $this->connection = $connection;
     }
 
-    public function setItems(string $url, RequestOptionsInterface $requestOptions) : self
+    public function setItems(string $url, RequestOptionsInterface $requestOptions) : ResponseIteratorInterface
     {
         $this->requestOptions = $requestOptions;
         $this->requestOptions->addPreferenceHeaders([
@@ -40,7 +42,7 @@ class ResponseIterator
         return $this;
     }
 
-    public function each()
+    public function each() : ?Generator
     {
         $page = $this->firstPage;
 
@@ -64,7 +66,8 @@ class ResponseIterator
                 $this->saveDeltaLink($page[static::DeltaLink]);
             }
 
-            for ($i = 0; $i < count($page[static::ItemsKey]); $i++) {
+            $counter = \count($page[static::ItemsKey]) ?? 0;
+            for ($i = 0; $i < $counter; $i++) {
                 yield $page[static::ItemsKey][$i];
             }
         }
