@@ -23,5 +23,5 @@ interface WriterInterface
 
     // Accessor
     public function getMethod() : ?RequestType;
-    public function url() : string;
+    public function getUrl() : string;
 }

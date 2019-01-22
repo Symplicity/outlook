@@ -56,7 +56,7 @@ class Connection implements ConnectionInterface
         foreach ($requestOptions->getBody() as $writer) {
             $promises[$writer->getId()] = $client->requestAsync(
                 $writer->getMethod(),
-                $rootUrl . $writer->url(),
+                $rootUrl . $writer->getUrl(),
                 [
                     'headers' => $requestOptions->getHeaders(),
                     'json' => $writer->jsonSerialize(),

@@ -18,27 +18,30 @@ use Symplicity\Outlook\Utilities\RequestType;
  */
 class Writer implements WriterInterface, \JsonSerializable
 {
+    protected const DefaultPostRequest = '/Me/events';
+
     protected $method;
     protected $guid;
     protected $id;
     protected $subject;
+    protected $cancelled;
+    protected $isAllDay;
+    protected $url;
+
     /** @var ResponseBodyInterface */
     protected $body;
+
     /** @var ODateTimeInterface */
     protected $startDate;
 
     /** @var ODateTimeInterface */
     protected $endDate;
-    protected $cancelled;
-    protected $isAllDay;
 
     /** @var RecurrenceEntityInterface */
     protected $recurrence;
 
     /** @var LocationInterface */
     protected $location;
-
-    protected $url;
 
     public function jsonSerialize() : array
     {
@@ -63,9 +66,9 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this->method;
     }
 
-    public function url() : string
+    public function getUrl() : string
     {
-        $this->url = '/Me/events';
+        $this->url = static::DefaultPostRequest;
         if ($this->getMethod() === RequestType::Patch) {
             $this->url = $this->url . '/' . $this->guid;
         }
