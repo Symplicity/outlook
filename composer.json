@@ -2,13 +2,8 @@
     "name": "symplicity/outlook",
     "type": "library",
     "description": "Outlook",
-    "license": "proprietary",
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://packages.symplicity.com"
-        }
-    ],
+    "homepage": "https://www.symplicity.com",
+    "license": "MIT",
     "require": {
         "php": "^7.1",
         "ramsey/uuid" : "^3.8.0",
@@ -36,5 +31,11 @@
         "psr-4": {
             "Symplicity\\Outlook\\Test\\": "tests/"
         }
+    },
+    "scripts": {
+      "test": [
+        "phpunit",
+        "phpcs"
+      ]
     }
 }
