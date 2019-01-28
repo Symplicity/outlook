@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Http;
 
 use Generator;
+use Symplicity\Outlook\Exception\ResponseIteratorException;
 use Symplicity\Outlook\Interfaces\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
@@ -79,7 +80,9 @@ class ResponseIterator implements ResponseIteratorInterface
             $response = $this->connection->get($url, $this->requestOptions);
             return ResponseHandler::toArray($response);
         } catch (\Exception $e) {
-            throw new CronofyException($e->getMessage(), $e->getCode(), Response::toArray($e->getResponse()));
+            throw (new ResponseIteratorException(
+                $e->getMessage(),
+                $e->getCode()))->setResponse(Response::toArray($e->getResponse()));
         }
     }
 

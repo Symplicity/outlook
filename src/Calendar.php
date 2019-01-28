@@ -100,7 +100,7 @@ abstract class Calendar implements CalendarInterface
                 $this->saveEventLocal($entity);
             }
         } catch (\Exception $e) {
-            throw new ReadFailed($e->getMessage(), $e->getCode(), $e->error_details());
+            throw new ReadError($e->getMessage(), $e->getCode(), $e->error_details());
         }
     }
 
