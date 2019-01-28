@@ -1,5 +1,9 @@
 <?php
 
+namespace Symplicity\Outlook\Interfaces\Utils;
+
+use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
+
 interface BatchResponseInterface
 {
     public function getStatusCode(): int;

@@ -8,8 +8,9 @@ use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
+use Symplicity\Outlook\Interfaces\Utils\BatchResponseInterface;
 
-class BatchResponse
+class BatchResponse implements BatchResponseInterface
 {
     public $state;
     public $statusCode;
