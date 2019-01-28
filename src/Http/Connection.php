@@ -26,6 +26,8 @@ class Connection implements ConnectionInterface
     private $logger;
     protected $responses;
 
+    protected static $eventInfo = [];
+
     public function __construct(?LoggerInterface $logger)
     {
         $this->logger = $logger;
@@ -52,12 +54,18 @@ class Connection implements ConnectionInterface
 
         /** @var WriterInterface $writer */
         foreach ($requestOptions->getBody() as $writer) {
-            $promises[$writer->getId()] = $client->requestAsync(
+            $id = $writer->getId();
+            $json = $writer->jsonSerialize();
+
+            static::$eventInfo[$id] = $json + ['class' => $writer->getClass()];
+
+            // Prepare promises
+            $promises[$id] = $client->requestAsync(
                 $writer->getMethod(),
                 $rootUrl . $writer->getUrl(),
                 [
                     'headers' => $requestOptions->getHeaders(),
-                    'json' => $writer->jsonSerialize(),
+                    'json' => $json,
                     'delay' => 0.9 * 1000
                 ]
             );
@@ -71,7 +79,10 @@ class Connection implements ConnectionInterface
     public function setResponses(array $responses)
     {
         foreach ($responses as $key => $response) {
-            $this->responses[$key] = new BatchResponse($response);
+            $this->responses[$key] = [
+                'response' => new BatchResponse($response),
+                'item' => static::$eventInfo[$key] ?? []
+            ];
         }
     }
 
