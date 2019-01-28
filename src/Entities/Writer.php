@@ -27,6 +27,7 @@ class Writer implements WriterInterface, \JsonSerializable
     protected $cancelled;
     protected $isAllDay;
     protected $url;
+    protected $class;
 
     /** @var ResponseBodyInterface */
     protected $body;
@@ -148,6 +149,12 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
+    public function setClass(string $class): WriterInterface
+    {
+        $this->class = $class;
+        return $this;
+    }
+
     public function method(RequestType $requestType) : WriterInterface
     {
         $this->method = $requestType;
@@ -157,5 +164,10 @@ class Writer implements WriterInterface, \JsonSerializable
     public function getId() : ?string
     {
         return $this->id;
+    }
+
+    public function getClass() : string
+    {
+        return $this->class;
     }
 }
