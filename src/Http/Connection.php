@@ -89,7 +89,7 @@ class Connection implements ConnectionInterface
     protected function createClient() : ClientInterface
     {
         $stack = HandlerStack::create(new CurlMultiHandler());
-        $stack->push(Middleware::retry($this->createRetryHandler($this->logger)));
+        $stack->push(Middleware::retry($this->createRetryHandler($this->logger), $this->retryDelay()));
         $client = new Client([
             'handler' => $stack
         ]);
@@ -136,6 +136,13 @@ class Connection implements ConnectionInterface
             ]);
 
             return true;
+        };
+    }
+
+    public function retryDelay()
+    {
+        return function ($numberOfRetries) {
+            return 1000 * $numberOfRetries;
         };
     }
 }
