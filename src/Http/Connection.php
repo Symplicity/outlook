@@ -57,7 +57,7 @@ class Connection implements ConnectionInterface
             $id = $writer->getId();
             $json = $writer->jsonSerialize();
 
-            static::$eventInfo[$id] = $json + ['class' => $writer->getEventType()];
+            static::$eventInfo[$id] = $json + ['eventType' => $writer->getEventType()];
 
             // Prepare promises
             $promises[$id] = $client->requestAsync(
