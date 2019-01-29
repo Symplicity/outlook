@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Http;
 
 use Closure;
-use Symplicity\Outlook\Interfaces\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class Request

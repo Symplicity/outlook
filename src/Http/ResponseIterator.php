@@ -6,9 +6,9 @@ namespace Symplicity\Outlook\Http;
 
 use Generator;
 use Symplicity\Outlook\Exception\ResponseIteratorException;
-use Symplicity\Outlook\Interfaces\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
-use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\ResponseHandler;
 
 class ResponseIterator implements ResponseIteratorInterface

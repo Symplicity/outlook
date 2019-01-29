@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Symplicity\Outlook\Interfaces;
+namespace Symplicity\Outlook\Interfaces\Http;
 
 interface RequestOptionsInterface
 {

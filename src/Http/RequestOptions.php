@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Http;
 
 use Ramsey\Uuid\Uuid;
-use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
+use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class RequestOptions implements RequestOptionsInterface

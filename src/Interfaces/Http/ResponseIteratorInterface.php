@@ -2,8 +2,6 @@
 
 namespace Symplicity\Outlook\Interfaces\Http;
 
-use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
-
 interface ResponseIteratorInterface
 {
     public function setItems(string $url, RequestOptionsInterface $requestOptions) : ResponseIteratorInterface;

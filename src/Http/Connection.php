@@ -13,9 +13,9 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Psr\Log\LoggerInterface;
-use Symplicity\Outlook\Interfaces\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
-use Symplicity\Outlook\Interfaces\RequestOptionsInterface;
+use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
 
@@ -108,6 +108,7 @@ class Connection implements ConnectionInterface
                 return false;
             }
 
+            // Wondering what we should try ??
             if ($response->getStatusCode() < 400) {
                 return false;
             }
