@@ -13,10 +13,10 @@ class ODateTime implements ODateTimeInterface
 
     /**
      * ODateTime constructor.
-     * @param \DateTime $dateTime
+     * @param \DateTimeInterface $dateTime
      * @param string Format Iana Timezone $timezone
      */
-    public function __construct(\DateTime $dateTime, string $timezone)
+    public function __construct(\DateTimeInterface $dateTime, string $timezone)
     {
         $this->dateTime = $dateTime;
         $this->timezone = $timezone;
@@ -24,9 +24,15 @@ class ODateTime implements ODateTimeInterface
 
     public function toArray() : array
     {
+
         return [
             'DateTime' => $this->dateTime->format('Y-m-d\TH:i:s'),
             'TimeZone' => $this->timezone
         ];
+    }
+
+    public function setDateToEndOfDay() : \DateTimeInterface
+    {
+        return $this->dateTime->modify('tomorrow')->setTime(0, 0, 0);
     }
 }

@@ -7,4 +7,5 @@ namespace Symplicity\Outlook\Interfaces\Entity;
 interface ODateTimeInterface
 {
     public function toArray() : array;
+    public function setDateToEndOfDay() : \DateTimeInterface;
 }
