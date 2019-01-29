@@ -19,11 +19,11 @@ interface WriterInterface
     public function setIsAllDay(bool $isAllDay): WriterInterface;
     public function setRecurrence(array $recurrence): WriterInterface;
     public function setLocation(LocationInterface $location): WriterInterface;
-    public function setClass(string $class): WriterInterface;
+    public function setEventType(string $class): WriterInterface;
     public function method(RequestType $requestType) : WriterInterface;
 
     // Accessor
     public function getMethod() : ?RequestType;
     public function getUrl() : string;
-    public function getClass() : string;
+    public function getEventType() : string;
 }

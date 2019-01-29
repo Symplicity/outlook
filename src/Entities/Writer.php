@@ -27,7 +27,7 @@ class Writer implements WriterInterface, \JsonSerializable
     protected $cancelled;
     protected $isAllDay;
     protected $url;
-    protected $class;
+    protected $eventType;
 
     /** @var ResponseBodyInterface */
     protected $body;
@@ -149,9 +149,9 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
-    public function setClass(string $class): WriterInterface
+    public function setEventType(string $eventType): WriterInterface
     {
-        $this->class = $class;
+        $this->eventType = $eventType;
         return $this;
     }
 
@@ -166,8 +166,8 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this->id;
     }
 
-    public function getClass() : string
+    public function getEventType() : string
     {
-        return $this->class;
+        return $this->eventType;
     }
 }
