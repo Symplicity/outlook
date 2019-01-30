@@ -75,7 +75,7 @@ class Token implements TokenInterface
         return new TokenEntity(ResponseHandler::toArray($response));
     }
 
-    public function queryParams(string $grantType, string $code, string $redirectUrl) : array
+    protected function queryParams(string $grantType, string $code, string $redirectUrl) : array
     {
         return [
             'grant_type' => $grantType,
