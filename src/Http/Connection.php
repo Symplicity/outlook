@@ -13,6 +13,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Psr\Log\LoggerInterface;
+use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
@@ -28,20 +29,36 @@ class Connection implements ConnectionInterface
 
     protected static $eventInfo = [];
 
-    public function __construct(?LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
 
     public function get(string $url, RequestOptionsInterface $requestOptions) : Response
     {
-        $client = $this->createClient();
+        $client = $this->createClientWithRetryHandler();
         try {
             return $client->request(RequestType::Get, $url, [
                 'headers' => $requestOptions->getHeaders(),
                 'query' => $requestOptions->getQueryParams()
             ]);
         } catch (\Exception $e) {
+            throw new ConnectionException(sprintf('Unable to GET for URL %s', $url));
+        }
+    }
+
+    public function post(string $url, RequestOptionsInterface $requestOptions) : Response
+    {
+        $client = $this->createClient();
+
+        try {
+            return $client->request(RequestType::Post, $url, [
+                'headers' => $requestOptions->getHeaders(),
+                'query' => $requestOptions->getQueryParams(),
+                'json' => $requestOptions->getBody()
+            ]);
+        } catch (\Exception $e) {
+            throw new ConnectionException(sprintf('Unable to POST for URL %s', $url));
         }
     }
 
@@ -86,18 +103,26 @@ class Connection implements ConnectionInterface
         }
     }
 
-    protected function createClient() : ClientInterface
+    public function createClientWithRetryHandler() : ClientInterface
     {
         $stack = HandlerStack::create(new CurlMultiHandler());
         $stack->push(Middleware::retry($this->createRetryHandler($this->logger), $this->retryDelay()));
         $client = new Client([
             'handler' => $stack
         ]);
+
         return $client;
     }
 
-    public function createRetryHandler(LoggerInterface $logger)
+    public function createClient() : ClientInterface
     {
+        $client = new Client();
+        return $client;
+    }
+
+    public function createRetryHandler()
+    {
+        $logger = $this->logger;
         return function (
             $retries,
             Request $request,
