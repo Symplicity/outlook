@@ -11,4 +11,5 @@ interface TokenInterface
     public function getRefreshToken() : string;
     public function getExpiresIn() : int;
     public function getIdToken() : string;
+    public function tokenReceivedOn() : \DateTimeInterface;
 }

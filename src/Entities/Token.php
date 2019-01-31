@@ -15,6 +15,7 @@ class Token implements TokenInterface
     protected $refreshToken;
     protected $expiresIn;
     protected $idToken;
+    protected $tokenReceivedOn;
 
     public function __construct(array $data)
     {
@@ -25,6 +26,7 @@ class Token implements TokenInterface
         $this->setRefreshToken($data['refresh_token']);
         $this->setExpiresIn($data['expires_in']);
         $this->setIdToken($data['id_token']);
+        $this->setTokenReceivedOn();
     }
 
     // Mutator
@@ -63,6 +65,11 @@ class Token implements TokenInterface
         $this->idToken = $idToken;
     }
 
+    public function setTokenReceivedOn(): void
+    {
+        $this->tokenReceivedOn = new \DateTimeImmutable('now');
+    }
+
     // Mark Accessors
     public function getEmailAddress() : string
     {
@@ -97,6 +104,11 @@ class Token implements TokenInterface
     public function getIdToken() : string
     {
         return $this->idToken;
+    }
+
+    public function tokenReceivedOn() : \DateTimeInterface
+    {
+        return $this->tokenReceivedOn;
     }
 
     public function __toString() : string
