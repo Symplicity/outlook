@@ -28,7 +28,7 @@ class Reader implements ReaderEntityInterface
     protected $eventType;
     protected $seriesMasterId;
 
-    public function hydrate(array $data = []) : self
+    public function hydrate(array $data = []) : ReaderEntityInterface
     {
         $this->setEventType($data['Type']);
         $this->setId($data['Id']);
@@ -84,7 +84,7 @@ class Reader implements ReaderEntityInterface
         return $this->title;
     }
 
-    public function getBody() : ResponseBodyInterface
+    public function getBody() : ?ResponseBodyInterface
     {
         return $this->body;
     }

@@ -8,11 +8,13 @@ use Symplicity\Outlook\Utilities\EventTypes;
 
 interface ReaderEntityInterface
 {
+    public function hydrate(array $data) : ReaderEntityInterface;
+
     public function getId() : string;
     public function getWebLink() : string;
     public function getTitle() : ?string;
     public function getDescription() : ?string;
-    public function getBody() : ResponseBodyInterface;
+    public function getBody() : ?ResponseBodyInterface;
     public function getDate() : DateEntityInterface;
     public function getLocation() : ?Location;
     public function getETag() : string;

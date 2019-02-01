@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
-use Office365\PHP\Client\OutlookServices\RecurrenceRangeType;
+use Closure;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
+use Symplicity\Outlook\Utilities\DayOfTheWeek;
 use Symplicity\Outlook\Utilities\PatternType;
 use Symplicity\Outlook\Utilities\RangeType;
 use Symplicity\Outlook\Utilities\RecurrenceIndex;
@@ -23,6 +24,7 @@ class Recurrence implements RecurrenceEntityInterface
     protected $rangeType;
     protected $rangeDates;
     protected $numberOfOccurrences = 0;
+    protected $occurrence;
 
     public function __construct(array $data = [])
     {
@@ -58,7 +60,7 @@ class Recurrence implements RecurrenceEntityInterface
         return $this->index;
     }
 
-    public function getFirstDayOfWeek() : RecurrenceRangeType
+    public function getFirstDayOfWeek() : DayOfTheWeek
     {
         return $this->firstDayOfWeek;
     }
@@ -86,6 +88,11 @@ class Recurrence implements RecurrenceEntityInterface
     public function getNumberOfOccurrences(): int
     {
         return $this->numberOfOccurrences;
+    }
+
+    public function getOccurrence() : Closure
+    {
+        return $this->occurrence;
     }
 
     // Mark: Mutator/Private
@@ -141,5 +148,10 @@ class Recurrence implements RecurrenceEntityInterface
     public function setNumberOfOccurrences(int $numberOfOccurrences): void
     {
         $this->numberOfOccurrences = $numberOfOccurrences;
+    }
+
+    public function attachOccurrences(Closure $occurrence)
+    {
+        $this->occurrence = $occurrence;
     }
 }

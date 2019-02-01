@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Symplicity\Outlook;
 
 use Psr\Log\LoggerInterface;
+use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
+use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
 use Symplicity\Outlook\Utilities\RequestType;
@@ -96,12 +98,24 @@ abstract class Calendar implements CalendarInterface
                     continue;
                 }
 
-                $entity = $this->getReader()->hydrate($event);
-                $this->saveEventLocal($entity);
+                $this->saveEventLocal($this->getEntity($event));
             }
         } catch (\Exception $e) {
             throw new ReadError($e->getMessage(), $e->getCode(), $e->error_details());
         }
+    }
+
+    protected function getEntity(array $event) : ReaderEntityInterface
+    {
+        switch ($event['Type']) {
+            case EventTypes::Occurrence :
+                $entity = $this->getOccurrenceReader()->hydrate($event);
+                break;
+            default:
+                $entity = $this->getReader()->hydrate($event);
+        }
+
+        return $entity;
     }
 
     private function setRequestHandler(?Request $requestHandler): void
@@ -118,9 +132,19 @@ abstract class Calendar implements CalendarInterface
         $this->requestHandler = $requestHandler;
     }
 
-    public function getReader(): Reader
+    protected function getReader(): ReaderEntityInterface
     {
-        return $this->reader instanceof Reader ? $this->reader : new Reader;
+        return new Reader;
+    }
+
+    protected function getOccurrenceReader(): ReaderEntityInterface
+    {
+        return new Occurrence();
+    }
+
+    protected function getExceptionReader(): ReaderEntityInterface
+    {
+        return new Reader;
     }
 
     public function isBatchRequest(): CalendarInterface
