@@ -25,7 +25,7 @@ interface WriterInterface
     // Accessor
     public function getMethod() : ?RequestType;
     public function getUrl() : string;
-    public function getInternalEventType() : string;
+    public function getInternalEventType() : ?string;
     public function isCancelled() : bool;
     public function hasOutlookId() : bool;
 }

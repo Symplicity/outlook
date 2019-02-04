@@ -2,10 +2,15 @@
 
 namespace Symplicity\Outlook\Interfaces;
 
+use Symplicity\Outlook\Exception\ReadError;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 
 interface CalendarInterface
 {
+    /**
+     * Set request as pool request
+     * @return CalendarInterface
+     */
     public function isBatchRequest(): CalendarInterface;
 
     /**
@@ -39,4 +44,11 @@ interface CalendarInterface
      * @param $failedToWrite
      */
     public function handleResponse(array $failedToWrite = []) : void;
+
+    /**
+     * Method that handles the sync
+     * @throws ReadError
+     * @param array $params
+     */
+    public function sync(array $params = []) : void;
 }

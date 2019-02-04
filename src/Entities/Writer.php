@@ -55,7 +55,7 @@ class Writer implements WriterInterface, \JsonSerializable
             'Start' => $this->startDate->toArray(),
             'End' => $this->endDate->toArray(),
             'Location' => [
-                'DisplayName' => $this->location->getLocationDisplayName()
+                'DisplayName' => $this->location instanceof LocationInterface ? $this->location->getLocationDisplayName() : null
             ],
             'Recurrence' => $this->recurrence
         ];
@@ -166,9 +166,9 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this->id;
     }
 
-    public function getInternalEventType() : string
+    public function getInternalEventType() : ?string
     {
-        return $this->eventType;
+        return $this->internalEventType;
     }
 
     public function isCancelled() : bool

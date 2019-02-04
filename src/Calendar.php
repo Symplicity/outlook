@@ -7,6 +7,7 @@ namespace Symplicity\Outlook;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
+use Symplicity\Outlook\Exception\ReadError;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
@@ -43,13 +44,13 @@ abstract class Calendar implements CalendarInterface
         $this->reader = $args['reader'];
     }
 
-    public function sync(array $params = [])
+    public function sync(array $params = []) : void
     {
         $this->push($params);
         $this->pull($params);
     }
 
-    public function push(array $params = [])
+    public function push(array $params = []) : void
     {
         if ($this->batch) {
             $this->batch($params);
@@ -58,7 +59,7 @@ abstract class Calendar implements CalendarInterface
         }
     }
 
-    protected function batch(array $params = [])
+    protected function batch(array $params = []) : void
     {
         $batch = [];
 
@@ -81,7 +82,7 @@ abstract class Calendar implements CalendarInterface
         }
     }
 
-    protected function pull(array $params = [])
+    protected function pull(array $params = []) : void
     {
         try {
             $url = $params['endPoint'];
@@ -101,7 +102,7 @@ abstract class Calendar implements CalendarInterface
                 $this->saveEventLocal($this->getEntity($event));
             }
         } catch (\Exception $e) {
-            throw new ReadError($e->getMessage(), $e->getCode(), $e->error_details());
+            throw new ReadError($e->getMessage(), $e->getCode());
         }
     }
 

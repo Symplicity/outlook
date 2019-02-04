@@ -82,7 +82,7 @@ class ResponseIterator implements ResponseIteratorInterface
         } catch (\Exception $e) {
             throw (new ResponseIteratorException(
                 $e->getMessage(),
-                $e->getCode()))->setResponse(Response::toArray($e->getResponse()));
+                $e->getCode()));
         }
     }
 
