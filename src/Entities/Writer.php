@@ -24,10 +24,10 @@ class Writer implements WriterInterface, \JsonSerializable
     protected $guid;
     protected $id;
     protected $subject;
-    protected $cancelled;
+    protected $isCancelled;
     protected $isAllDay;
     protected $url;
-    protected $eventType;
+    protected $internalEventType;
 
     /** @var ResponseBodyInterface */
     protected $body;
@@ -70,7 +70,7 @@ class Writer implements WriterInterface, \JsonSerializable
     public function getUrl() : string
     {
         $this->url = static::DefaultPostRequest;
-        if ($this->getMethod()->equals(RequestType::Patch())) {
+        if (in_array($this->method, [RequestType::Patch, RequestType::Put, RequestType::Delete])) {
             $this->url = $this->url . '/' . $this->guid;
         }
 
@@ -125,9 +125,9 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
-    public function setCancelled(bool $cancelled): WriterInterface
+    public function cancel(): WriterInterface
     {
-        $this->cancelled = $cancelled;
+        $this->isCancelled = true;
         return $this;
     }
 
@@ -149,9 +149,9 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
-    public function setEventType(string $eventType): WriterInterface
+    public function setInternalEventType(string $eventType): WriterInterface
     {
-        $this->eventType = $eventType;
+        $this->internalEventType = $eventType;
         return $this;
     }
 
@@ -166,8 +166,18 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this->id;
     }
 
-    public function getEventType() : string
+    public function getInternalEventType() : string
     {
         return $this->eventType;
+    }
+
+    public function isCancelled() : bool
+    {
+        return $this->isCancelled;
+    }
+
+    public function hasOutlookId() : bool
+    {
+        return isset($this->guid);
     }
 }

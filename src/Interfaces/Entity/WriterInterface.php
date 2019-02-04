@@ -15,15 +15,17 @@ interface WriterInterface
     public function setBody(ResponseBodyInterface $body): WriterInterface;
     public function setStartDate(ODateTimeInterface $startDate): WriterInterface;
     public function setEndDate(ODateTimeInterface $endDate): WriterInterface;
-    public function setCancelled(bool $cancelled): WriterInterface;
+    public function cancel(): WriterInterface;
     public function setIsAllDay(bool $isAllDay): WriterInterface;
     public function setRecurrence(array $recurrence): WriterInterface;
     public function setLocation(LocationInterface $location): WriterInterface;
-    public function setEventType(string $class): WriterInterface;
+    public function setInternalEventType(string $eventType): WriterInterface;
     public function method(RequestType $requestType) : WriterInterface;
 
     // Accessor
     public function getMethod() : ?RequestType;
     public function getUrl() : string;
-    public function getEventType() : string;
+    public function getInternalEventType() : string;
+    public function isCancelled() : bool;
+    public function hasOutlookId() : bool;
 }

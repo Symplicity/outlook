@@ -70,7 +70,11 @@ class BatchResponse implements BatchResponseInterface
 
     public function setResponse(string $response): void
     {
-        $responseStream = \GuzzleHttp\json_decode($response, true);
-        $this->response = (new Reader())->hydrate($responseStream);
+        try {
+            $responseStream = \GuzzleHttp\json_decode($response, true);
+            $this->response = (new Reader())->hydrate($responseStream);
+        } catch (\Exception $e) {
+            // Ignore response probably a delete.
+        }
     }
 }
