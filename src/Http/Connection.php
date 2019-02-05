@@ -133,8 +133,7 @@ class Connection implements ConnectionInterface
                 return false;
             }
 
-            // Wondering what we should try ??
-            if ($response->getStatusCode() < 400) {
+            if ($this->shouldRetry($response->getStatusCode())) {
                 return false;
             }
 
@@ -170,5 +169,10 @@ class Connection implements ConnectionInterface
         return function ($numberOfRetries) {
             return 1000 * $numberOfRetries;
         };
+    }
+
+    protected function shouldRetry(int $statusCode) : bool
+    {
+        return in_array($statusCode, [401, 403, 408, 429]) || $statusCode >= 500;
     }
 }
