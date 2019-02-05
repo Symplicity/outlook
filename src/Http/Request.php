@@ -102,7 +102,7 @@ class Request
         return $this->response;
     }
 
-    public function getRootApi()
+    public static function getRootApi()
     {
         return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION;
     }

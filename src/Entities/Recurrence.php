@@ -34,7 +34,7 @@ class Recurrence implements RecurrenceEntityInterface
         $this->setIndex($data['Pattern']['Index']);
         $this->setFirstDayOfWeek($data['Pattern']['FirstDayOfWeek']);
         $this->setDayOfMonth($data['Pattern']['DayOfMonth']);
-        $this->setDaysOfWeek($data['Pattern']['DaysOfWeek']);
+        $this->setDaysOfWeek($data['Pattern']['DaysOfWeek'] ?? []);
         $this->setRangeType($data['Range']['Type']);
         $this->setRangeDates($data);
         $this->setNumberOfOccurrences($data['Range']['NumberOfOccurrences']);

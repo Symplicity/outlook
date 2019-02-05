@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Symplicity\Outlook\Tests;
 
 use GuzzleHttp\Client;
@@ -9,7 +12,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Stream\Stream;
+use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use Symplicity\Outlook\Calendar;
@@ -56,9 +59,9 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
     {
         $mock = new MockHandler([
             new Response(200),
-            new RequestException("Error Communicating with Server", new \GuzzleHttp\Psr7\Request('GET', 'test')),
-            new Response(200, [], Stream::factory($this->getStream())),
-            new Response(200, [], Stream::factory($this->getStream()))
+            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test')),
+            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], stream_for($this->getStream()))
         ]);
 
         $handler = HandlerStack::create($mock);

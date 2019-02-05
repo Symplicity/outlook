@@ -41,7 +41,7 @@ abstract class Calendar implements CalendarInterface
         $this->token = $token;
         $this->logger = $args['logger'] ?? null;
         $this->setRequestHandler($args['request']);
-        $this->reader = $args['reader'];
+        $this->reader = $args['reader'] ?? null;
     }
 
     public function sync(array $params = []) : void
@@ -108,15 +108,11 @@ abstract class Calendar implements CalendarInterface
 
     protected function getEntity(array $event) : ReaderEntityInterface
     {
-        switch ($event['Type']) {
-            case EventTypes::Occurrence :
-                $entity = $this->getOccurrenceReader()->hydrate($event);
-                break;
-            default:
-                $entity = $this->getReader()->hydrate($event);
+        if  ($event['Type'] == EventTypes::Occurrence) {
+            return $this->getOccurrenceReader()->hydrate($event);
         }
 
-        return $entity;
+        return  $this->getReader()->hydrate($event);
     }
 
     private function setRequestHandler(?Request $requestHandler): void
