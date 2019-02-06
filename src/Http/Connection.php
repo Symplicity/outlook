@@ -12,6 +12,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
@@ -105,13 +106,19 @@ class Connection implements ConnectionInterface
 
     public function createClientWithRetryHandler() : ClientInterface
     {
-        $stack = HandlerStack::create(new CurlMultiHandler());
-        $stack->push(Middleware::retry($this->createRetryHandler($this->logger), $this->retryDelay()));
+        $stack = $this->getRetryHandler();
         $client = new Client([
             'handler' => $stack
         ]);
 
         return $client;
+    }
+
+    protected function getRetryHandler() : HandlerStack
+    {
+        $stack = HandlerStack::create(new CurlMultiHandler());
+        $stack->push(Middleware::retry($this->createRetryHandler(), $this->retryDelay()));
+        return $stack;
     }
 
     public function createClient() : ClientInterface
@@ -133,7 +140,8 @@ class Connection implements ConnectionInterface
                 return false;
             }
 
-            if ($this->shouldRetry($response->getStatusCode())) {
+            if (!$response instanceof ResponseInterface
+                || !$this->shouldRetry($response->getStatusCode())) {
                 return false;
             }
 
