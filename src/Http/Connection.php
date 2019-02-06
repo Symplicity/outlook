@@ -20,6 +20,7 @@ use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Utilities\ResponseHandler;
 
 class Connection implements ConnectionInterface
 {
@@ -44,7 +45,7 @@ class Connection implements ConnectionInterface
                 'query' => $requestOptions->getQueryParams()
             ]);
         } catch (\Exception $e) {
-            throw new ConnectionException(sprintf('Unable to GET for URL %s', $url));
+            throw new ConnectionException(sprintf('Unable to GET for URL %s', $url), $e->getCode());
         }
     }
 
@@ -145,8 +146,6 @@ class Connection implements ConnectionInterface
                 return false;
             }
 
-            $message = \GuzzleHttp\json_decode($response->getBody()->getContents());
-
             $statusCode = 0;
             $reasonPhrase = '';
 
@@ -164,8 +163,7 @@ class Connection implements ConnectionInterface
                 'retries' => $retries + 1,
                 'total' => static::MAX_RETRIES,
                 'responseCode' => $statusCode,
-                'message' => $reasonPhrase,
-                'exceptionMessage' => $retries === 0 ? $message->error->message : ''
+                'message' => $reasonPhrase
             ]);
 
             return true;
