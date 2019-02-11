@@ -44,11 +44,11 @@ class Token implements TokenInterface
     {
         $requestData = $this->queryParams('authorization_code', $code, $redirectUrl);
         $url = static::AUTHORITY . DIRECTORY_SEPARATOR . static::COMMON . DIRECTORY_SEPARATOR . static::VERSION . DIRECTORY_SEPARATOR . static::TOKEN_URL;
-        $requestOptions = new RequestOptions($url, RequestType::Get, ['body' => $requestData]);
+        $requestOptions = new RequestOptions($url, RequestType::Post(), ['body' => $requestData]);
 
         $response = $this->getConnectionHandler()
             ->createClient()
-            ->request(RequestType::Post, $url, [
+            ->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders(),
                 'query' => $requestOptions->getQueryParams(),
                 'form_params' => $requestOptions->getBody()
