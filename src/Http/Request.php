@@ -72,7 +72,7 @@ class Request
         return $this;
     }
 
-    public function getConnection() : Closure
+    public function getConnection() : ConnectionInterface
     {
         return $this->connection;
     }

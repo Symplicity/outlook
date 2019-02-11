@@ -37,7 +37,7 @@ class RequestOptions implements RequestOptionsInterface
 
     public function addDefaultHeaders()
     {
-        if ($this->token == null) {
+        if ($this->token === null) {
             throw new \InvalidArgumentException('Missing Token');
         }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Interfaces\Http;
 
+use Symplicity\Outlook\Utilities\RequestType;
+
 interface RequestOptionsInterface
 {
     public function addHeader(string $key, $value) : void;
@@ -16,4 +18,5 @@ interface RequestOptionsInterface
     public function toArray() : array;
     public function addPreferenceHeaders(array $preferenceHeaders) : void;
     public function getPreferredTimezone() : string;
+    public function getMethod() : RequestType;
 }
