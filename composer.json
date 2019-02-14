@@ -1,0 +1,42 @@
+{
+    "name": "symplicity/outlook",
+    "type": "library",
+    "description": "Outlook",
+    "homepage": "https://www.symplicity.com",
+    "license": "MIT",
+    "require": {
+        "php": "^7.1",
+        "ramsey/uuid" : "^3.8.0",
+        "guzzlehttp/guzzle": "^6.2",
+        "monolog/monolog" : "^1.17",
+		"myclabs/php-enum": "^1.6.0"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^2.5",
+        "phpunit/phpunit": "^5.7",
+        "friendsofphp/php-cs-fixer" : "^2.14.0"
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "optimize-autoloader": true,
+        "discard-changes": "stash",
+        "notify-on-install": false,
+        "process-timeout": 3000
+    },
+    "autoload": {
+        "psr-4": {
+            "Symplicity\\Outlook\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Symplicity\\Outlook\\Test\\": "tests/"
+        }
+    },
+    "scripts": {
+      "test": [
+        "phpunit",
+        "phpcs"
+      ]
+    }
+}
