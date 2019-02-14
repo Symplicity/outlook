@@ -71,12 +71,12 @@ class Token implements TokenInterface
     }
 
     // Mark Accessors
-    public function getEmailAddress() : string
+    public function getEmailAddress() : ?string
     {
         return $this->emailAddress;
     }
 
-    public function getDisplayName() : string
+    public function getDisplayName() : ?string
     {
         return $this->displayName;
     }

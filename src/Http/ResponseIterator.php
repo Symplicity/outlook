@@ -91,7 +91,7 @@ class ResponseIterator implements ResponseIteratorInterface
         $this->deltaLink = $url;
     }
 
-    public function getDeltaLink() : string
+    public function getDeltaLink() : ?string
     {
         return $this->deltaLink;
     }
