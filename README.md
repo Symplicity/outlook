@@ -20,9 +20,9 @@ $log->pushHandler($streamHandler, Logger::WARNING);
 ```            
 
 ## Documentations
+- [Starting](docs/calendar-usage.md)
 - [Token Handling](docs/token-usage.md)
 - [Events Handling](docs/event-usage.md)
-- [Starting](docs/calendar-usage.md)
 
 
 
