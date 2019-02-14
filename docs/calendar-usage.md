@@ -29,7 +29,7 @@ class OutlookCalendar extends Calendar
     public function getLocalEvents() : array 
     {
         // setup a return for all events that you want pushed to outlook calendar.
-        // A Writer entity is setup for use but u can always create a new one for your specific use case, just make sure it extends WriterInterface
+        // A Writer entity is setup for use but u can always create a new one for your specific use case, just make sure it implements WriterInterface
         $event1 = new Writer()
             ->setId('1')
             ->setSubject('testing new outlook events')
