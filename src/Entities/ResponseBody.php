@@ -29,6 +29,6 @@ class ResponseBody implements ResponseBodyInterface
 
     public function getSanitizedContent() : string
     {
-        return trim(strip_tags($this->content));
+        return trim($this->content);
     }
 }
