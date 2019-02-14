@@ -1,8 +1,8 @@
 # Getting Token
 
-- AuthorizationURL(#authorization)
-- Request(#request)
-- Refresh(#refresh)
+- [AuthorizationURL](#authorization)
+- [Request](#request)
+- [Refresh](#refresh)
 
 ## Authorization
 ```php

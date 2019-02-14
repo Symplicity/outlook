@@ -149,9 +149,4 @@ class Recurrence implements RecurrenceEntityInterface
     {
         $this->numberOfOccurrences = $numberOfOccurrences;
     }
-
-    public function attachOccurrences(Closure $occurrence)
-    {
-        $this->occurrence = $occurrence;
-    }
 }
