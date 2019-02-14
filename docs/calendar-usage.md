@@ -7,7 +7,13 @@ To start working with calendars simply extend the Calendar class. There are a bu
 
 declare(strict_types=1);
 
-namespace []
+namespace YourPackage;
+
+use Symplicity\Outlook\Calendar;
+use Symplicity\Outlook\Entities\Writer;
+use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
+use Symplicity\Outlook\Entities\ResponseBody;
+use Symplicity\Outlook\Interfaces\Utils\BatchResponseInterface;
 
 class OutlookCalendar extends Calendar 
 {
