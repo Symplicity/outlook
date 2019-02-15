@@ -2,7 +2,7 @@
 
 ## Installation
 
-Use composer to install Outlook package
+Use composer to install Outlook package.
 
 ```
 $ composer require symplicity/outlook "^1.0"
