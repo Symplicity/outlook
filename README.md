@@ -1,5 +1,8 @@
 # Outlook
 
+### Status
+[![Build Status](https://travis-ci.org/Symplicity/outlook.png)](https://travis-ci.org/Symplicity/outlook)
+
 ## Installation
 
 Use composer to install Outlook package.
