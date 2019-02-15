@@ -18,12 +18,6 @@
         "friendsofphp/php-cs-fixer" : "^2.14.0"
     },
     "minimum-stability": "stable",
-    "config": {
-        "optimize-autoloader": true,
-        "discard-changes": "stash",
-        "notify-on-install": false,
-        "process-timeout": 3000
-    },
     "autoload": {
         "psr-4": {
             "Symplicity\\Outlook\\": "src/"
