@@ -1,7 +1,7 @@
 # Outlook
 
 ### Status
-[![Build Status](https://travis-ci.org/Symplicity/outlook.png)](https://travis-ci.org/Symplicity/outlook)
+[![Build Status](https://travis-ci.org/Symplicity/outlook.svg?branch=master)](https://travis-ci.org/Symplicity/outlook)
 
 ## Installation
 
