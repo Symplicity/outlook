@@ -14,7 +14,7 @@ interface CalendarInterface
     public function isBatchRequest(): CalendarInterface;
 
     /**
-     * Once event has been accessed from outlook, use the method to save event to your db
+     * Once event has been accessed from outlook, use the method to save event to your database
      * @param ReaderEntityInterface $reader
      * @return void
      */
@@ -29,7 +29,7 @@ interface CalendarInterface
 
     /**
      * Gets all the events to be sent to outlook
-     * @return array Return array of Write Entities, example [Write(....), Write(....)]
+     * @return array Return array of WriteInterface Entities, example [Write(....), Write(....)]
      */
     public function getLocalEvents() : array;
 

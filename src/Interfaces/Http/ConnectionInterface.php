@@ -5,12 +5,44 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces\Http;
 
 use GuzzleHttp\ClientInterface;
+use Symplicity\Outlook\Exception\ConnectionException;
 
 interface ConnectionInterface
 {
+    /**
+     * Creates a guzzle client.
+     * @return ClientInterface
+     */
     public function createClient() : ClientInterface;
+
+    /**
+     * Creates a guzzle client with a retry and delayed handler.
+     * @return ClientInterface
+     */
     public function createClientWithRetryHandler() : ClientInterface;
+
+    /**
+     * Calls outlook using the guzzle get request
+     * @param string $url
+     * @param RequestOptionsInterface $requestOptions
+     * @return mixed
+     * @throws ConnectionException
+     */
     public function get(string $url, RequestOptionsInterface $requestOptions);
+
+    /**
+     * Post to outlook using the guzzle post request.
+     * @param string $url
+     * @param RequestOptionsInterface $requestOptions
+     * @return mixed
+     * @throws ConnectionException
+     */
     public function post(string $url, RequestOptionsInterface $requestOptions);
+
+    /**
+     * Batch post/delete/get using the guzzle pool handler.
+     * @param RequestOptionsInterface $requestOptions
+     * @return mixed
+     */
     public function batch(RequestOptionsInterface $requestOptions);
 }
