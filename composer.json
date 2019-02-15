@@ -2,6 +2,7 @@
     "name": "symplicity/outlook",
     "type": "library",
     "description": "Outlook",
+    "keywords": ["outlook", "calendar"],
     "homepage": "https://www.symplicity.com",
     "license": "MIT",
     "require": {
