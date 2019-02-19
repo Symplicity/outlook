@@ -2,6 +2,8 @@
 
 ### Status
 [![Build Status](https://travis-ci.org/Symplicity/outlook.svg?branch=master)](https://travis-ci.org/Symplicity/outlook)
+[![Latest Stable Version](https://poser.pugx.org/symplicity/outlook/v/stable)](https://packagist.org/packages/symplicity/outlook)
+[![License](https://poser.pugx.org/symplicity/outlook/license)](https://packagist.org/packages/symplicity/outlook)
 
 ## Installation
 

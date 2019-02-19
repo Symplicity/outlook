@@ -2,7 +2,7 @@
     "name": "symplicity/outlook",
     "type": "library",
     "description": "Outlook",
-    "keywords": ["outlook", "calendar"],
+    "keywords": ["outlook", "calendar", "sync", "synchronization", "php-outlook365-sync"],
     "homepage": "https://www.symplicity.com",
     "license": "MIT",
     "require": {
