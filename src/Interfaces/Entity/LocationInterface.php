@@ -4,5 +4,5 @@ namespace Symplicity\Outlook\Interfaces\Entity;
 
 interface LocationInterface
 {
-    public function getLocationDisplayName();
+    public function getLocationDisplayName() : ?string;
 }

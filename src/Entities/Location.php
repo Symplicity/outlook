@@ -15,7 +15,7 @@ class Location implements LocationInterface
         $this->displayName = $location['DisplayName'];
     }
 
-    public function getLocationDisplayName() : string
+    public function getLocationDisplayName() : ?string
     {
         return $this->displayName;
     }
