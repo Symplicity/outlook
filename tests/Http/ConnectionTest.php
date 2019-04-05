@@ -14,6 +14,7 @@ use GuzzleHttp\Psr7\Response;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
+use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Utilities\RequestType;
@@ -49,7 +50,8 @@ class ConnectionTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $handler = HandlerStack::create($mock);
-        $handler->push(Middleware::retry($this->connection->createRetryHandler(), $this->connection->retryDelay()));
+        $retryHandler = $this->connection->createRetryHandler();
+        $handler->push(Middleware::retry($retryHandler, $this->connection->retryDelay()));
         $requestOptions = new RequestOptions('test', RequestType::Get());
 
         $client = new Client(['handler' => $handler]);
@@ -58,7 +60,9 @@ class ConnectionTest extends \PHPUnit_Framework_TestCase
             ->method('createClientWithRetryHandler')
             ->willReturn($client);
 
-        $this->connection->get('test', $requestOptions);
+        $response = $this->connection->get('test', $requestOptions);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
+        $this->assertInstanceOf(Response::class, $response);
         $this->assertFalse($this->handler->hasWarningRecords());
 
         $this->connection->get('test.com', $requestOptions);
@@ -72,7 +76,6 @@ class ConnectionTest extends \PHPUnit_Framework_TestCase
             // Not retrying for 400
             $this->assertFalse($this->handler->hasWarningRecords());
         }
-
 
         try {
             $this->connection->get('test.com', $requestOptions);

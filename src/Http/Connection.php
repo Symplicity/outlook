@@ -20,7 +20,6 @@ use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Utilities\ResponseHandler;
 
 class Connection implements ConnectionInterface
 {
@@ -36,20 +35,25 @@ class Connection implements ConnectionInterface
         $this->logger = $logger;
     }
 
-    public function get(string $url, RequestOptionsInterface $requestOptions) : Response
+    public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface
     {
         $client = $this->createClientWithRetryHandler();
+        $options = [
+            'headers' => $requestOptions->getHeaders()
+        ];
+
+        if (empty($args['skipQueryParams']) ) {
+            $options['query'] = $requestOptions->getQueryParams();
+        }
+
         try {
-            return $client->request(RequestType::Get, $url, [
-                'headers' => $requestOptions->getHeaders(),
-                'query' => $requestOptions->getQueryParams()
-            ]);
+            return $client->request(RequestType::Get, $url, $options);
         } catch (\Exception $e) {
             throw new ConnectionException(sprintf('Unable to GET for URL %s', $url), $e->getCode());
         }
     }
 
-    public function post(string $url, RequestOptionsInterface $requestOptions) : Response
+    public function post(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
     {
         $client = $this->createClient();
 
@@ -128,7 +132,7 @@ class Connection implements ConnectionInterface
         return $client;
     }
 
-    public function createRetryHandler()
+    public function createRetryHandler() : callable
     {
         $logger = $this->logger;
         return function (
@@ -170,7 +174,7 @@ class Connection implements ConnectionInterface
         };
     }
 
-    public function retryDelay()
+    public function retryDelay() : callable
     {
         return function ($numberOfRetries) {
             return 1000 * $numberOfRetries;

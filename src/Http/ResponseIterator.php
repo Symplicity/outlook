@@ -55,12 +55,12 @@ class ResponseIterator implements ResponseIteratorInterface
         while (isset($page[static::NextPageLink])) {
             $this->requestOptions->resetUUID();
             $this->requestOptions->addPreferenceHeaders([
-                'odata.maxpagesize=50',
                 'odata.track-changes',
+                'odata.maxpagesize=3',
                 'outlook.timezone="' . $this->requestOptions->getPreferredTimezone() . '"'
             ]);
 
-            $page = $this->getPage($page[static::NextPageLink]);
+            $page = $this->getPage($page[static::NextPageLink], ['skipQueryParams' => true]);
 
             // Loop complete if we get a deltaLink
             if (isset($page[static::DeltaLink])) {
@@ -74,10 +74,10 @@ class ResponseIterator implements ResponseIteratorInterface
         }
     }
 
-    private function getPage(string $url) : array
+    private function getPage(string $url, array $args = []) : array
     {
         try {
-            $response = $this->connection->get($url, $this->requestOptions);
+            $response = $this->connection->get($url, $this->requestOptions, $args);
             return ResponseHandler::toArray($response);
         } catch (\Exception $e) {
             throw (new ResponseIteratorException(
