@@ -56,7 +56,7 @@ class ResponseIterator implements ResponseIteratorInterface
             $this->requestOptions->resetUUID();
             $this->requestOptions->addPreferenceHeaders([
                 'odata.track-changes',
-                'odata.maxpagesize=3',
+                'odata.maxpagesize=50',
                 'outlook.timezone="' . $this->requestOptions->getPreferredTimezone() . '"'
             ]);
 
