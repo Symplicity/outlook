@@ -42,7 +42,7 @@ class Connection implements ConnectionInterface
             'headers' => $requestOptions->getHeaders()
         ];
 
-        if (empty($args['skipQueryParams']) ) {
+        if (empty($args['skipQueryParams'])) {
             $options['query'] = $requestOptions->getQueryParams();
         }
 
@@ -135,7 +135,7 @@ class Connection implements ConnectionInterface
     public function createRetryHandler() : callable
     {
         $logger = $this->logger;
-        return function (
+        return function(
             $retries,
             Request $request,
             Response $response = null,
@@ -176,7 +176,7 @@ class Connection implements ConnectionInterface
 
     public function retryDelay() : callable
     {
-        return function ($numberOfRetries) {
+        return function($numberOfRetries) {
             return 1000 * $numberOfRetries;
         };
     }

@@ -108,7 +108,7 @@ abstract class Calendar implements CalendarInterface
 
     protected function getEntity(array $event) : ReaderEntityInterface
     {
-        if  ($event['Type'] == EventTypes::Occurrence) {
+        if ($event['Type'] == EventTypes::Occurrence) {
             return $this->getOccurrenceReader()->hydrate($event);
         }
 
@@ -119,7 +119,7 @@ abstract class Calendar implements CalendarInterface
     {
         if ($requestHandler === null) {
             $requestHandler = new Request($this->token, [
-                'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
+                'requestOptions' => function(string $url, RequestType $methodType, array $args = []) {
                     return new RequestOptions($url, $methodType, $args);
                 },
                 'connection' => new Connection($this->logger)
