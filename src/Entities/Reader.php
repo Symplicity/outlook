@@ -215,7 +215,7 @@ class Reader implements ReaderEntityInterface
 
     protected function setEventType(string $eventType) : void
     {
-        $this->eventType = EventTypes::Single();
+        $this->eventType = EventTypes::Single;
         if ($value = EventTypes::search($eventType)) {
             $this->eventType = EventTypes::$value();
         }

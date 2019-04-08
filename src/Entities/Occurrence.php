@@ -109,7 +109,7 @@ class Occurrence implements ReaderEntityInterface
 
     private function setEventType(string $eventType) : void
     {
-        $this->eventType = EventTypes::Occurrence();
+        $this->eventType = EventTypes::Occurrence;
         if ($value = EventTypes::search($eventType)) {
             $this->eventType = EventTypes::$value();
         }

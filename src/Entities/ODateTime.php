@@ -14,7 +14,7 @@ class ODateTime implements ODateTimeInterface
     /**
      * ODateTime constructor.
      * @param \DateTimeInterface $dateTime
-     * @param string Format Iana Timezone $timezone
+     * @param string $timezone
      */
     public function __construct(\DateTimeInterface $dateTime, string $timezone)
     {

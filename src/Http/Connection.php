@@ -30,7 +30,7 @@ class Connection implements ConnectionInterface
 
     protected static $eventInfo = [];
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(?LoggerInterface $logger)
     {
         $this->logger = $logger;
     }
@@ -161,15 +161,16 @@ class Connection implements ConnectionInterface
                 $reasonPhrase = $exception->getMessage();
             }
 
-            $logger->warning('Retrying', [
-                'method' => $request->getMethod(),
-                'uri' => $request->getUri(),
-                'retries' => $retries + 1,
-                'total' => static::MAX_RETRIES,
-                'responseCode' => $statusCode,
-                'message' => $reasonPhrase
-            ]);
-
+            if ($logger instanceof LoggerInterface) {
+                $logger->warning('Retrying', [
+                    'method' => $request->getMethod(),
+                    'uri' => $request->getUri(),
+                    'retries' => $retries + 1,
+                    'total' => static::MAX_RETRIES,
+                    'responseCode' => $statusCode,
+                    'message' => $reasonPhrase
+                ]);
+            }
             return true;
         };
     }

@@ -8,6 +8,6 @@ interface DateEntityInterface
 {
     public function getStartDate() : string;
     public function getEndDate() : string;
-    public function getModifiedDate() : string;
-    public function getTimezone() : string;
+    public function getModifiedDate() : ?string;
+    public function getTimezone() : ?string;
 }

@@ -38,7 +38,7 @@ class Writer implements WriterInterface, \JsonSerializable
     /** @var ODateTimeInterface */
     protected $endDate;
 
-    /** @var RecurrenceEntityInterface */
+    /** @var array */
     protected $recurrence;
 
     /** @var LocationInterface */
@@ -86,7 +86,7 @@ class Writer implements WriterInterface, \JsonSerializable
     public function setGuid(?string $guid): WriterInterface
     {
         $this->guid = $guid;
-        $this->method(RequestType::Patch());
+        $this->method(RequestType::Patch);
         return $this;
     }
 

@@ -74,4 +74,9 @@ interface RequestOptionsInterface
      * @return RequestType
      */
     public function getMethod() : RequestType;
+
+    /**
+     * Resets uuid for client call
+     */
+    public function resetUUID() : void;
 }

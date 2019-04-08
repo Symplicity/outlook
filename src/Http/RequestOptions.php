@@ -63,7 +63,7 @@ class RequestOptions implements RequestOptionsInterface
 
     public function setUUID()
     {
-        $this->addHeader('client-request-id', $this->uuid());
+        $this->addHeader('client-request-id', $this->resetUUID());
     }
 
     public function addHeader(string $key, $value) : void

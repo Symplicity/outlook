@@ -19,7 +19,7 @@ class Request
     protected $args;
     protected $requestOptions;
 
-    /** @var Connection $connection */
+    /** @var ConnectionInterface $connection */
     protected $connection;
 
     /** @var ResponseIterator $responseIterator */

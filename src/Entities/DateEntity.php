@@ -31,12 +31,12 @@ class DateEntity implements DateEntityInterface
         return $this->end;
     }
 
-    public function getModifiedDate() : string
+    public function getModifiedDate() : ?string
     {
         return $this->modified;
     }
 
-    public function getTimezone() : string
+    public function getTimezone() : ?string
     {
         return $this->timezone;
     }

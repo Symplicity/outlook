@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces\Http;
 
 use GuzzleHttp\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
 
 interface ConnectionInterface
@@ -25,10 +26,11 @@ interface ConnectionInterface
      * Calls outlook using the guzzle get request
      * @param string $url
      * @param RequestOptionsInterface $requestOptions
+     * @param array $args
      * @return mixed
      * @throws ConnectionException
      */
-    public function get(string $url, RequestOptionsInterface $requestOptions);
+    public function get(string $url, RequestOptionsInterface $requestOptions , array $args = []) : ResponseInterface;
 
     /**
      * Post to outlook using the guzzle post request.
@@ -37,7 +39,7 @@ interface ConnectionInterface
      * @return mixed
      * @throws ConnectionException
      */
-    public function post(string $url, RequestOptionsInterface $requestOptions);
+    public function post(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface;
 
     /**
      * Batch post/delete/get using the guzzle pool handler.
