@@ -70,6 +70,11 @@ class BatchResponse implements BatchResponseInterface
 
     public function setResponse(string $response): void
     {
+        // return if status code is 204, no need to hydrate reader.
+        if ($this->getStatusCode() == 204) {
+            return;
+        }
+
         try {
             $responseStream = \GuzzleHttp\json_decode($response, true);
             $this->response = (new Reader())->hydrate($responseStream);
