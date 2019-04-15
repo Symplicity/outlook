@@ -35,6 +35,7 @@ class OutlookCalendar extends Calendar
     public function getLocalEvents() : array 
     {
         // setup a return for all events that you want pushed to outlook calendar.
+        // For events that needs to be deleted create an instance of Delete class. You can also set up your own by implementing the DeleteInterface
         // A Writer entity is setup for use but u can always create a new one for your specific use case, just make sure it implements WriterInterface
         $event1 = new Writer()
             ->setId('1')
@@ -53,8 +54,10 @@ class OutlookCalendar extends Calendar
             ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'Testing Calendar']))
             ->setStartDate(new ODateTime(new DateTime('2019-02-21 08:30:00'), 'Eastern Standard Time'))
             ->setEndDate(new ODateTime(new DateTime('2019-02-21 09:00:00'), 'Eastern Standard Time'));
+            
+        $event3 = new Delete('guid', 'internalEventId')   
                       
-        return [$event1, $event2];
+        return [$event1, $event2, $event3];
     }
     
     public function handlePoolResponses(array $responses = []) : void 
