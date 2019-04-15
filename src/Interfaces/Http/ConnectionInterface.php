@@ -42,9 +42,16 @@ interface ConnectionInterface
     public function post(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface;
 
     /**
-     * Batch post/delete/get using the guzzle pool handler.
+     * Batch post/get/patch using the guzzle pool handler.
      * @param RequestOptionsInterface $requestOptions
      * @return mixed
      */
     public function batch(RequestOptionsInterface $requestOptions);
+
+    /**
+     * Batch delete using the guzzle pool handler.
+     * @param RequestOptionsInterface $requestOptions
+     * @return mixed
+     */
+    public function batchDelete(RequestOptionsInterface $requestOptions);
 }
