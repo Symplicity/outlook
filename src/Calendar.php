@@ -12,6 +12,7 @@ use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
+use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
@@ -62,6 +63,7 @@ abstract class Calendar implements CalendarInterface
     protected function batch(array $params = []) : void
     {
         $batch = [];
+        $batchDelete = [];
 
         $eventsToWrite = $this->getLocalEvents();
 
@@ -70,11 +72,20 @@ abstract class Calendar implements CalendarInterface
         foreach ($chunks as $chunk) {
             /** @var WriterInterface $event */
             foreach ($chunk as $event) {
+                if ($event instanceof DeleteInterface) {
+                    $batchDelete[] = $event;
+                    continue;
+                }
+
                 if (!$event instanceof WriterInterface) {
                     continue;
                 }
 
                 $batch[] = $event;
+            }
+
+            if (count($batchDelete)) {
+                $this->requestHandler->batchDelete($batchDelete, $params);
             }
 
             $this->requestHandler->batch($batch, $params);

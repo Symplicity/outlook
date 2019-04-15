@@ -15,6 +15,7 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
+use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
@@ -89,6 +90,35 @@ class Connection implements ConnectionInterface
                 [
                     'headers' => $requestOptions->getHeaders(),
                     'json' => $json,
+                    'delay' => 0.9 * 1000
+                ]
+            );
+        }
+
+        $responses = \GuzzleHttp\Promise\settle($promises)->wait();
+        $this->setResponses($responses);
+        return $this->responses;
+    }
+
+    public function batchDelete(RequestOptionsInterface $requestOptions)
+    {
+        $client = $this->createClient();
+        $promises = [];
+        $rootUrl = \Symplicity\Outlook\Http\Request::getRootApi();
+
+        /** @var DeleteInterface $delete */
+        foreach ($requestOptions->getBody() as $delete) {
+            $id = $delete->getInternalId();
+
+            // prepare for response handling
+            static::$eventInfo[$id] = ['guid' => $delete->getGuid(), 'eventType' => $delete->getInternalEventType()];
+
+            // Prepare promises
+            $promises[$id] = $client->requestAsync(
+                RequestType::Delete,
+                $rootUrl . $delete->getUrl(),
+                [
+                    'headers' => $requestOptions->getHeaders(),
                     'delay' => 0.9 * 1000
                 ]
             );

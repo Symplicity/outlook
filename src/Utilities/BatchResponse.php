@@ -60,7 +60,7 @@ class BatchResponse implements BatchResponseInterface
 
     public function setStatus(): void
     {
-        $this->status = in_array($this->getStatusCode(), [200, 201, 202], true) ? PromiseInterface::FULFILLED : PromiseInterface::REJECTED;
+        $this->status = in_array($this->getStatusCode(), [200, 201, 202, 204], true) ? PromiseInterface::FULFILLED : PromiseInterface::REJECTED;
     }
 
     public function setReason(string $reason): void

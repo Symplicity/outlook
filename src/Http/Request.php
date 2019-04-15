@@ -72,6 +72,22 @@ class Request
         return $this;
     }
 
+    public function batchDelete(array $events, array $params = []) : self
+    {
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, '', new RequestType(RequestType::Delete), [
+            'headers' => $params['headers'] ?? [],
+            'queryParams' => $params['queryParams'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'token' => $this->accessToken
+        ]);
+
+        $requestOptions->addBatchHeaders();
+        $requestOptions->addBody($events);
+        $this->response = $this->connection->batchDelete($requestOptions);
+        return $this;
+    }
+
     public function getConnection() : ConnectionInterface
     {
         return $this->connection;
