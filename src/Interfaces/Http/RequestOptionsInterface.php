@@ -79,4 +79,10 @@ interface RequestOptionsInterface
      * Resets uuid for client call
      */
     public function resetUUID() : void;
+
+    /**
+     * Set preference headers that you want to send to outlook (e.g 'outlook.body-content-type=\'text\'')
+     * @return array
+     */
+    public function getDefaultPreferenceHeaders() : array;
 }
