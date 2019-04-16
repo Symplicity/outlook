@@ -23,6 +23,7 @@ class RequestOptions implements RequestOptionsInterface
     protected $token;
     protected $timezone;
     protected $batchId;
+    protected $preferenceHeaders;
 
     public function __construct(string $url, RequestType $methodType, array $args = [])
     {
@@ -33,6 +34,7 @@ class RequestOptions implements RequestOptionsInterface
         $this->queryParams = $args['queryParams'] ?? [];
         $this->token = $args['token'] ?? null;
         $this->timezone = $args['timezone'] ?? static::DEFAULT_TIMEZONE;
+        $this->preferenceHeaders = $args['preferenceHeaders'] ?? [];
     }
 
     public function addDefaultHeaders()
@@ -152,5 +154,10 @@ class RequestOptions implements RequestOptionsInterface
     public function getMethod() : RequestType
     {
         return $this->method;
+    }
+
+    public function getDefaultPreferenceHeaders() : array
+    {
+        return $this->preferenceHeaders;
     }
 }

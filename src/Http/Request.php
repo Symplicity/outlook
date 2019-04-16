@@ -46,6 +46,7 @@ class Request
             'headers' => $params['headers'] ?? [],
             'queryParams' => $params['queryParams'] ?? [],
             'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'preferenceHeaders' => $params['preferenceHeaders'] ?? [],
             'token' => $this->accessToken
         ]);
 

@@ -89,7 +89,7 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $this->stub->expects($this->exactly(1))->method('handlePoolResponses')->with($this->equalTo($this->fulFilledResponse()));
-        $this->stub->expects($this->exactly(4))->method('saveEventLocal')->withConsecutive($this->equalTo($this->getExpectedReadEntities()));
+        $this->stub->expects($this->exactly(8))->method('saveEventLocal')->withConsecutive($this->equalTo($this->getExpectedReadEntities()));
 
         $this->stub->sync([
             'endPoint' => 'me/calendarview',

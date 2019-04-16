@@ -6,7 +6,6 @@ namespace Symplicity\Outlook\Entities;
 
 use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ODateTimeInterface;
-use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\RequestType;

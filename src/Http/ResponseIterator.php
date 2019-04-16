@@ -33,11 +33,11 @@ class ResponseIterator implements ResponseIteratorInterface
     public function setItems(string $url, RequestOptionsInterface $requestOptions) : ResponseIteratorInterface
     {
         $this->requestOptions = $requestOptions;
-        $this->requestOptions->addPreferenceHeaders([
+        $this->requestOptions->addPreferenceHeaders(array_merge($this->requestOptions->getDefaultPreferenceHeaders(), [
             'odata.maxpagesize=1',
             'odata.track-changes',
             'outlook.timezone="' . $this->requestOptions->getPreferredTimezone() . '"'
-        ]);
+        ]));
 
         $this->firstPage = $this->getPage($url);
         return $this;
@@ -47,6 +47,11 @@ class ResponseIterator implements ResponseIteratorInterface
     {
         $page = $this->firstPage;
 
+        $initialPageCounter = \count($page[static::ItemsKey]) ?? 0;
+        for ($i = 0; $i < $initialPageCounter; $i++) {
+            yield $page[static::ItemsKey][$i];
+        }
+
         if (isset($page[static::DeltaLink])) {
             $page[static::NextPageLink] = $page[static::DeltaLink];
             unset($page[static::DeltaLink]);
@@ -54,11 +59,11 @@ class ResponseIterator implements ResponseIteratorInterface
 
         while (isset($page[static::NextPageLink])) {
             $this->requestOptions->resetUUID();
-            $this->requestOptions->addPreferenceHeaders([
+            $this->requestOptions->addPreferenceHeaders(array_merge($this->requestOptions->getDefaultPreferenceHeaders(), [
                 'odata.track-changes',
                 'odata.maxpagesize=50',
                 'outlook.timezone="' . $this->requestOptions->getPreferredTimezone() . '"'
-            ]);
+            ]));
 
             $page = $this->getPage($page[static::NextPageLink], ['skipQueryParams' => true]);
 
@@ -82,7 +87,8 @@ class ResponseIterator implements ResponseIteratorInterface
         } catch (\Exception $e) {
             throw (new ResponseIteratorException(
                 $e->getMessage(),
-                $e->getCode()));
+                $e->getCode()
+            ));
         }
     }
 

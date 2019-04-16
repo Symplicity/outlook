@@ -1,0 +1,78 @@
+<?php
+
+namespace Symplicity\Outlook\Tests\Entities;
+
+use Symplicity\Outlook\Entities\ODateTime;
+use Symplicity\Outlook\Entities\ResponseBody;
+use Symplicity\Outlook\Entities\Writer;
+use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
+use Symplicity\Outlook\Utilities\RequestType;
+
+class WriterTest extends \PHPUnit_Framework_TestCase
+{
+
+    /**
+     * @dataProvider getData
+     * @param WriterInterface $writer
+     * @param array $expected
+     */
+    public function testJsonSerialize(WriterInterface $writer, array $expected)
+    {
+        $this->assertEquals($expected['url'], $writer->getUrl());
+        $this->assertJsonStringEqualsJsonString($expected['json'], json_encode($writer));
+        $this->assertEquals($expected['id'], (string) $writer);
+        $this->assertEquals($expected['method'], $writer->getMethod());
+    }
+
+    public function getData()
+    {
+        return [
+            [(new Writer())
+                ->setId('foo')
+                ->setSubject('test')
+                ->method(new RequestType(RequestType::Post))
+                ->setInternalEventType('1')
+                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
+                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
+                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time')), [
+                    'url' => '/Me/events',
+                    'method' => 'POST',
+                    'id' => 'foo',
+                    'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null}'
+            ]],
+            [(new Writer())
+                ->setGuid('ABC')
+                ->setId('foo')
+                ->method(new RequestType(RequestType::Patch))
+                ->setSubject('test')
+                ->setInternalEventType('1')
+                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
+                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
+                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time'))
+                ->setRecurrence([
+                    'Pattern' =>
+                        [
+                            'Month' => 0,
+                            'DayOfMonth' => 0,
+                            'FirstDayOfWeek' => 'Sunday',
+                            'Index' => 'First',
+                            'Type' => 'Daily',
+                            'Interval' => 1,
+                        ],
+                    'Range' =>
+                        [
+                            'NumberOfOccurrences' => '3',
+                            'Type' => 'Numbered',
+                            'StartDate' => '2019-05-29',
+                            'RecurrenceTimeZone' => 'Eastern Standard Time',
+                            'EndDate' => '2019-06-01',
+                        ],
+                ]), [
+                'url' => '/Me/events/ABC',
+                'id' => 'ABC',
+                'method' => 'PATCH',
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}}}'
+            ]]
+        ];
+    }
+}

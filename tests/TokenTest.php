@@ -65,6 +65,43 @@ class TokenTest extends \PHPUnit_Framework_TestCase
         $this->assertNotEmpty($token->getExpiresIn());
     }
 
+    /**
+     * @dataProvider getStream
+     * @param StreamInterface $stream
+     * @param null|\Exception $exception
+     */
+    public function testRefresh(StreamInterface $stream, ?\Exception $exception)
+    {
+        $code = $exception === null ? 200 : $exception->getCode();
+        $mock = new MockHandler([
+            new Response($code, [], $stream),
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+
+        $this->connection->expects($this->once())->method('createClient')->willReturn($client);
+        $this->tokenHandler->expects($this->once())->method('getConnectionHandler')->willReturn($this->connection);
+        if ($exception !== null) {
+            $this->expectExceptionCode($code);
+        }
+
+        $token = $this->tokenHandler->refresh('123', 'symplicity.com');
+        $this->assertInstanceOf(TokenInterface::class, $token);
+        $this->assertNotEmpty($token->getAccessToken());
+        $this->assertNotEmpty($token->getRefreshToken());
+        $this->assertNotEmpty($token->getExpiresIn());
+    }
+
+    public function testAuthorizationUrl()
+    {
+        $authUrl = $this->tokenHandler->getAuthorizationUrl(['abc'], 'test.com');
+        $this->assertEquals('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=foo&redirect_uri=test.com&response_type=code&scope=openid+offline_access+https%3A%2F%2Foutlook.office.com%2Fcalendars.readwrite&state=%5B%22abc%22%5D', $authUrl);
+
+        $authUrl = $this->tokenHandler->getAuthorizationUrl(['123'], 'test.com');
+        $this->assertEquals('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=foo&redirect_uri=test.com&response_type=code&scope=openid+offline_access+https%3A%2F%2Foutlook.office.com%2Fcalendars.readwrite&state=%5B%22123%22%5D', $authUrl);
+    }
+
     public function getStream()
     {
         return [
