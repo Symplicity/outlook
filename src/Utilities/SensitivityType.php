@@ -8,8 +8,8 @@ use MyCLabs\Enum\Enum;
 
 class SensitivityType extends Enum
 {
-    public const Normal = 0;
-    public const Personal = 1;
-    public const Private = 2;
-    public const Confidential = 3;
+    public const Normal = 'Normal';
+    public const Personal = 'Personal';
+    public const Private = 'Private';
+    public const Confidential = 'Confidential';
 }

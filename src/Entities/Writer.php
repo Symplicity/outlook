@@ -9,6 +9,7 @@ use Symplicity\Outlook\Interfaces\Entity\ODateTimeInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Utilities\SensitivityType;
 
 /**
  * Class Writer
@@ -27,6 +28,7 @@ class Writer implements WriterInterface, \JsonSerializable
     protected $isAllDay;
     protected $url;
     protected $internalEventType;
+    protected $sensitivity;
 
     /** @var ResponseBodyInterface */
     protected $body;
@@ -56,6 +58,7 @@ class Writer implements WriterInterface, \JsonSerializable
             'Location' => [
                 'DisplayName' => $this->location instanceof LocationInterface ? $this->location->getLocationDisplayName() : null
             ],
+            'Sensitivity' => $this->getSensitivity(),
             'Recurrence' => $this->recurrence
         ];
     }
@@ -154,6 +157,12 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
+    public function setSensitivity(string $sensitivity): WriterInterface
+    {
+        $this->sensitivity = $sensitivity;
+        return $this;
+    }
+
     public function method(RequestType $requestType) : WriterInterface
     {
         $this->method = $requestType;
@@ -168,6 +177,11 @@ class Writer implements WriterInterface, \JsonSerializable
     public function getInternalEventType() : ?string
     {
         return $this->internalEventType;
+    }
+
+    public function getSensitivity() : string
+    {
+        return $this->sensitivity ?? SensitivityType::Personal;
     }
 
     public function isCancelled() : bool
