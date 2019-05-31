@@ -20,12 +20,14 @@ interface WriterInterface
     public function setRecurrence(array $recurrence): WriterInterface;
     public function setLocation(LocationInterface $location): WriterInterface;
     public function setInternalEventType(string $eventType): WriterInterface;
+    public function setSensitivity(string $sensitivity): WriterInterface;
     public function method(RequestType $requestType) : WriterInterface;
 
     // Accessor
     public function getMethod() : ?RequestType;
     public function getUrl() : string;
     public function getInternalEventType() : ?string;
+    public function getSensitivity() : string;
     public function isCancelled() : bool;
     public function hasOutlookId() : bool;
 }
