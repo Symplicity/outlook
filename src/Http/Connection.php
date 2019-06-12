@@ -111,7 +111,11 @@ class Connection implements ConnectionInterface
             $id = $delete->getInternalId();
 
             // prepare for response handling
-            static::$eventInfo[$id] = ['guid' => $delete->getGuid(), 'eventType' => $delete->getInternalEventType()];
+            static::$eventInfo[$id] = [
+                'guid' => $delete->getGuid(),
+                'eventType' => $delete->getInternalEventType(),
+                'delete' => true
+            ];
 
             // Prepare promises
             $promises[$id] = $client->requestAsync(

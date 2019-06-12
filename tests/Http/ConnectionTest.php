@@ -178,6 +178,7 @@ class ConnectionTest extends \PHPUnit_Framework_TestCase
             $this->assertInstanceOf(BatchResponseInterface::class, $oResponse);
             $this->assertTrue(is_array($value['item']));
             $this->assertArrayHasKey('eventType', $value['item']);
+            $this->assertArrayHasKey('delete', $value['item']);
             $this->assertTrue(in_array($oResponse->getStatus(), [PromiseInterface::FULFILLED, PromiseInterface::REJECTED]));
             $this->assertTrue(in_array($oResponse->getStatusCode(), [204, 0]));
         }
