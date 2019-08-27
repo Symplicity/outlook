@@ -73,7 +73,7 @@ interface RequestOptionsInterface
      * Get type of request (Post, Put, Get, Delete)
      * @return RequestType
      */
-    public function getMethod() : RequestType;
+    public function getMethod() : string;
 
     /**
      * Resets uuid for client call

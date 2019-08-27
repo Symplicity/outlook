@@ -64,9 +64,9 @@ class Writer implements WriterInterface, \JsonSerializable
     }
 
     // Accessors
-    public function getMethod() : ?RequestType
+    public function getMethod() : string
     {
-        return $this->method;
+        return $this->method instanceOf RequestType ? $this->method->getValue() : RequestType::Get;
     }
 
     public function getUrl() : string

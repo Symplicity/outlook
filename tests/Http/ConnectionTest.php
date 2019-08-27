@@ -131,6 +131,7 @@ class ConnectionTest extends \PHPUnit_Framework_TestCase
             $events[] = (new Writer())->setId($id)
                 ->setBody(new ResponseBody(['Content' => 'test', 'ContentType' => 'HTML']))
                 ->setSubject('ABC')
+                ->method(new RequestType(RequestType::Get))
                 ->setStartDate(new ODateTime(new \DateTime('now'), 'Eastern Standard Time'))
                 ->setEndDate(new ODateTime(new \DateTime('now'), 'Eastern Standard Time'))
                 ->setInternalEventType('PHP');

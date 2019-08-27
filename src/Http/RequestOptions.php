@@ -151,9 +151,9 @@ class RequestOptions implements RequestOptionsInterface
         return static::BATCH_SCHEME . '_' . $this->batchId;
     }
 
-    public function getMethod() : RequestType
+    public function getMethod() : string
     {
-        return $this->method;
+        return $this->method instanceOf RequestType ? $this->method->getValue() : RequestType::Get;
     }
 
     public function getDefaultPreferenceHeaders() : array

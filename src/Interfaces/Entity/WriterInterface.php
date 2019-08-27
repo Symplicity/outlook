@@ -24,7 +24,7 @@ interface WriterInterface
     public function method(RequestType $requestType) : WriterInterface;
 
     // Accessor
-    public function getMethod() : ?RequestType;
+    public function getMethod() : string;
     public function getUrl() : string;
     public function getInternalEventType() : ?string;
     public function getSensitivity() : string;

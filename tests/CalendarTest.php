@@ -59,7 +59,7 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
     {
         $mock = new MockHandler([
             new Response(200),
-            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test')),
+            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar'])),
             new Response(200, [], stream_for($this->getStream())),
             new Response(200, [], stream_for($this->getStream()))
         ]);
@@ -75,6 +75,7 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
             (new Writer())
                 ->setId('bar')
                 ->setSubject('test')
+                ->method(new RequestType(RequestType::Get))
                 ->setInternalEventType('1')
                 ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
                 ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
@@ -82,6 +83,7 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
             (new Writer())
                 ->setId('foo')
                 ->setSubject('test')
+                ->method(new RequestType(RequestType::Get))
                 ->setInternalEventType('1')
                 ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
                 ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
@@ -108,7 +110,7 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
                 'item' => \GuzzleHttp\json_decode('{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null,"eventType":"1","Sensitivity":"Personal"}', true)
             ],
             'foo' => [
-                'response' => new BatchResponse(['state' => PromiseInterface::REJECTED, 'reason' => new ServerException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('POST', 'test'), new Response(0, ['X-Foo' => 'Bar']))]),
+                'response' => new BatchResponse(['state' => PromiseInterface::REJECTED, 'reason' => new ServerException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('POST', 'test'), new Response(500, ['X-Foo' => 'Bar']))]),
                 'item' => \GuzzleHttp\json_decode('{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null,"eventType":"1","Sensitivity":"Personal"}', true)
             ]
         ];
