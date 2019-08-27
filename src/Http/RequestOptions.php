@@ -153,7 +153,7 @@ class RequestOptions implements RequestOptionsInterface
 
     public function getMethod() : string
     {
-        return $this->method instanceOf RequestType ? $this->method->getValue() : RequestType::Get;
+        return $this->method->getValue();
     }
 
     public function getDefaultPreferenceHeaders() : array
