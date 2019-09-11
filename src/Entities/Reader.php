@@ -51,7 +51,7 @@ class Reader implements ReaderEntityInterface
         $this->setVisibility($data['Importance']);
         $this->setRecurrence($data);
         $this->setPrivate($data['Sensitivity']);
-        $this->setOrganizer($data['Organizer']);
+        $this->setOrganizer($data['Organizer'] ?? []);
         $this->setSeriesMasterId($data['SeriesMasterId'] ?? null);
 
         return $this;
