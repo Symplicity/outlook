@@ -25,7 +25,7 @@ class Writer implements WriterInterface, \JsonSerializable
     protected $id;
     protected $subject;
     protected $isCancelled;
-    protected $isAllDay;
+    protected $isAllDay = false;
     protected $url;
     protected $internalEventType;
     protected $sensitivity;
@@ -59,14 +59,15 @@ class Writer implements WriterInterface, \JsonSerializable
                 'DisplayName' => $this->location instanceof LocationInterface ? $this->location->getLocationDisplayName() : null
             ],
             'Sensitivity' => $this->getSensitivity(),
-            'Recurrence' => $this->recurrence
+            'Recurrence' => $this->recurrence,
+            'IsAllDay' => $this->isAllDay
         ];
     }
 
     // Accessors
     public function getMethod() : string
     {
-        return $this->method instanceOf RequestType ? $this->method->getValue() : RequestType::Get;
+        return $this->method instanceof RequestType ? $this->method->getValue() : RequestType::Get;
     }
 
     public function getUrl() : string

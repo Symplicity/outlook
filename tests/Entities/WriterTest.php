@@ -34,12 +34,27 @@ class WriterTest extends \PHPUnit_Framework_TestCase
                 ->method(new RequestType(RequestType::Post))
                 ->setInternalEventType('1')
                 ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
+                ->setIsAllDay(false)
                 ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
                 ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time')), [
                     'url' => '/Me/events',
                     'method' => 'POST',
                     'id' => 'foo',
-                    'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Personal"}'
+                    'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Personal", "IsAllDay": false}'
+            ]],
+            [(new Writer())
+                ->setId('foo')
+                ->setSubject('test')
+                ->method(new RequestType(RequestType::Post))
+                ->setInternalEventType('1')
+                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
+                ->setIsAllDay(true)
+                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 09:00:00'), 'Eastern Standard Time'))
+                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:00:00'), 'Eastern Standard Time')), [
+                'url' => '/Me/events',
+                'method' => 'POST',
+                'id' => 'foo',
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T09:00:00","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Personal", "IsAllDay": true}'
             ]],
             [(new Writer())
                 ->setId('foo')
@@ -53,7 +68,7 @@ class WriterTest extends \PHPUnit_Framework_TestCase
                 'url' => '/Me/events',
                 'method' => 'POST',
                 'id' => 'foo',
-                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Private"}'
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Private", "IsAllDay": false}'
             ]],
             [(new Writer())
                 ->setGuid('ABC')
@@ -86,7 +101,7 @@ class WriterTest extends \PHPUnit_Framework_TestCase
                 'url' => '/Me/events/ABC',
                 'id' => 'ABC',
                 'method' => 'PATCH',
-                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}}, "Sensitivity": "Personal"}'
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}}, "Sensitivity": "Personal", "IsAllDay": false}'
             ]]
         ];
     }
