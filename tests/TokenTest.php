@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -16,7 +17,7 @@ use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Interfaces\Entity\TokenInterface;
 use Symplicity\Outlook\Token;
 
-class TokenTest extends \PHPUnit_Framework_TestCase
+class TokenTest extends TestCase
 {
     protected $tokenHandler;
     protected $connection;

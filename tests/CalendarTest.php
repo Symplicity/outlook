@@ -12,6 +12,8 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
+use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -27,12 +29,12 @@ use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
 
-class CalendarTest extends \PHPUnit_Framework_TestCase
+class CalendarTest extends TestCase
 {
     protected $stub;
     protected $connection;
 
-    public function setUp()
+    public function setUp() : void
     {
         $logger = new Logger('outlook_calendar');
         $logger->pushHandler(new NullHandler());
@@ -91,7 +93,7 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $this->stub->expects($this->exactly(1))->method('handlePoolResponses')->with($this->equalTo($this->fulFilledResponse()));
-        $this->stub->expects($this->exactly(8))->method('saveEventLocal')->withConsecutive($this->equalTo($this->getExpectedReadEntities()));
+        $this->stub->expects($this->exactly(8))->method('saveEventLocal');
 
         $this->stub->sync([
             'endPoint' => 'me/calendarview',
@@ -113,15 +115,6 @@ class CalendarTest extends \PHPUnit_Framework_TestCase
                 'response' => new BatchResponse(['state' => PromiseInterface::REJECTED, 'reason' => new ServerException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('POST', 'test'), new Response(500, ['X-Foo' => 'Bar']))]),
                 'item' => \GuzzleHttp\json_decode('{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null,"eventType":"1","Sensitivity":"Personal","IsAllDay": false}', true)
             ]
-        ];
-    }
-
-    public function getExpectedReadEntities()
-    {
-        return [
-            new Reader(\GuzzleHttp\json_decode('{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'foo\')\/Events(\'x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=\')","@odata.etag":"W\/\"ghc\/foo\/\/pA==\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","CreatedDateTime":"2019-02-01T18:05:03.7354577-05:00","LastModifiedDateTime":"2019-02-04T23:58:49.478552-05:00","ChangeKey":"foo\/\/pA==","Categories":[],"OriginalStartTimeZone":"Eastern Standard Time","OriginalEndTimeZone":"Eastern Standard Time","iCalUId":"foo","ReminderMinutesBeforeStart":15,"IsReminderOn":true,"HasAttachments":false,"Subject":"FooBar","BodyPreview":"CCCCCCC","Importance":"Normal","Sensitivity":"Normal","IsAllDay":true,"IsCancelled":false,"IsOrganizer":false,"ResponseRequested":true,"SeriesMasterId":null,"ShowAs":"Free","Type":"SeriesMaster","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=foo%3D&exvsurl=1&path=\/calendar\/item","OnlineMeetingUrl":null,"ResponseStatus":{"Response":"Accepted","Time":"2019-02-01T18:05:25.680242-05:00"},"Body":{"ContentType":"HTML","Content":"test"},"Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"India","PostalCode":""},"Coordinates":{"Latitude":27.6031,"Longitude":88.6468}},"Locations":[{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"US","PostalCode":""},"Coordinates":{"Latitude":32.6031,"Longitude":999.6468}}],"Recurrence":{"Pattern":{"Type":"Daily","Interval":1,"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First"},"Range":{"Type":"EndDate","StartDate":"2019-02-25","EndDate":"2019-02-28","RecurrenceTimeZone":"Eastern Standard Time","NumberOfOccurrences":0}},"Attendees":[{"Type":"Required","Status":{"Response":"None","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}},{"Type":"Required","Status":{"Response":"Accepted","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Insight Test","Address":"test"}}],"Organizer":{"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}}}', true)),
-            new Occurrence(\GuzzleHttp\json_decode('{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9f\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1==\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ=","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"}}', true)),
-            new Occurrence(\GuzzleHttp\json_decode('{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9f-\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1pxGhEEAAEYAAAAAQT-FGzVQ0E2D76JKXt4TogcAghc-oDgwvEWAzon06Zf8fQAAAAABDQAAghc-\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLT=","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-27T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-28T00:00:00.0000000","TimeZone":"Eastern Standard Time"}}', true))
         ];
     }
 

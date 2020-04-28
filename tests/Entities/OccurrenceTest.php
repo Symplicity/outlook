@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
 
-class OccurrenceTest extends \PHPUnit_Framework_TestCase
+class OccurrenceTest extends TestCase
 {
     /**
      * @dataProvider getOccurrences

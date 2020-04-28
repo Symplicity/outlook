@@ -2,6 +2,7 @@
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\ODateTime;
 use Symplicity\Outlook\Entities\ResponseBody;
 use Symplicity\Outlook\Entities\Writer;
@@ -9,7 +10,7 @@ use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Utilities\SensitivityType;
 
-class WriterTest extends \PHPUnit_Framework_TestCase
+class WriterTest extends TestCase
 {
 
     /**

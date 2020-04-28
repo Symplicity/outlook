@@ -8,11 +8,12 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Utils\BatchResponseInterface;
 use Symplicity\Outlook\Utilities\BatchResponse;
 
-class BatchResponseTest extends \PHPUnit_Framework_TestCase
+class BatchResponseTest extends TestCase
 {
     /**
      * @dataProvider getResponse

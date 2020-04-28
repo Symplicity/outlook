@@ -12,6 +12,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
@@ -25,7 +26,7 @@ use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\Utils\BatchResponseInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
-class ConnectionTest extends \PHPUnit_Framework_TestCase
+class ConnectionTest extends TestCase
 {
     private $connection;
     private $handler;

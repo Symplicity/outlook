@@ -2,10 +2,11 @@
 
 namespace Symplicity\Outlook\Tests\Http;
 
+use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Utilities\RequestType;
 
-class RequestOptionsTest extends \PHPUnit_Framework_TestCase
+class RequestOptionsTest extends TestCase
 {
     public function testHeaders()
     {

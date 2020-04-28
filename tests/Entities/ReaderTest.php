@@ -2,6 +2,7 @@
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\Organizer;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Entities\ResponseBody;
@@ -11,7 +12,7 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
 
-class ReaderTest extends \PHPUnit_Framework_TestCase
+class ReaderTest extends TestCase
 {
     public function testHydrate()
     {

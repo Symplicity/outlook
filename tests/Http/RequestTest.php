@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Tests\Http;
 
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 use function GuzzleHttp\Psr7\stream_for;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
@@ -13,7 +14,7 @@ use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
-class RequestTest extends \PHPUnit_Framework_TestCase
+class RequestTest extends TestCase
 {
     public function testGetEvents()
     {

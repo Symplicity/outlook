@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\Delete;
 use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 
-class DeleteTest extends \PHPUnit_Framework_TestCase
+class DeleteTest extends TestCase
 {
     public function testGetGuid()
     {
