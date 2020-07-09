@@ -10,8 +10,10 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\CurlMultiHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use function GuzzleHttp\Promise\settle;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\RequestOptions as GuzzleRequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
@@ -27,13 +29,16 @@ class Connection implements ConnectionInterface
     public const MAX_RETRIES = 3;
 
     private $logger;
+    private $clientOptions;
+
     protected $responses;
 
     protected static $eventInfo = [];
 
-    public function __construct(?LoggerInterface $logger)
+    public function __construct(?LoggerInterface $logger, array $clientOptions = [])
     {
         $this->logger = $logger;
+        $this->clientOptions = $clientOptions;
     }
 
     public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface
@@ -95,7 +100,7 @@ class Connection implements ConnectionInterface
             );
         }
 
-        $responses = \GuzzleHttp\Promise\settle($promises)->wait();
+        $responses = settle($promises)->wait();
         $this->setResponses($responses);
         return $this->responses;
     }
@@ -128,7 +133,7 @@ class Connection implements ConnectionInterface
             );
         }
 
-        $responses = \GuzzleHttp\Promise\settle($promises)->wait();
+        $responses = settle($promises)->wait();
         $this->setResponses($responses);
         return $this->responses;
     }
@@ -146,11 +151,8 @@ class Connection implements ConnectionInterface
     public function createClientWithRetryHandler() : ClientInterface
     {
         $stack = $this->getRetryHandler();
-        $client = new Client([
-            'handler' => $stack
-        ]);
-
-        return $client;
+        $options = $this->getClientOptions() + ['handler' => $stack];
+        return new Client($options);
     }
 
     protected function getRetryHandler() : HandlerStack
@@ -162,14 +164,23 @@ class Connection implements ConnectionInterface
 
     public function createClient() : ClientInterface
     {
-        $client = new Client();
-        return $client;
+        return new Client($this->getClientOptions());
+    }
+
+    protected function getClientOptions(): array
+    {
+        return [
+            GuzzleRequestOptions::CONNECT_TIMEOUT => $this->clientOptions['connect_timeout'] ?? 4,
+            GuzzleRequestOptions::TIMEOUT => $this->clientOptions['timeout'] ?? 4,
+            GuzzleRequestOptions::VERIFY => $this->clientOptions['verify'] ?? true,
+            GuzzleRequestOptions::HTTP_ERRORS => $this->clientOptions['http_errors'] ?? true
+        ];
     }
 
     public function createRetryHandler() : callable
     {
         $logger = $this->logger;
-        return function(
+        return function (
             $retries,
             Request $request,
             Response $response = null,
@@ -211,7 +222,7 @@ class Connection implements ConnectionInterface
 
     public function retryDelay() : callable
     {
-        return function($numberOfRetries) {
+        return function ($numberOfRetries) {
             return 1000 * $numberOfRetries;
         };
     }

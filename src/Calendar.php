@@ -41,7 +41,7 @@ abstract class Calendar implements CalendarInterface
     {
         $this->token = $token;
         $this->logger = $args['logger'] ?? null;
-        $this->setRequestHandler($args['request']);
+        $this->setRequestHandler($args['request'], $args['connectionClientOptions'] ?? []);
         $this->reader = $args['reader'] ?? null;
     }
 
@@ -53,11 +53,8 @@ abstract class Calendar implements CalendarInterface
 
     public function push(array $params = []) : void
     {
-        if ($this->batch) {
-            $this->batch($params);
-        } else {
-            $this->push($params);
-        }
+        // TODO: add individual sync later
+        $this->batch($params);
     }
 
     protected function batch(array $params = []) : void
@@ -126,14 +123,14 @@ abstract class Calendar implements CalendarInterface
         return  $this->getReader()->hydrate($event);
     }
 
-    private function setRequestHandler(?Request $requestHandler): void
+    private function setRequestHandler(?Request $requestHandler, array $connectionClientOptions = []): void
     {
         if ($requestHandler === null) {
             $requestHandler = new Request($this->token, [
-                'requestOptions' => function(string $url, RequestType $methodType, array $args = []) {
+                'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
                     return new RequestOptions($url, $methodType, $args);
                 },
-                'connection' => new Connection($this->logger)
+                'connection' => new Connection($this->logger, $connectionClientOptions)
             ]);
         }
 
