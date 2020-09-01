@@ -80,7 +80,7 @@ class ConnectionTest extends TestCase
         } catch (\Exception $exception) {
         } finally {
             // Not retrying for 400
-            $this->assertFalse($this->handler->hasWarningRecords());
+            $this->assertTrue($this->handler->hasWarningRecords());
         }
 
         try {
@@ -88,8 +88,9 @@ class ConnectionTest extends TestCase
         } catch (\Exception $exception) {
         } finally {
             $this->assertTrue($this->handler->hasWarningRecords());
+            $this->assertTrue($this->handler->hasRecordThatMatches('/Get Request Failed/', Logger::WARNING));
             $this->assertTrue($this->handler->hasRecordThatMatches('/Retrying/', Logger::WARNING));
-            $this->assertCount(2, $this->handler->getRecords());
+            $this->assertCount(3, $this->handler->getRecords());
         }
 
         try {
@@ -97,8 +98,9 @@ class ConnectionTest extends TestCase
         } catch (\Exception $exception) {
         } finally {
             $this->assertTrue($this->handler->hasWarningRecords());
+            $this->assertTrue($this->handler->hasRecordThatMatches('/Get Request Failed/', Logger::WARNING));
             $this->assertTrue($this->handler->hasRecordThatMatches('/Retrying/', Logger::WARNING));
-            $this->assertCount(2, $this->handler->getRecords());
+            $this->assertCount(4, $this->handler->getRecords());
         }
     }
 

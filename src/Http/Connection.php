@@ -55,6 +55,10 @@ class Connection implements ConnectionInterface
         try {
             return $client->request(RequestType::Get, $url, $options);
         } catch (\Exception $e) {
+            $this->logger->warning('Get Request Failed', [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode()
+            ]);
             throw new ConnectionException(sprintf('Unable to GET for URL %s', $url), $e->getCode());
         }
     }
@@ -70,6 +74,10 @@ class Connection implements ConnectionInterface
                 'json' => $requestOptions->getBody()
             ]);
         } catch (\Exception $e) {
+            $this->logger->warning('Post Request Failed', [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode()
+            ]);
             throw new ConnectionException(sprintf('Unable to POST for URL %s', $url));
         }
     }
@@ -170,8 +178,8 @@ class Connection implements ConnectionInterface
     protected function getClientOptions(): array
     {
         return [
-            GuzzleRequestOptions::CONNECT_TIMEOUT => $this->clientOptions['connect_timeout'] ?? 4,
-            GuzzleRequestOptions::TIMEOUT => $this->clientOptions['timeout'] ?? 4,
+            GuzzleRequestOptions::CONNECT_TIMEOUT => $this->clientOptions['connect_timeout'] ?? 0,
+            GuzzleRequestOptions::TIMEOUT => $this->clientOptions['timeout'] ?? 0,
             GuzzleRequestOptions::VERIFY => $this->clientOptions['verify'] ?? true,
             GuzzleRequestOptions::HTTP_ERRORS => $this->clientOptions['http_errors'] ?? true
         ];
