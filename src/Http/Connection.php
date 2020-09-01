@@ -55,10 +55,12 @@ class Connection implements ConnectionInterface
         try {
             return $client->request(RequestType::Get, $url, $options);
         } catch (\Exception $e) {
-            $this->logger->warning('Get Request Failed', [
-                'error' => $e->getMessage(),
-                'code' => $e->getCode()
-            ]);
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->warning('Get Request Failed', [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+            }
             throw new ConnectionException(sprintf('Unable to GET for URL %s', $url), $e->getCode());
         }
     }
@@ -74,10 +76,12 @@ class Connection implements ConnectionInterface
                 'json' => $requestOptions->getBody()
             ]);
         } catch (\Exception $e) {
-            $this->logger->warning('Post Request Failed', [
-                'error' => $e->getMessage(),
-                'code' => $e->getCode()
-            ]);
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->warning('Post Request Failed', [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+            }
             throw new ConnectionException(sprintf('Unable to POST for URL %s', $url));
         }
     }
