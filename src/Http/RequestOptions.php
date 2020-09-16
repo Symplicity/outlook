@@ -145,7 +145,7 @@ class RequestOptions implements RequestOptionsInterface
         $this->addHeader('client-request-id', Uuid::uuid1()->toString());
     }
 
-    public function getAccessToken()
+    public function getAccessToken(): string
     {
         return sprintf('%s %s', static::AUTHENTICATION_SCHEME, $this->token);
     }

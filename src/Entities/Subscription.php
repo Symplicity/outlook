@@ -8,7 +8,7 @@ use Ramsey\Uuid\Uuid;
 use RuntimeException;
 use Symplicity\Outlook\Interfaces\Entity\SubscriptionEntityInterface;
 
-class Subscription implements \JsonSerializable, SubscriptionEntityInterface
+class Subscription implements SubscriptionEntityInterface
 {
     public const DEFAULT_DATA_TYPE = '#Microsoft.OutlookServices.PushSubscription';
 

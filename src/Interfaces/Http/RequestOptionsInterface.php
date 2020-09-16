@@ -85,4 +85,10 @@ interface RequestOptionsInterface
      * @return array
      */
     public function getDefaultPreferenceHeaders() : array;
+
+    /**
+     * Get access token of user with prefix
+     * @return string
+     */
+    public function getAccessToken(): string;
 }

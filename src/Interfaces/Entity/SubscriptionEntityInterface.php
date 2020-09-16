@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Interfaces\Entity;
 
-interface SubscriptionEntityInterface
+interface SubscriptionEntityInterface extends \JsonSerializable
 {
     /**
      * Sets the data type

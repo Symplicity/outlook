@@ -37,9 +37,9 @@ class SubscriptionResponse implements SubscriptionResponseEntityInterface
             return null;
         }
 
-        $date = new DateTimeImmutable($this->subscriptionExpirationDate);
-        if ($date !== false) {
-            return $date;
+        try {
+            return new DateTimeImmutable($this->subscriptionExpirationDate);
+        } catch (\Exception $e) {
         }
 
         return null;
