@@ -7,6 +7,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Symplicity\Outlook\Entities\NotificationReaderEntity;
+use Symplicity\Outlook\Utilities\ChangeType;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -69,10 +71,41 @@ class ReceiverTest extends TestCase
         $this->receiverStub->expects($this->exactly(2))->method('validate');
         $this->receiverStub->expects($this->exactly(2))->method('willWrite')->with($calendarStub, $this->logger, $this->receiverStub->getEntities()[0]);
         $this->receiverStub->expects($this->once())->method('didWrite')->with($calendarStub, $this->logger, $reader, $this->receiverStub->getEntities()[0]);
+        $this->checkEntity($this->receiverStub->getEntities()[0]);
         $this->receiverStub->exec($calendarStub, $this->logger, ['skipParams' => true]);
 
         $this->receiverStub->expects($this->once())->method('eventWriteFailed');
         $this->receiverStub->exec($calendarStub, $this->logger, ['skipParams' => true]);
+    }
+
+    protected function checkEntity(NotificationReaderEntity $entity)
+    {
+        $entity
+            ->setSequenceNumber(2)
+            ->setResource('test.com')
+            ->setId('123');
+
+        $json = $entity->jsonSerialize();
+        $this->assertArrayHasKey('res', $json);
+        $this->assertArrayHasKey('id', $json);
+        $this->assertArrayHasKey('subId', $json);
+        $this->assertArrayHasKey('cT', $json);
+        $this->assertArrayHasKey('seq', $json);
+
+        $this->assertTrue($entity->has('subscriptionId'));
+        $this->assertFalse($entity->has('test'));
+
+        $this->assertEquals(2, $entity->getSequenceNumber());
+        $this->assertEquals($entity->getSubscriptionId(), $json['subId']);
+        $this->assertEquals(ChangeType::updated, $json['cT']);
+
+        $this->assertEquals('#Microsoft.OutlookServices.Notification', $entity->getType());
+        $this->assertEquals('ABC==', $entity->getSubscriptionId());
+        $this->assertEquals('2020-09-23T13:58:53.708556Z', $entity->getSubscriptionExpirationDateTime());
+        $this->assertEquals('#Microsoft.OutlookServices.Event', $entity->getODataType());
+        $this->assertEquals('W/"123"', $entity->getEtag());
+        $this->assertEquals('123', $entity->getId());
+        $this->assertEquals(ChangeType::updated, $entity->getChangeType());
     }
 
     protected function getOData(): array
@@ -92,7 +125,7 @@ class ReceiverTest extends TestCase
                         [
                             '@odata.type' => '#Microsoft.OutlookServices.Event',
                             '@odata.id' => 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')',
-                            '@odata.etag' => 'W/"CDSEDYAAABodD63zXU6T4hidDhGCO5uAAJfhdxW"',
+                            '@odata.etag' => 'W/"123"',
                             'Id' => 'ACX2nRLAAAAA==',
                         ],
                     ],

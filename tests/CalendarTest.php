@@ -11,6 +11,8 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Symplicity\Outlook\Exception\ReadError;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -52,6 +54,58 @@ class CalendarTest extends TestCase
                 ])
             ]
         ], '', true, true, true, ['handlePoolResponses', 'saveEventLocal']);
+    }
+
+    public function testGetEventInstances()
+    {
+        $mock = new MockHandler([
+            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], stream_for('{}')),
+            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+
+        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
+
+        $this->stub->expects($this->exactly(4))->method('saveEventLocal');
+        $this->stub->expects($this->exactly(1))->method('deleteEventLocal');
+
+        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true]);
+
+        $this->expectException(ReadError::class);
+        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true]);
+
+        $this->expectException(ReadError::class);
+        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true]);
+    }
+
+    public function testUpsertEvent()
+    {
+        $mock = new MockHandler([
+            new Response(200, [], stream_for($this->getStream())),
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+
+        $this->connection->expects($this->exactly(1))->method('createClient')->willReturn($client);
+
+        $writer = (new Writer())
+            ->setGuid('ABC')
+            ->setId('foo')
+            ->method(new RequestType(RequestType::Patch))
+            ->setSubject('test')
+            ->setInternalEventType('1')
+            ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
+            ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
+            ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time'))
+            ->setIsAllDay(true);
+
+
+        $response = $this->stub->upsert($writer, ['skipOccurrences' => true]);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
     }
 
     public function testSync()
