@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Interfaces\Entity;
 
+use JsonSerializable;
 use Symplicity\Outlook\Utilities\RequestType;
 
-interface WriterInterface
+interface WriterInterface extends JsonSerializable
 {
     // Fluent Mutator
     public function setGuid(?string $guid): WriterInterface;
@@ -22,6 +23,7 @@ interface WriterInterface
     public function setInternalEventType(string $eventType): WriterInterface;
     public function setSensitivity(string $sensitivity): WriterInterface;
     public function method(RequestType $requestType) : WriterInterface;
+    public function setExtensions(ExtensionWriterInterface $extensions);
 
     // Accessor
     public function getMethod() : string;
@@ -30,4 +32,5 @@ interface WriterInterface
     public function getSensitivity() : string;
     public function isCancelled() : bool;
     public function hasOutlookId() : bool;
+    public function getRequestType(): RequestType;
 }

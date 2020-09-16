@@ -25,4 +25,5 @@ interface ReaderEntityInterface
     public function getOrganizer() : ?Organizer;
     public function getEventType() : EventTypes;
     public function getSeriesMasterId(): ?string;
+    public function getExtensions(): array;
 }

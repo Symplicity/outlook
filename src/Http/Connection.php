@@ -65,12 +65,12 @@ class Connection implements ConnectionInterface
         }
     }
 
-    public function post(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
+    public function upsert(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
     {
         $client = $this->createClient();
 
         try {
-            return $client->request(RequestType::Post, $url, [
+            return $client->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders(),
                 'query' => $requestOptions->getQueryParams(),
                 'json' => $requestOptions->getBody()

@@ -30,16 +30,16 @@ interface ConnectionInterface
      * @return mixed
      * @throws ConnectionException
      */
-    public function get(string $url, RequestOptionsInterface $requestOptions , array $args = []) : ResponseInterface;
+    public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface;
 
     /**
-     * Post to outlook using the guzzle post request.
+     * Post/Patch to outlook using the guzzle post request.
      * @param string $url
      * @param RequestOptionsInterface $requestOptions
      * @return mixed
      * @throws ConnectionException
      */
-    public function post(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface;
+    public function upsert(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface;
 
     /**
      * Batch post/get/patch using the guzzle pool handler.

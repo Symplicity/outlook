@@ -27,6 +27,7 @@ class Reader implements ReaderEntityInterface
     protected $organizer;
     protected $eventType;
     protected $seriesMasterId;
+    protected $extensions = [];
 
     public function hydrate(array $data = []) : ReaderEntityInterface
     {
@@ -53,7 +54,7 @@ class Reader implements ReaderEntityInterface
         $this->setPrivate($data['Sensitivity']);
         $this->setOrganizer($data['Organizer'] ?? []);
         $this->setSeriesMasterId($data['SeriesMasterId'] ?? null);
-
+        $this->setExtensions($data['Extensions'] ?? []);
         return $this;
     }
 
@@ -144,7 +145,17 @@ class Reader implements ReaderEntityInterface
         return $this->seriesMasterId;
     }
 
+    public function getExtensions(): array
+    {
+        return $this->extensions;
+    }
+
     // Mark: Setters
+    public function setSeriesMasterId(?string $seriesMasterId): void
+    {
+        $this->seriesMasterId = $seriesMasterId;
+    }
+
     protected function setId(string $id): void
     {
         $this->id = $id;
@@ -221,8 +232,12 @@ class Reader implements ReaderEntityInterface
         }
     }
 
-    public function setSeriesMasterId(?string $seriesMasterId): void
+    protected function setExtensions(array $extensions = []): ReaderEntityInterface
     {
-        $this->seriesMasterId = $seriesMasterId;
+        foreach ($extensions as $extension) {
+            $this->extensions[] = new Extension($extension);
+        }
+
+        return $this;
     }
 }

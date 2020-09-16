@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
+use Ramsey\Uuid\Uuid;
+use Symplicity\Outlook\Interfaces\Entity\ExtensionWriterInterface;
 use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ODateTimeInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
@@ -16,7 +18,7 @@ use Symplicity\Outlook\Utilities\SensitivityType;
  * Implementation of class to handle writes to outlook calendar
  * @package Symplicity\Outlook\Entities
  */
-class Writer implements WriterInterface, \JsonSerializable
+class Writer implements WriterInterface
 {
     protected const DefaultPostRequest = '/Me/events';
 
@@ -45,9 +47,12 @@ class Writer implements WriterInterface, \JsonSerializable
     /** @var LocationInterface */
     protected $location;
 
+    /** @var ExtensionWriterInterface */
+    protected $extensions;
+
     public function jsonSerialize() : array
     {
-        return [
+        $data = [
             'Subject' => $this->subject,
             'Body' => [
                 'ContentType' => $this->body->getContentType(),
@@ -62,6 +67,14 @@ class Writer implements WriterInterface, \JsonSerializable
             'Recurrence' => $this->recurrence,
             'IsAllDay' => $this->isAllDay
         ];
+
+        if ($this->extensions instanceof ExtensionWriterInterface) {
+            $data['Extensions'] = [
+                $this->extensions->jsonSerialize()
+            ];
+        }
+
+        return $data;
     }
 
     // Accessors
@@ -164,6 +177,12 @@ class Writer implements WriterInterface, \JsonSerializable
         return $this;
     }
 
+    public function setExtensions(ExtensionWriterInterface $extensions): WriterInterface
+    {
+        $this->extensions = $extensions;
+        return $this;
+    }
+
     public function method(RequestType $requestType) : WriterInterface
     {
         $this->method = $requestType;
@@ -193,5 +212,10 @@ class Writer implements WriterInterface, \JsonSerializable
     public function hasOutlookId() : bool
     {
         return isset($this->guid);
+    }
+
+    public function getRequestType(): RequestType
+    {
+        return $this->method;
     }
 }

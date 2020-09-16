@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
@@ -17,6 +18,7 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Utilities\ResponseHandler;
 
 abstract class Calendar implements CalendarInterface
 {
@@ -55,6 +57,69 @@ abstract class Calendar implements CalendarInterface
     {
         // TODO: add individual sync later
         $this->batch($params);
+    }
+
+    public function upsert(WriterInterface $writer, array $params = []): ResponseInterface
+    {
+        $response = $this->requestHandler->upsert($writer, $params);
+        return $response;
+    }
+
+    public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface
+    {
+        try {
+            /** @var ResponseIteratorInterface $events */
+            $response = $this->requestHandler->getEvent($url, $params);
+            $event = ResponseHandler::toArray($response);
+            if (!count($event)) {
+                throw new ReadError('Could not find event', 404);
+            }
+
+            if (isset($params['skipOccurrences'], $event['Type'])
+                && $event['Type'] == EventTypes::Occurrence) {
+                return null;
+            }
+
+            if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
+                $this->deleteEventLocal($this->getReader()->deleted($event));
+                return null;
+            }
+
+            $entity = $this->getEntity($event);
+            $this->saveEventLocal($entity);
+            return $entity;
+        } catch (\Exception $e) {
+            throw new ReadError($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function getEventInstances(string $url, array $params = []) : void
+    {
+        try {
+            /** @var ResponseIteratorInterface $events */
+            $response = $this->requestHandler->getEvent($url, $params);
+            $event = ResponseHandler::toArray($response);
+            if (!count($event)) {
+                throw new ReadError('Could not find event', 404);
+            }
+
+            foreach ($event['value'] as $event) {
+                if (isset($params['skipOccurrences'], $event['Type'])
+                    && $event['Type'] == EventTypes::Occurrence) {
+                    continue;
+                }
+
+                if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
+                    $this->deleteEventLocal($this->getReader()->deleted($event), $params);
+                    continue;
+                }
+
+                $entity = $this->getEntity($event);
+                $this->saveEventLocal($entity, $params);
+            }
+        } catch (\Exception $e) {
+            throw new ReadError($e->getMessage(), $e->getCode());
+        }
     }
 
     protected function batch(array $params = []) : void
@@ -144,7 +209,7 @@ abstract class Calendar implements CalendarInterface
 
     protected function getOccurrenceReader(): ReaderEntityInterface
     {
-        return new Occurrence();
+        return new Occurrence;
     }
 
     protected function getExceptionReader(): ReaderEntityInterface

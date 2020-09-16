@@ -37,14 +37,17 @@ class RequestOptions implements RequestOptionsInterface
         $this->preferenceHeaders = $args['preferenceHeaders'] ?? [];
     }
 
-    public function addDefaultHeaders()
+    public function addDefaultHeaders(bool $skipDelta = false)
     {
         if ($this->token === null) {
             throw new \InvalidArgumentException('Missing Token');
         }
 
         $this->resetUUID();
-        $this->addDelta();
+        if (!$skipDelta) {
+            $this->addDelta();
+        }
+
         $this->addHeader('User-Agent', 'php-symplicity');
         $this->addHeader('Authorization', $this->getAccessToken());
         $this->addHeader('Accept', 'application/json');
@@ -108,6 +111,7 @@ class RequestOptions implements RequestOptionsInterface
         if (!empty($this->queryParams['delta'])) {
             $this->queryParams['$deltaToken'] = $this->queryParams['delta'];
         }
+
         unset($this->queryParams['delta']);
     }
 
@@ -141,7 +145,7 @@ class RequestOptions implements RequestOptionsInterface
         $this->addHeader('client-request-id', Uuid::uuid1()->toString());
     }
 
-    private function getAccessToken()
+    public function getAccessToken()
     {
         return sprintf('%s %s', static::AUTHENTICATION_SCHEME, $this->token);
     }
