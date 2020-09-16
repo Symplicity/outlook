@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
-use Ramsey\Uuid\Uuid;
 use Symplicity\Outlook\Interfaces\Entity\ExtensionWriterInterface;
 use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ODateTimeInterface;

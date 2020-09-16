@@ -24,7 +24,6 @@ class ODateTime implements ODateTimeInterface
 
     public function toArray() : array
     {
-
         return [
             'DateTime' => $this->dateTime->format('Y-m-d\TH:i:s'),
             'TimeZone' => $this->timezone

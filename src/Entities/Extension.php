@@ -19,7 +19,7 @@ class Extension implements ExtensionInterface
         $this->setODataId($data['@odata.id'] ?? null);
         $this->setId($data['Id'] ?? null);
         $this->setExtensionName($data['ExtensionName'] ?? null);
-        $this->unset( $data, '@odata.type', '@odata.id', 'Id', 'ExtensionName');
+        $this->unset($data, '@odata.type', '@odata.id', 'Id', 'ExtensionName');
         $this->setValues($data);
     }
 

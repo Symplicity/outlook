@@ -91,7 +91,7 @@ class RequestOptions implements RequestOptionsInterface
     public function getRawHeaders() : array
     {
         $headers = array_map(
-            function($k, $v) {
+            function ($k, $v) {
                 return "$k:$v";
             },
             array_keys($this->headers),
