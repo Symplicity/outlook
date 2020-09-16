@@ -13,6 +13,7 @@ use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\Entity\SubscriptionEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\SubscriptionResponseEntityInterface;
+use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Interfaces\Notification\SubscriptionInterface;
 use Symplicity\Outlook\Utilities\RequestType;
@@ -28,6 +29,9 @@ class Subscription implements SubscriptionInterface
     /** @var LoggerInterface $loggerInterface */
     private $logger;
 
+    /** @var ConnectionInterface $connection */
+    private $connection;
+
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
@@ -39,7 +43,7 @@ class Subscription implements SubscriptionInterface
         $requestOptions = new RequestOptions($url, RequestType::Post(), ['token' => $accessToken]);
         $this->addDefaultHeaders($requestOptions);
 
-        $response = (new Connection($this->logger))
+        $response = $this->getConnection()
             ->createClient()
             ->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders(),
@@ -60,7 +64,7 @@ class Subscription implements SubscriptionInterface
         $requestOptions = new RequestOptions($url, RequestType::Patch(), ['token' => $accessToken]);
         $this->addDefaultHeaders($requestOptions);
 
-        $response = (new Connection($this->logger))
+        $response = $this->getConnection()
             ->createClient()
             ->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders(),
@@ -83,7 +87,7 @@ class Subscription implements SubscriptionInterface
         $requestOptions = new RequestOptions($url, RequestType::Delete(), ['token' => $accessToken]);
         $this->addDefaultHeaders($requestOptions);
 
-        $response = (new Connection($this->logger))
+        $response = $this->getConnection()
             ->createClient()
             ->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders()
@@ -94,6 +98,21 @@ class Subscription implements SubscriptionInterface
         }
 
         return false;
+    }
+
+    public function getConnection(): ConnectionInterface
+    {
+        if (!$this->connection instanceof ConnectionInterface) {
+            $this->connection = new Connection($this->logger);
+        }
+
+        return $this->connection;
+    }
+
+    public function setConnection(ConnectionInterface $connection): SubscriptionInterface
+    {
+        $this->connection = $connection;
+        return $this;
     }
 
     // Mark Protected
