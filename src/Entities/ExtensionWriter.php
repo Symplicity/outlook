@@ -46,12 +46,12 @@ abstract class ExtensionWriter implements ExtensionWriterInterface
     }
 
     // Mark Getters
-    public function getODataType(): string
+    public function getODataType(): ?string
     {
         return $this->oDataType;
     }
 
-    public function getExtensionName(): string
+    public function getExtensionName(): ?string
     {
         return $this->extensionName;
     }
