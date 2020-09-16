@@ -38,9 +38,9 @@ abstract class Receiver implements ReceiverInterface
                 $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity);
             } catch (\Exception $e) {
                 $eventInfo = [
-                    'resource' => $this->resource,
-                    'subscriptionId' => $this->subscriptionId,
-                    'id' => $this->id
+                    'resource' => $notificationEntity->getResource(),
+                    'subscriptionId' => $notificationEntity->getSubscriptionId(),
+                    'id' => $notificationEntity->getId()
                 ];
 
                 $this->eventWriteFailed($calendar, $logger, $eventInfo);

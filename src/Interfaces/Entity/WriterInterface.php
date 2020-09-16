@@ -33,4 +33,5 @@ interface WriterInterface extends JsonSerializable
     public function isCancelled() : bool;
     public function hasOutlookId() : bool;
     public function getRequestType(): RequestType;
+    public function getId() : ?string;
 }
