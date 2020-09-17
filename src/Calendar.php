@@ -61,8 +61,12 @@ abstract class Calendar implements CalendarInterface
 
     public function upsert(WriterInterface $writer, array $params = []): ResponseInterface
     {
-        $response = $this->requestHandler->upsert($writer, $params);
-        return $response;
+        return $this->requestHandler->upsert($writer, $params);
+    }
+
+    public function delete(DeleteInterface $writer, array $params = []): ResponseInterface
+    {
+        return $this->requestHandler->delete($writer, $params);
     }
 
     public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface

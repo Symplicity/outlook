@@ -86,6 +86,25 @@ class Connection implements ConnectionInterface
         }
     }
 
+    public function delete(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
+    {
+        $client = $this->createClient();
+
+        try {
+            return $client->request($requestOptions->getMethod(), $url, [
+                'headers' => $requestOptions->getHeaders()
+            ]);
+        } catch (\Exception $e) {
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->warning('Delete Request Failed', [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+            }
+            throw new ConnectionException(sprintf('Unable to Delete for URL %s', $url));
+        }
+    }
+
     public function batch(RequestOptionsInterface $requestOptions)
     {
         /** @var Client $client */

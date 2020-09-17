@@ -6,6 +6,7 @@ namespace Symplicity\Outlook\Http;
 
 use Closure;
 use Psr\Http\Message\ResponseInterface;
+use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Utilities\RequestType;
@@ -97,6 +98,21 @@ class Request
         $requestOptions->addDefaultHeaders();
         $url = Request::getRootApi() . $writer->getUrl();
         return $this->connection->upsert($url, $requestOptions);
+    }
+
+    public function delete(DeleteInterface $writer, array $params = [])
+    {
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, '',  new RequestType(RequestType::Delete), [
+            'headers' => $params['headers'] ?? [],
+            'queryParams' => $params['queryParams'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'token' => $this->accessToken,
+        ]);
+
+        $requestOptions->addDefaultHeaders();
+        $url = Request::getRootApi() . $writer->getUrl();
+        return $this->connection->delete($url, $requestOptions);
     }
 
     public function batch(array $events, array $params = []) : self

@@ -12,6 +12,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
+use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Exception\ReadError;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
@@ -85,12 +86,13 @@ class CalendarTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(200, [], stream_for($this->getStream())),
+            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(1))->method('createClient')->willReturn($client);
+        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
 
         $writer = (new Writer())
             ->setGuid('ABC')
@@ -106,6 +108,29 @@ class CalendarTest extends TestCase
 
         $response = $this->stub->upsert($writer, ['skipOccurrences' => true]);
         $this->assertInstanceOf(ResponseInterface::class, $response);
+
+        $this->expectException(ConnectionException::class);
+        $this->stub->upsert($writer, ['skipOccurrences' => true]);
+    }
+
+    public function testDeleteEvent()
+    {
+        $mock = new MockHandler([
+            new Response(204, [], ''),
+            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+
+        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
+
+        $writer = new Delete('ABC==', 'intId123');
+        $response = $this->stub->delete($writer);
+        $this->assertInstanceOf(ResponseInterface::class, $response);
+
+        $this->expectException(ConnectionException::class);
+        $this->stub->delete($writer);
     }
 
     public function testSync()

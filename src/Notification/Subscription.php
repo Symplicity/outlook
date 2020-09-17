@@ -29,7 +29,7 @@ class Subscription implements SubscriptionInterface
     /** @var LoggerInterface $loggerInterface */
     private $logger;
 
-    /** @var ConnectionInterface $connection */
+    /** @var ConnectionInterface|null $connection */
     private $connection;
 
     public function __construct(LoggerInterface $logger)
