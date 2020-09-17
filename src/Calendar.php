@@ -110,12 +110,13 @@ abstract class Calendar implements CalendarInterface
                 }
 
                 if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
-                    $this->deleteEventLocal($this->getReader()->deleted($event), $params);
+                    $event = $this->getReader()->deleted($event);
+                    $this->deleteEventLocal($event);
                     continue;
                 }
 
                 $entity = $this->getEntity($event);
-                $this->saveEventLocal($entity, $params);
+                $this->saveEventLocal($entity);
             }
         } catch (\Exception $e) {
             throw new ReadError($e->getMessage(), $e->getCode());

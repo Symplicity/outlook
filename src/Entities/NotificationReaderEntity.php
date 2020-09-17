@@ -65,7 +65,7 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
 
     public function setChangeType(?string $changeType): NotificationReaderEntityInterface
     {
-        $this->changeType = ChangeType::unknown;
+        $this->changeType = ChangeType::unknown();
         if ($value = ChangeType::search($changeType)) {
             $this->changeType = ChangeType::$value();
         }

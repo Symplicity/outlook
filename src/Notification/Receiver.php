@@ -32,6 +32,11 @@ abstract class Receiver implements ReceiverInterface
         /** @var NotificationReaderEntity $notificationEntity */
         foreach ($this->entities as $notificationEntity) {
             try {
+                $url = $notificationEntity->getResource();
+                if ($url === null) {
+                    throw new \RuntimeException('Missing resource url');
+                }
+
                 $this->validate($calendar, $logger, $notificationEntity);
                 $this->willWrite($calendar, $logger, $notificationEntity, $params);
                 $outlookEntity = $calendar->getEvent($notificationEntity->getResource(), $params);
@@ -40,7 +45,8 @@ abstract class Receiver implements ReceiverInterface
                 $eventInfo = [
                     'resource' => $notificationEntity->getResource(),
                     'subscriptionId' => $notificationEntity->getSubscriptionId(),
-                    'id' => $notificationEntity->getId()
+                    'id' => $notificationEntity->getId(),
+                    'error' => $e->getMessage()
                 ];
 
                 $this->eventWriteFailed($calendar, $logger, $eventInfo);
@@ -75,8 +81,7 @@ abstract class Receiver implements ReceiverInterface
     // Mark Protected
     protected function validate(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $entity): bool
     {
-        if ($entity->has('resource')
-            && $entity->has('subscriptionId')
+        if ($entity->has('subscriptionId')
             && $entity->has('id')) {
             $this->validateSequenceNumber($calendar, $logger, $entity);
             return true;
@@ -85,15 +90,9 @@ abstract class Receiver implements ReceiverInterface
         throw new ValidationException('Missing resource/subscription-id/id');
     }
 
-    protected function willWrite(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $notificationReaderEntity, array &$params = []): void
-    {
-    }
-
-    protected function didWrite(CalendarInterface $calendar, LoggerInterface $logger, ?ReaderEntityInterface $entity, NotificationReaderEntity $notificationReaderEntity): void
-    {
-    }
-
     // Mark abstract
     abstract protected function validateSequenceNumber(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $entity): void;
     abstract protected function eventWriteFailed(CalendarInterface $calender, LoggerInterface $logger, array $info): void;
+    abstract protected function willWrite(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $notificationReaderEntity, array &$params = []): void;
+    abstract protected function didWrite(CalendarInterface $calendar, LoggerInterface $logger, ?ReaderEntityInterface $entity, NotificationReaderEntity $notificationReaderEntity): void;
 }

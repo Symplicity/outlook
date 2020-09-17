@@ -95,7 +95,6 @@ class Request
         ]);
 
         $requestOptions->addDefaultHeaders();
-        $selectOptions = $params['$Select'] ?? null;
         $url = Request::getRootApi() . $writer->getUrl();
         return $this->connection->upsert($url, $requestOptions);
     }

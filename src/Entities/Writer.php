@@ -46,7 +46,7 @@ class Writer implements WriterInterface
     /** @var LocationInterface */
     protected $location;
 
-    /** @var ExtensionWriterInterface */
+    /** @var ExtensionWriterInterface|null */
     protected $extensions;
 
     public function jsonSerialize() : array

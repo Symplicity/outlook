@@ -40,6 +40,7 @@ class SubscriptionResponse implements SubscriptionResponseEntityInterface
         try {
             return new DateTimeImmutable($this->subscriptionExpirationDate);
         } catch (\Exception $e) {
+            // return null check
         }
 
         return null;
