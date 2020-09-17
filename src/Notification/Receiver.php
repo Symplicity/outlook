@@ -39,7 +39,7 @@ abstract class Receiver implements ReceiverInterface
 
                 $this->validate($calendar, $logger, $notificationEntity);
                 $this->willWrite($calendar, $logger, $notificationEntity, $params);
-                $outlookEntity = $calendar->getEvent($notificationEntity->getResource(), $params);
+                $outlookEntity = $calendar->getEvent($url, $params);
                 $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity);
             } catch (\Exception $e) {
                 $eventInfo = [
