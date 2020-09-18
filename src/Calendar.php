@@ -72,8 +72,11 @@ abstract class Calendar implements CalendarInterface
     public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface
     {
         try {
-            /** @var ResponseIteratorInterface $events */
             $response = $this->requestHandler->getEvent($url, $params);
+            if (!$response instanceof ResponseInterface) {
+                throw new ReadError('Response not received', 400);
+            }
+
             $event = ResponseHandler::toArray($response);
             if (!count($event)) {
                 throw new ReadError('Could not find event', 404);
@@ -100,8 +103,11 @@ abstract class Calendar implements CalendarInterface
     public function getEventInstances(string $url, array $params = []) : void
     {
         try {
-            /** @var ResponseIteratorInterface $events */
             $response = $this->requestHandler->getEvent($url, $params);
+            if (!$response instanceof ResponseInterface) {
+                throw new ReadError('Response not received', 400);
+            }
+
             $event = ResponseHandler::toArray($response);
             if (!count($event)) {
                 throw new ReadError('Could not find event', 404);

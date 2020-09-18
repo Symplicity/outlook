@@ -11,6 +11,9 @@ use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
+use Symplicity\Outlook\Utilities\PatternType;
+use Symplicity\Outlook\Utilities\RangeType;
+use Symplicity\Outlook\Utilities\RecurrenceIndex;
 
 class ReaderTest extends TestCase
 {
@@ -37,6 +40,20 @@ class ReaderTest extends TestCase
         $this->assertNotEmpty($reader->getVisibility());
         $this->assertNotEmpty($reader->getRecurrence());
         $this->assertNotEmpty($reader->getOrganizer());
+        $this->assertNotEmpty($reader->getDate()->getStartDate());
+        $this->assertNotEmpty($reader->getDate()->getEndDate());
+        $this->assertNotEmpty($reader->getDate()->getModifiedDate());
+        $this->assertNotEmpty($reader->getDate()->getTimezone());
+        $this->assertTrue($reader->getBody()->isHTML());
+        $this->assertFalse($reader->getBody()->isText());
+        $this->assertEquals('foo@bar.com', $reader->getOrganizer()->getEmail());
+        $this->assertEquals('Outlook Test', $reader->getOrganizer()->getName());
+        $this->assertEquals(PatternType::Daily, $reader->getRecurrence()->getType());
+        $this->assertEquals(1, $reader->getRecurrence()->getInterval());
+        $this->assertEquals(RecurrenceIndex::first, $reader->getRecurrence()->getIndex());
+        $this->assertEquals(RangeType::EndDate, $reader->getRecurrence()->getRangeType());
+        $this->assertEquals(RangeType::EndDate, $reader->getRecurrence()->getRangeType());
+        $this->assertEquals(0, $reader->getRecurrence()->getNumberOfOccurrences());
         $this->assertTrue(is_array($reader->toArray()));
     }
 

@@ -6,6 +6,7 @@ namespace Symplicity\Outlook\Notification;
 
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\NotificationReaderEntity;
+use Symplicity\Outlook\Exception\MissingResourceURLException;
 use Symplicity\Outlook\Exception\ValidationException;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
@@ -17,7 +18,7 @@ abstract class Receiver implements ReceiverInterface
     protected $state;
 
     /** @var array $entities */
-    protected $entities;
+    protected $entities = [];
 
     public function hydrate(array $data = []): ReceiverInterface
     {
@@ -32,13 +33,14 @@ abstract class Receiver implements ReceiverInterface
         /** @var NotificationReaderEntity $notificationEntity */
         foreach ($this->entities as $notificationEntity) {
             try {
-                $url = $notificationEntity->getResource();
-                if ($url === null) {
-                    throw new \RuntimeException('Missing resource url');
-                }
-
                 $this->validate($calendar, $logger, $notificationEntity);
                 $this->willWrite($calendar, $logger, $notificationEntity, $params);
+
+                $url = $notificationEntity->getResource();
+                if ($url === null) {
+                    throw new MissingResourceURLException;
+                }
+
                 $outlookEntity = $calendar->getEvent($url, $params);
                 $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity);
             } catch (\Exception $e) {
@@ -81,7 +83,8 @@ abstract class Receiver implements ReceiverInterface
     // Mark Protected
     protected function validate(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $entity): bool
     {
-        if ($entity->has('subscriptionId')
+        if ($entity->has('resource')
+            && $entity->has('subscriptionId')
             && $entity->has('id')) {
             $this->validateSequenceNumber($calendar, $logger, $entity);
             return true;

@@ -31,4 +31,14 @@ class ResponseBody implements ResponseBodyInterface
     {
         return trim($this->content);
     }
+
+    public function isHTML(): bool
+    {
+        return $this->contentType === 'HTML';
+    }
+
+    public function isText(): bool
+    {
+        return $this->contentType === 'text';
+    }
 }
