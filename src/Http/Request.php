@@ -103,7 +103,7 @@ class Request
     public function delete(DeleteInterface $writer, array $params = [])
     {
         /** @var RequestOptions $requestOptions */
-        $requestOptions = $this->requestOptions->call($this, '',  new RequestType(RequestType::Delete), [
+        $requestOptions = $this->requestOptions->call($this, '', new RequestType(RequestType::Delete), [
             'headers' => $params['headers'] ?? [],
             'queryParams' => $params['queryParams'] ?? [],
             'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,

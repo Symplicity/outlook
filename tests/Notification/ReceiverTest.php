@@ -109,9 +109,6 @@ class ReceiverTest extends TestCase
             ]
         ], '', true, true, true, ['handlePoolResponses', 'saveEventLocal']);
 
-        $reader = (new Reader())
-            ->hydrate(json_decode($this->getStream(), true));
-
         $receivedFailedWrites = [];
         $logHandler = new TestHandler();
         $logger = new Logger('outlook_sync', [$logHandler]);
@@ -119,7 +116,13 @@ class ReceiverTest extends TestCase
         $receiverStub->hydrate($this->getOData());
 
         $expectedUrl = 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')?$expand=Extensions($filter=Id%20eq%20\'Microsoft.OutlookServices.OpenTypeExtension.symplicitytest\')';
-        $connection->expects($this->exactly(1))->method('get')->with($expectedUrl);
+        $connection->expects($this->exactly(2))->method('get')->with($expectedUrl)->willReturnOnConsecutiveCalls(new Response(200, [], $this->getStream()), new Response(200, [], function () {
+            return [];
+        }));
+        $receiverStub->exec($calendarStub, $logger, ['skipParams' => true]);
+
+        $receiverStub = $this->getReceiverClass($receivedFailedWrites);
+        $receiverStub->hydrate($this->getOData());
         $receiverStub->exec($calendarStub, $logger, ['skipParams' => true]);
 
         $receiverStub->exec($calendarStub, $logger, ['skipParams' => true, 'setResourceToNull' => true]);
@@ -201,8 +204,7 @@ class ReceiverTest extends TestCase
                 CalendarInterface $calendar,
                 LoggerInterface $logger,
                 NotificationReaderEntity $entity
-            ): void
-            {
+            ): void {
             }
 
             protected function eventWriteFailed(CalendarInterface $calender, LoggerInterface $logger, array $info): void
