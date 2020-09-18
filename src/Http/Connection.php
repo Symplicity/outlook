@@ -65,12 +65,12 @@ class Connection implements ConnectionInterface
         }
     }
 
-    public function post(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
+    public function upsert(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
     {
         $client = $this->createClient();
 
         try {
-            return $client->request(RequestType::Post, $url, [
+            return $client->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders(),
                 'query' => $requestOptions->getQueryParams(),
                 'json' => $requestOptions->getBody()
@@ -83,6 +83,25 @@ class Connection implements ConnectionInterface
                 ]);
             }
             throw new ConnectionException(sprintf('Unable to POST for URL %s', $url));
+        }
+    }
+
+    public function delete(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface
+    {
+        $client = $this->createClient();
+
+        try {
+            return $client->request($requestOptions->getMethod(), $url, [
+                'headers' => $requestOptions->getHeaders()
+            ]);
+        } catch (\Exception $e) {
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->warning('Delete Request Failed', [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+            }
+            throw new ConnectionException(sprintf('Unable to Delete for URL %s', $url));
         }
     }
 

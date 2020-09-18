@@ -134,4 +134,9 @@ class Occurrence implements ReaderEntityInterface
     {
         $this->seriesMasterId = $seriesMasterId;
     }
+
+    public function getExtensions(): array
+    {
+        return [];
+    }
 }

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Http;
 
 use Closure;
+use Psr\Http\Message\ResponseInterface;
+use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
+use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
@@ -55,6 +58,61 @@ class Request
         $this->responseIterator = new ResponseIterator($this->connection);
         $this->responseIterator->setItems($url, $requestOptions);
         return $this;
+    }
+
+    public function getEvent(string $url, array $params = []): ResponseInterface
+    {
+        $options = [
+            'headers' => $params['headers'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'preferenceHeaders' => $params['preferenceHeaders'] ?? [],
+            'token' => $this->accessToken
+        ];
+
+        if (isset($params['queryParams'])) {
+            $options['queryParams'] = $params['queryParams'] ?? [];
+        }
+
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
+
+        $requestOptions->addDefaultHeaders(true);
+        $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
+            'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
+        ]));
+
+        return $this->connection->get($url, $requestOptions, ['skipQueryParams' => $params['skipQueryParams'] ?? true]);
+    }
+
+    public function upsert(WriterInterface $writer, array $params = [])
+    {
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, '', $writer->getRequestType(), [
+            'headers' => $params['headers'] ?? [],
+            'queryParams' => $params['queryParams'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'token' => $this->accessToken,
+            'body' => $writer->jsonSerialize()
+        ]);
+
+        $requestOptions->addDefaultHeaders();
+        $url = Request::getRootApi() . $writer->getUrl();
+        return $this->connection->upsert($url, $requestOptions);
+    }
+
+    public function delete(DeleteInterface $writer, array $params = [])
+    {
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, '',  new RequestType(RequestType::Delete), [
+            'headers' => $params['headers'] ?? [],
+            'queryParams' => $params['queryParams'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'token' => $this->accessToken,
+        ]);
+
+        $requestOptions->addDefaultHeaders();
+        $url = Request::getRootApi() . $writer->getUrl();
+        return $this->connection->delete($url, $requestOptions);
     }
 
     public function batch(array $events, array $params = []) : self

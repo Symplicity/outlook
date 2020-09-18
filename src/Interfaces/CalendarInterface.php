@@ -51,4 +51,20 @@ interface CalendarInterface
      * @param array $params
      */
     public function sync(array $params = []) : void;
+
+    /**
+     * Method to get & process a single event
+     * url : /me/events/{{eventId}}
+     * @param string $url
+     * @param array $params
+     */
+    public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface;
+
+    /**
+     * Method to get all instances of a series master
+     * url : /me/events/{{eventId}}/instances
+     * @param string $url
+     * @param array $params
+     */
+    public function getEventInstances(string $url, array $params = []) : void;
 }

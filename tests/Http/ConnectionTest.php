@@ -113,7 +113,7 @@ class ConnectionTest extends TestCase
         $requestOptions = new RequestOptions('test', new RequestType(RequestType::Post));
 
         $this->createHandler($mock);
-        $response = $this->connection->post('test', $requestOptions);
+        $response = $this->connection->upsert('test', $requestOptions);
         $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
     }
