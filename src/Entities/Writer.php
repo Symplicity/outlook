@@ -217,4 +217,14 @@ class Writer implements WriterInterface
     {
         return $this->method;
     }
+
+    public function getExtensions(): ?ExtensionWriterInterface
+    {
+        return $this->extensions;
+    }
+
+    public function getGuid(): ?string
+    {
+        return $this->guid;
+    }
 }

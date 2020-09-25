@@ -34,4 +34,6 @@ interface WriterInterface extends JsonSerializable
     public function hasOutlookId() : bool;
     public function getRequestType(): RequestType;
     public function getId() : ?string;
+    public function getExtensions(): ?ExtensionWriterInterface;
+    public function getGuid(): ?string;
 }

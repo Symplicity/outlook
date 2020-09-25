@@ -6,6 +6,7 @@ namespace Symplicity\Outlook\Interfaces\Entity;
 
 use Closure;
 use Symplicity\Outlook\Utilities\PatternType;
+use Symplicity\Outlook\Utilities\RangeType;
 use Symplicity\Outlook\Utilities\RecurrenceIndex;
 
 interface RecurrenceEntityInterface
@@ -19,4 +20,5 @@ interface RecurrenceEntityInterface
     public function getRangeDates() : DateEntityInterface;
     public function getNumberOfOccurrences(): int;
     public function getOccurrence() : Closure;
+    public function getRangeType() : RangeType;
 }
