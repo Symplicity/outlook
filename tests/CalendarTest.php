@@ -146,8 +146,8 @@ class CalendarTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
-        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
+        $this->connection->expects($this->exactly(4))->method('createClientWithRetryHandler')->willReturn($client);
+        $this->connection->expects($this->never())->method('createClient');
 
         $this->stub->isBatchRequest();
         $this->stub->expects($this->once())->method('getLocalEvents')->willReturn([

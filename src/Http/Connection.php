@@ -27,6 +27,7 @@ use Symplicity\Outlook\Utilities\RequestType;
 class Connection implements ConnectionInterface
 {
     public const MAX_RETRIES = 3;
+    public const MAX_UPSERT_RETRIES = 10;
 
     private $logger;
     private $clientOptions;
@@ -108,7 +109,7 @@ class Connection implements ConnectionInterface
     public function batch(RequestOptionsInterface $requestOptions)
     {
         /** @var Client $client */
-        $client = $this->createClient();
+        $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());
         $promises = [];
         $rootUrl = \Symplicity\Outlook\Http\Request::getRootApi();
 
@@ -138,7 +139,7 @@ class Connection implements ConnectionInterface
 
     public function batchDelete(RequestOptionsInterface $requestOptions)
     {
-        $client = $this->createClient();
+        $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());
         $promises = [];
         $rootUrl = \Symplicity\Outlook\Http\Request::getRootApi();
 
@@ -179,17 +180,18 @@ class Connection implements ConnectionInterface
         }
     }
 
-    public function createClientWithRetryHandler() : ClientInterface
+    public function createClientWithRetryHandler(?callable $customRetryDelay = null) : ClientInterface
     {
-        $stack = $this->getRetryHandler();
+        $stack = $this->getRetryHandler($customRetryDelay);
         $options = $this->getClientOptions() + ['handler' => $stack];
         return new Client($options);
     }
 
-    protected function getRetryHandler() : HandlerStack
+    protected function getRetryHandler(?callable $customRetryDelay = null) : HandlerStack
     {
+        $retryHandler = $customRetryDelay ?? $this->retryDelay();
         $stack = HandlerStack::create(new CurlMultiHandler());
-        $stack->push(Middleware::retry($this->createRetryHandler(), $this->retryDelay()));
+        $stack->push(Middleware::retry($this->createRetryHandler(), $retryHandler));
         return $stack;
     }
 
@@ -217,13 +219,24 @@ class Connection implements ConnectionInterface
             Response $response = null,
             RequestException $exception = null
         ) use ($logger) {
-            if ($retries >= static::MAX_RETRIES) {
+            $isGet = $request->getMethod() === RequestType::Get;
+            if ($isGet && $retries >= static::MAX_RETRIES) {
                 return false;
             }
 
             if (!$response instanceof ResponseInterface
                 || !$this->shouldRetry($response->getStatusCode())) {
                 return false;
+            }
+
+            if (in_array($request->getMethod(), [RequestType::Post, RequestType::Put, RequestType::Delete])) {
+                if ($response->getStatusCode() !== 429) {
+                    return false;
+                }
+
+                if ($retries >= static::MAX_UPSERT_RETRIES) {
+                    return false;
+                }
             }
 
             $statusCode = 0;
@@ -242,7 +255,7 @@ class Connection implements ConnectionInterface
                     'method' => $request->getMethod(),
                     'uri' => $request->getUri(),
                     'retries' => $retries + 1,
-                    'total' => static::MAX_RETRIES,
+                    'total' => $isGet ? static::MAX_RETRIES : static::MAX_UPSERT_RETRIES,
                     'responseCode' => $statusCode,
                     'message' => $reasonPhrase
                 ]);
@@ -254,6 +267,18 @@ class Connection implements ConnectionInterface
     public function retryDelay() : callable
     {
         return function ($numberOfRetries) {
+            return 1000 * $numberOfRetries;
+        };
+    }
+
+    public function upsertRetryDelay(): callable
+    {
+        return function ($numberOfRetries, $response) {
+            $retryAfter = $response->getHeaderLine('Retry-After');
+            if (!empty($retryAfter) && $retryAfter < 20) {
+                return 1000 * $retryAfter;
+            }
+
             return 1000 * $numberOfRetries;
         };
     }

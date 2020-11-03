@@ -12,10 +12,11 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use PHPUnit\Framework\TestCase;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Entities\Delete;
 use Symplicity\Outlook\Entities\ODateTime;
@@ -37,7 +38,7 @@ class ConnectionTest extends TestCase
         $logger = new Logger('outlook-calendar', [$this->handler]);
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs(['logger' => $logger])
-            ->setMethods(['createClientWithRetryHandler', 'createClient'])
+            ->setMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
             ->getMock();
     }
 
@@ -124,6 +125,7 @@ class ConnectionTest extends TestCase
             new Response(200, [], '{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'foo\')\/Events(\'x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=\')","@odata.etag":"W\/\"ghc\/foo\/\/pA==\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","CreatedDateTime":"2019-02-01T18:05:03.7354577-05:00","LastModifiedDateTime":"2019-02-04T23:58:49.478552-05:00","ChangeKey":"foo\/\/pA==","Categories":[],"OriginalStartTimeZone":"Eastern Standard Time","OriginalEndTimeZone":"Eastern Standard Time","iCalUId":"foo","ReminderMinutesBeforeStart":15,"IsReminderOn":true,"HasAttachments":false,"Subject":"FooBar","BodyPreview":"CCCCCCC","Importance":"Normal","Sensitivity":"Normal","IsAllDay":true,"IsCancelled":false,"IsOrganizer":false,"ResponseRequested":true,"SeriesMasterId":null,"ShowAs":"Free","Type":"SeriesMaster","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=foo%3D&exvsurl=1&path=\/calendar\/item","OnlineMeetingUrl":null,"ResponseStatus":{"Response":"Accepted","Time":"2019-02-01T18:05:25.680242-05:00"},"Body":{"ContentType":"HTML","Content":"test"},"Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"India","PostalCode":""},"Coordinates":{"Latitude":27.6031,"Longitude":88.6468}},"Locations":[{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"US","PostalCode":""},"Coordinates":{"Latitude":32.6031,"Longitude":999.6468}}],"Recurrence":{"Pattern":{"Type":"Daily","Interval":1,"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First"},"Range":{"Type":"EndDate","StartDate":"2019-02-25","EndDate":"2019-02-28","RecurrenceTimeZone":"Eastern Standard Time","NumberOfOccurrences":0}},"Attendees":[{"Type":"Required","Status":{"Response":"None","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}},{"Type":"Required","Status":{"Response":"Accepted","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Insight Test","Address":"test"}}],"Organizer":{"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}}}'),
             new Response(202, ['Content-Length' => 0]),
             new Response(401, ['Content-Length' => 0], stream_for('Client Error')),
+            new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')),
             new RequestException('Error Communicating with Server', new Request('GET', 'test.com')),
         ]);
 
@@ -141,7 +143,10 @@ class ConnectionTest extends TestCase
         }
 
         $requestOptions->addBody($events);
-        $this->createHandler($mock);
+        $this->createRetryHandler($mock);
+
+        $this->connection->expects($this->once())
+            ->method('upsertRetryDelay');
 
         $response = $this->connection->batch($requestOptions);
         $this->assertCount(4, $response);
@@ -152,7 +157,7 @@ class ConnectionTest extends TestCase
             $this->assertTrue(is_array($value['item']));
             $this->assertArrayHasKey('eventType', $value['item']);
             $this->assertTrue(in_array($oResponse->getStatus(), [PromiseInterface::FULFILLED, PromiseInterface::REJECTED]));
-            $this->assertTrue(in_array($oResponse->getStatusCode(), [200, 202, 401, 0]));
+            $this->assertTrue(in_array($oResponse->getStatusCode(), [200, 202, 401, 0, 429]));
         }
     }
 
@@ -172,7 +177,7 @@ class ConnectionTest extends TestCase
         }
 
         $requestOptions->addBody($events);
-        $this->createHandler($mock);
+        $this->createRetryHandler($mock);
 
         $response = $this->connection->batchDelete($requestOptions);
         $this->assertCount(2, $response);
@@ -188,6 +193,39 @@ class ConnectionTest extends TestCase
         }
     }
 
+    public function testUpsertRetryDelay()
+    {
+        $connectionHandler = new Connection(new Logger('outlook-calendar', [$this->handler]));
+        $this->assertInstanceOf(Client::class, $connectionHandler->createClientWithRetryHandler());
+        $this->assertInstanceOf(Client::class, $connectionHandler->createClient());
+        $retryHandler = $connectionHandler->upsertRetryDelay();
+        $response = $retryHandler->call($connectionHandler, 3, new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')));
+        $this->assertEquals(2000, $response);
+
+        $response = $retryHandler->call($connectionHandler, 1, new Response(429, ['Content-Length' => 0], stream_for('Client Error')));
+        $this->assertEquals(1000, $response);
+    }
+
+    /**
+     * @dataProvider getRetryHandlerData
+     * @param RequestInterface $request
+     * @param ResponseInterface $response
+     * @param int $retries
+     * @param bool $expected
+     */
+    public function testRetryHandler(RequestInterface $request, ?ResponseInterface $response, int $retries = 1, bool $expected = false)
+    {
+        $this->handler->clear();
+        $connectionHandler = new Connection(new Logger('outlook-calendar', [$this->handler]));
+        $retryHandler = $connectionHandler->createRetryHandler();
+        $this->assertIsCallable($retryHandler);
+        $response = $retryHandler->call($connectionHandler, $retries, $request, $response);
+        $this->assertEquals($expected, $response);
+        if ($expected) {
+            $this->assertTrue($this->handler->hasWarningThatContains('Retrying'));
+        }
+    }
+
     public function createHandler(\Countable $mock)
     {
         $handler = HandlerStack::create($mock);
@@ -195,5 +233,28 @@ class ConnectionTest extends TestCase
         $this->connection->expects($this->any())
             ->method('createClient')
             ->willReturn($client);
+    }
+
+    public function createRetryHandler(\Countable $mock)
+    {
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $this->connection->expects($this->any())
+            ->method('createClientWithRetryHandler')
+            ->willReturn($client);
+    }
+
+    public function getRetryHandlerData(): array
+    {
+        return [
+            [new Request(RequestType::Get, 'outlook.com'), new Response(200, ['Content-Length' => 0], stream_for(''))],
+            [new Request(RequestType::Get, 'outlook.com'), new Response(401, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
+            [new Request(RequestType::Get, 'outlook.com'), new Response(401, ['Content-Length' => 0], stream_for('Client Error')), 4, false],
+            [new Request(RequestType::Post, 'outlook.com'), new Response(401, ['Content-Length' => 0], stream_for('Client Error')), 2, false],
+            [new Request(RequestType::Post, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
+            [new Request(RequestType::Put, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
+            [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
+            [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 11, false]
+        ];
     }
 }
