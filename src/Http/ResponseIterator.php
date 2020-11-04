@@ -30,7 +30,7 @@ class ResponseIterator implements ResponseIteratorInterface
         $this->connection = $connection;
     }
 
-    public function setItems(string $url, RequestOptionsInterface $requestOptions) : ResponseIteratorInterface
+    public function setItems(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseIteratorInterface
     {
         $this->requestOptions = $requestOptions;
         $this->requestOptions->addPreferenceHeaders(array_merge($this->requestOptions->getDefaultPreferenceHeaders(), [
@@ -39,7 +39,7 @@ class ResponseIterator implements ResponseIteratorInterface
             'outlook.timezone="' . $this->requestOptions->getPreferredTimezone() . '"'
         ]));
 
-        $this->firstPage = $this->getPage($url);
+        $this->firstPage = $this->getPage($url, $args);
         return $this;
     }
 

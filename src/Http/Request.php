@@ -56,7 +56,8 @@ class Request
         $requestOptions->addDefaultHeaders();
 
         $this->responseIterator = new ResponseIterator($this->connection);
-        $this->responseIterator->setItems($url, $requestOptions);
+        $args = empty($params['skipQueryParams']) ? [] : ['skipQueryParams' => true];
+        $this->responseIterator->setItems($url, $requestOptions, $args);
         return $this;
     }
 
