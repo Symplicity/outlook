@@ -91,4 +91,10 @@ interface RequestOptionsInterface
      * @return string
      */
     public function getAccessToken(): string;
+
+    /**
+     * Get batch boundary Id
+     * @return string|null
+     */
+    public function getBatchBoundary(): ?string;
 }

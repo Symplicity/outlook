@@ -6,15 +6,19 @@ namespace Symplicity\Outlook\Http;
 
 use Closure;
 use Psr\Http\Message\ResponseInterface;
+use Ramsey\Uuid\Uuid;
+use Symplicity\Outlook\Batch\Response;
 use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
+use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertBatchResponseHandler;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class Request
 {
     public const OUTLOOK_VERSION = 'v2.0';
     public const OUTLOOK_ROOT_URL = 'https://outlook.office.com/api/';
+    public const OUTLOOK_BATCH_ENDPOINT = 'me/$batch';
 
     private $rootUrl;
 
@@ -116,7 +120,7 @@ class Request
         return $this->connection->delete($url, $requestOptions);
     }
 
-    public function batch(array $events, array $params = []) : self
+    public function batch(array $events, array $params = []) : ?Response
     {
         /** @var RequestOptions $requestOptions */
         $requestOptions = $this->requestOptions->call($this, '', RequestType::Post(), [
@@ -128,24 +132,7 @@ class Request
 
         $requestOptions->addBatchHeaders();
         $requestOptions->addBody($events);
-        $this->response = $this->connection->batch($requestOptions);
-        return $this;
-    }
-
-    public function batchDelete(array $events, array $params = []) : self
-    {
-        /** @var RequestOptions $requestOptions */
-        $requestOptions = $this->requestOptions->call($this, '', new RequestType(RequestType::Delete), [
-            'headers' => $params['headers'] ?? [],
-            'queryParams' => $params['queryParams'] ?? [],
-            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
-            'token' => $this->accessToken
-        ]);
-
-        $requestOptions->addBatchHeaders();
-        $requestOptions->addBody($events);
-        $this->response = $this->connection->batchDelete($requestOptions);
-        return $this;
+        return $this->connection->batch($requestOptions);
     }
 
     public function getConnection() : ConnectionInterface
@@ -181,5 +168,10 @@ class Request
     public static function getRootApi()
     {
         return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION;
+    }
+
+    public static function getBatchApi()
+    {
+        return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION . DIRECTORY_SEPARATOR . 'me/$batch';
     }
 }

@@ -55,11 +55,4 @@ interface ConnectionInterface
      * @return mixed
      */
     public function batch(RequestOptionsInterface $requestOptions);
-
-    /**
-     * Batch delete using the guzzle pool handler.
-     * @param RequestOptionsInterface $requestOptions
-     * @return mixed
-     */
-    public function batchDelete(RequestOptionsInterface $requestOptions);
 }

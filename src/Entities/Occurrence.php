@@ -29,6 +29,7 @@ class Occurrence implements ReaderEntityInterface
             'timezone' => $data['Start']['TimeZone'],
         ]);
 
+        $this->setExtensions($data['Extensions'] ?? []);
         return $this;
     }
 
@@ -107,6 +108,16 @@ class Occurrence implements ReaderEntityInterface
         return $this->seriesMasterId;
     }
 
+    public function getExtensions(): array
+    {
+        return [];
+    }
+
+    public function setSeriesMasterId(string $seriesMasterId): void
+    {
+        $this->seriesMasterId = $seriesMasterId;
+    }
+
     private function setEventType(string $eventType) : void
     {
         $this->eventType = EventTypes::Occurrence;
@@ -130,13 +141,12 @@ class Occurrence implements ReaderEntityInterface
         $this->eTag = $eTag;
     }
 
-    public function setSeriesMasterId(string $seriesMasterId): void
+    private function setExtensions(array $extensions = []): ReaderEntityInterface
     {
-        $this->seriesMasterId = $seriesMasterId;
-    }
+        foreach ($extensions as $extension) {
+            $this->extensions[] = new Extension($extension);
+        }
 
-    public function getExtensions(): array
-    {
-        return [];
+        return $this;
     }
 }

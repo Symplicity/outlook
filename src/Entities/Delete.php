@@ -1,12 +1,13 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
+use Symplicity\Outlook\Interfaces\Entity\BatchWriterEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
+use Symplicity\Outlook\Utilities\RequestType;
 
-class Delete implements DeleteInterface
+class Delete implements DeleteInterface, BatchWriterEntityInterface
 {
     private $guid;
     private $internalId;
@@ -43,5 +44,15 @@ class Delete implements DeleteInterface
     public function getUrl() : string
     {
         return '/me/events/' . $this->guid;
+    }
+
+    public function getMethod(): string
+    {
+        return RequestType::Delete;
+    }
+
+    public function getId(): ?string
+    {
+        return $this->internalId;
     }
 }

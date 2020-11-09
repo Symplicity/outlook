@@ -36,4 +36,5 @@ interface WriterInterface extends JsonSerializable
     public function getId() : ?string;
     public function getExtensions(): ?ExtensionWriterInterface;
     public function getGuid(): ?string;
+    public function __toString() : string;
 }

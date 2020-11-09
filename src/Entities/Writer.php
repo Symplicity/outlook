@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
+use Symplicity\Outlook\Interfaces\Entity\BatchWriterEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ExtensionWriterInterface;
 use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ODateTimeInterface;
@@ -17,7 +18,7 @@ use Symplicity\Outlook\Utilities\SensitivityType;
  * Implementation of class to handle writes to outlook calendar
  * @package Symplicity\Outlook\Entities
  */
-class Writer implements WriterInterface
+class Writer implements WriterInterface, BatchWriterEntityInterface
 {
     protected const DefaultPostRequest = '/Me/events';
 

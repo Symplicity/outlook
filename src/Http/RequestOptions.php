@@ -14,6 +14,8 @@ class RequestOptions implements RequestOptionsInterface
     protected const BATCH_SCHEME = 'batch';
 
     public const DEFAULT_TIMEZONE = 'Eastern Standard Time';
+    public const DEFAULT_ACCEPT_HEADER = 'application/json';
+    public const BATCH_PREFIX = 'batch_';
 
     protected $url;
     protected $method;
@@ -24,6 +26,7 @@ class RequestOptions implements RequestOptionsInterface
     protected $timezone;
     protected $batchId;
     protected $preferenceHeaders;
+    protected $batchBoundary;
 
     public function __construct(string $url, RequestType $methodType, array $args = [])
     {
@@ -54,16 +57,20 @@ class RequestOptions implements RequestOptionsInterface
         $this->addHeader('return-client-request-id', true);
     }
 
-    public function addBatchHeaders()
+    public function addBatchHeaders(array $args = [])
     {
         if ($this->token == null) {
             throw new \InvalidArgumentException('Missing Token');
         }
 
+        $this->setBatchBoundary();
         $this->resetUUID();
         $this->addHeader('Host', 'outlook.office.com');
         $this->addHeader('Authorization', $this->getAccessToken());
         $this->addHeader('return-client-request-id', true);
+        $this->addHeader('Accept', $args['Accept'] ?? static::DEFAULT_ACCEPT_HEADER);
+        $this->addHeader('Content-Type', 'multipart/mixed; boundary=' . $this->getBatchBoundary());
+        $this->addHeader('Prefer', 'odata.continue-on-error');
     }
 
     public function addHeader(string $key, $value) : void
@@ -161,5 +168,18 @@ class RequestOptions implements RequestOptionsInterface
     public function getDefaultPreferenceHeaders() : array
     {
         return $this->preferenceHeaders;
+    }
+
+    public function getBatchBoundary(): ?string
+    {
+        return $this->batchBoundary;
+    }
+
+    // Mark: Private
+    private function setBatchBoundary()
+    {
+        $uuid = Uuid::uuid1()->toString();
+        $this->batchBoundary = static::BATCH_PREFIX . $uuid;
+        return $this;
     }
 }

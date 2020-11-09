@@ -23,7 +23,7 @@ use Symplicity\Outlook\Utilities\ResponseHandler;
 abstract class Calendar implements CalendarInterface
 {
     protected const EVENT_DELETED = 'deleted';
-    protected const BATCH_BY = 20;
+    public const BATCH_BY = 20;
 
     private $token;
 
@@ -128,33 +128,20 @@ abstract class Calendar implements CalendarInterface
     protected function batch(array $params = []) : void
     {
         $batch = [];
-        $batchDelete = [];
-
         $eventsToWrite = $this->getLocalEvents();
-
         $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
 
         foreach ($chunks as $chunk) {
             /** @var WriterInterface $event */
             foreach ($chunk as $event) {
-                if ($event instanceof DeleteInterface) {
-                    $batchDelete[] = $event;
-                    continue;
+                if ($event instanceof WriterInterface
+                    || $event instanceof DeleteInterface) {
+                    $batch[] = $event;
                 }
-
-                if (!$event instanceof WriterInterface) {
-                    continue;
-                }
-
-                $batch[] = $event;
             }
 
-            if (count($batchDelete)) {
-                $this->requestHandler->batchDelete($batchDelete, $params);
-            }
-
-            $this->requestHandler->batch($batch, $params);
-            $this->handlePoolResponses($this->requestHandler->getResponseFromBatch());
+            $responses = $this->requestHandler->batch($batch, $params);
+            $this->handleBatchResponse($responses);
         }
     }
 

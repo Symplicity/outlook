@@ -10,6 +10,17 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\CurlMultiHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\MultipartStream;
+use Symplicity\Outlook\Batch\InputFormatter;
+use Symplicity\Outlook\Calendar;
+use Symplicity\Outlook\Exception\BatchBoundaryMissingException;
+use Symplicity\Outlook\Exception\BatchLimitExceededException;
+use Symplicity\Outlook\Exception\BatchRequestEmptyException;
+use Symplicity\Outlook\Interfaces\Batch\FormatterInterface;
+use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertBatchResponseHandler;
+use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertResponseHandler;
+use Symplicity\Outlook\Utilities\ResponseHandler;
+use Symplicity\Outlook\Utilities\UpsertBatchResponse;
 use function GuzzleHttp\Promise\settle;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -23,6 +34,7 @@ use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Batch\Response as BatchResponseHandler;
 
 class Connection implements ConnectionInterface
 {
@@ -106,70 +118,74 @@ class Connection implements ConnectionInterface
         }
     }
 
-    public function batch(RequestOptionsInterface $requestOptions)
+    public function batch(RequestOptionsInterface $requestOptions, array $args = []): ?BatchResponseHandler
     {
-        /** @var Client $client */
-        $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());
-        $promises = [];
-        $rootUrl = \Symplicity\Outlook\Http\Request::getRootApi();
+        $boundary = $this->getBatchBoundary($requestOptions);
+        $body = $this->getBatchBody($requestOptions);
+        $upsertInputFormatter = $this->getFormatter($args);
+        $batchContent = [];
+        $responses = null;
 
-        /** @var WriterInterface $writer */
-        foreach ($requestOptions->getBody() as $writer) {
-            $id = $writer->getId();
-            $json = $writer->jsonSerialize();
-
-            static::$eventInfo[$id] = $json + ['eventType' => $writer->getInternalEventType()];
-
-            // Prepare promises
-            $promises[$id] = $client->requestAsync(
-                $writer->getMethod(),
-                $rootUrl . $writer->getUrl(),
-                [
-                    'headers' => $requestOptions->getHeaders(),
-                    'json' => $json,
-                    'delay' => 0.9 * 1000
-                ]
-            );
+        foreach ($body as $writer) {
+            switch (true) {
+                case $writer instanceof DeleteInterface:
+                    $batchContent[] = $this->prepareBatchDelete($writer, $upsertInputFormatter);
+                    break;
+                default:
+                    $batchContent[] = $this->prepareBatchWrite($writer, $upsertInputFormatter);
+            }
         }
 
-        $responses = settle($promises)->wait();
-        $this->setResponses($responses);
-        return $this->responses;
+        if (count($batchContent) == 0) {
+            throw new BatchRequestEmptyException('Batch request is empty');
+        }
+
+        $outlookResponse = $this->execBatch($requestOptions, $batchContent, $boundary);
+        if ($outlookResponse instanceof Response) {
+            $responses = new BatchResponseHandler($outlookResponse, ['eventInfo' => static::$eventInfo]);
+        }
+
+        return $responses;
     }
 
-    public function batchDelete(RequestOptionsInterface $requestOptions)
+    private function prepareBatchWrite(WriterInterface $writer, FormatterInterface $upsertInputFormatter): array
     {
-        $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());
-        $promises = [];
-        $rootUrl = \Symplicity\Outlook\Http\Request::getRootApi();
+        $contentToWrite = [];
+        $formattedContent = $upsertInputFormatter->format($writer);
+        if (count($formattedContent)) {
+            $contentToWrite = $formattedContent;
+            static::$eventInfo[$writer->getId()] = [
+                'guid' => $writer->getGuid() ?? null,
+                'method' => $writer->getMethod(),
+                'eventType' => $writer->getInternalEventType(),
+                'Sensitivity' => $writer->getSensitivity()
+            ];
+        }
 
-        /** @var DeleteInterface $delete */
-        foreach ($requestOptions->getBody() as $delete) {
-            $id = $delete->getInternalId();
+        return $contentToWrite;
+    }
 
-            // prepare for response handling
-            static::$eventInfo[$id] = [
+    private function prepareBatchDelete(DeleteInterface $delete, FormatterInterface $upsertInputFormatter): array
+    {
+        $contentToWrite = [];
+        $formattedContent = $upsertInputFormatter->format($delete);
+        if (count($formattedContent)) {
+            $contentToWrite = $formattedContent;
+            static::$eventInfo[$delete->getId()] = [
                 'guid' => $delete->getGuid(),
+                'method' => RequestType::Delete,
                 'eventType' => $delete->getInternalEventType(),
                 'delete' => true
             ];
-
-            // Prepare promises
-            $promises[$id] = $client->requestAsync(
-                RequestType::Delete,
-                $rootUrl . $delete->getUrl(),
-                [
-                    'headers' => $requestOptions->getHeaders(),
-                    'delay' => 0.9 * 1000
-                ]
-            );
         }
 
-        $responses = settle($promises)->wait();
-        $this->setResponses($responses);
-        return $this->responses;
+        return $contentToWrite;
     }
 
+    /**
+     * @deprecated
+     * @param array $responses
+     */
     public function setResponses(array $responses)
     {
         foreach ($responses as $key => $response) {
@@ -283,8 +299,55 @@ class Connection implements ConnectionInterface
         };
     }
 
+    // Mark: Protected
     protected function shouldRetry(int $statusCode) : bool
     {
         return in_array($statusCode, [401, 403, 408, 429]) || $statusCode >= 500;
+    }
+
+    protected function getFormatter(array $args = []): FormatterInterface
+    {
+        if (isset($args['batchInputFormatter']) && $args['batchInputFormatter'] instanceof FormatterInterface) {
+            $upsertInputFormatter = $args['batchInputFormatter'];
+        } else {
+            $upsertInputFormatter = new InputFormatter($this->logger);
+        }
+
+        return $upsertInputFormatter;
+    }
+
+    protected function execBatch(RequestOptionsInterface $requestOptions, array $batchContent, string $boundary): ?Response
+    {
+        try {
+            /** @var Client $client */
+            $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());
+            $responses = $client->request(RequestType::Post, \Symplicity\Outlook\Http\Request::getBatchApi(), [
+                'headers' => $requestOptions->getHeaders(),
+                'body' => new MultipartStream($batchContent, $boundary)
+            ]);
+        } catch (\Exception $e) {}
+
+        return $responses;
+    }
+
+    // Mark: Private
+    // Batch Methods
+    private function getBatchBoundary(RequestOptionsInterface $requestOptions): string
+    {
+        if (($boundary = $requestOptions->getBatchBoundary()) === null) {
+            throw new BatchBoundaryMissingException('batch boundary id is missing');
+        }
+
+        return $boundary;
+    }
+
+    private function getBatchBody(RequestOptionsInterface $requestOptions): array
+    {
+        $body = $requestOptions->getBody();
+        if (count($body) > Calendar::BATCH_BY) {
+            throw new BatchLimitExceededException('batch maximum limit of 20 items was exceeded');
+        }
+
+        return $body;
     }
 }
