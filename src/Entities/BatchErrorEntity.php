@@ -17,8 +17,8 @@ final class BatchErrorEntity
     {
         $this->id = $data['id'] ?? null;
         $this->statusCode = $data['status'] ?? 0;
-        $this->errorCode = $data['body']['code'] ?? self::UNKNOWN_ERROR_CODE;
-        $this->errorMessage = $data['body']['message'] ?? null;
+        $this->errorCode = $data['body']['error']['code'] ?? self::UNKNOWN_ERROR_CODE;
+        $this->errorMessage = $data['body']['error']['message'] ?? null;
     }
 
     public function getId(): ?string

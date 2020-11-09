@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Batch;
 
 use GuzzleHttp\Psr7\AppendStream;
+use Symplicity\Outlook\Interfaces\Batch\OStreamInterface;
 use function GuzzleHttp\Psr7\stream_for;
 use Psr\Http\Message\StreamInterface;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Interfaces\Entity\BatchWriterEntityInterface;
 
-class Stream
+class Stream implements OStreamInterface
 {
     protected const HTTP_VERSION = 'HTTP/1.1';
     protected const DEFAULT_CONTENT_TYPE = 'application/json';

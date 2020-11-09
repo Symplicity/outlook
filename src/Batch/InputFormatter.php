@@ -7,6 +7,7 @@ namespace Symplicity\Outlook\Batch;
 use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Interfaces\Batch\FormatterInterface;
+use Symplicity\Outlook\Interfaces\Batch\OStreamInterface;
 use Symplicity\Outlook\Interfaces\Entity\BatchWriterEntityInterface;
 
 class InputFormatter implements FormatterInterface
@@ -18,7 +19,7 @@ class InputFormatter implements FormatterInterface
     private $stream;
     private $args;
 
-    public function __construct(LoggerInterface $logger, ?StreamInterface $stream = null, array $args = [])
+    public function __construct(LoggerInterface $logger, ?OStreamInterface $stream = null, array $args = [])
     {
         $this->logger = $logger;
         $this->stream = $stream;
