@@ -51,7 +51,7 @@ class Response implements ResponseInterface, IteratorAggregate
         if (empty($body['error'])) {
             $items = $this->args['eventInfo'][$id] ?? [];
             $items = array_merge($items, ['statusCode' => $statusCode]);
-            if ($statusCode === 204 && $items['method'] === RequestType::Delete) {
+            if ($statusCode === 204 && $items['method'] ?? null === RequestType::Delete) {
                 $this->response[$id] = [
                     'response' => new BatchResponseDeleteEntity($items['guid'], $response['id']),
                     'item' => $items

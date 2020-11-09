@@ -9,9 +9,11 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Symplicity\Outlook\Entities\BatchErrorEntity;
+use Symplicity\Outlook\Entities\BatchResponseDeleteEntity;
+use Symplicity\Outlook\Entities\BatchResponseReader;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
@@ -26,6 +28,7 @@ use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\Utils\BatchResponseInterface;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Batch\Response as BatchResponse;
 
 class ConnectionTest extends TestCase
 {
@@ -122,74 +125,51 @@ class ConnectionTest extends TestCase
     public function testBatch()
     {
         $mock = new MockHandler([
-            new Response(200, [], '{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'foo\')\/Events(\'x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=\')","@odata.etag":"W\/\"ghc\/foo\/\/pA==\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","CreatedDateTime":"2019-02-01T18:05:03.7354577-05:00","LastModifiedDateTime":"2019-02-04T23:58:49.478552-05:00","ChangeKey":"foo\/\/pA==","Categories":[],"OriginalStartTimeZone":"Eastern Standard Time","OriginalEndTimeZone":"Eastern Standard Time","iCalUId":"foo","ReminderMinutesBeforeStart":15,"IsReminderOn":true,"HasAttachments":false,"Subject":"FooBar","BodyPreview":"CCCCCCC","Importance":"Normal","Sensitivity":"Normal","IsAllDay":true,"IsCancelled":false,"IsOrganizer":false,"ResponseRequested":true,"SeriesMasterId":null,"ShowAs":"Free","Type":"SeriesMaster","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=foo%3D&exvsurl=1&path=\/calendar\/item","OnlineMeetingUrl":null,"ResponseStatus":{"Response":"Accepted","Time":"2019-02-01T18:05:25.680242-05:00"},"Body":{"ContentType":"HTML","Content":"test"},"Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"India","PostalCode":""},"Coordinates":{"Latitude":27.6031,"Longitude":88.6468}},"Locations":[{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"US","PostalCode":""},"Coordinates":{"Latitude":32.6031,"Longitude":999.6468}}],"Recurrence":{"Pattern":{"Type":"Daily","Interval":1,"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First"},"Range":{"Type":"EndDate","StartDate":"2019-02-25","EndDate":"2019-02-28","RecurrenceTimeZone":"Eastern Standard Time","NumberOfOccurrences":0}},"Attendees":[{"Type":"Required","Status":{"Response":"None","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}},{"Type":"Required","Status":{"Response":"Accepted","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Insight Test","Address":"test"}}],"Organizer":{"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}}}'),
+            new Response(200, [], '{"responses":[{"id":"foo","status":201,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","@odata.etag":"W\/\"123==\"","Id":"test==","LastModifiedDateTime":"2020-11-09T14:40:50.8444665-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=ANC%3D%3D&exvsurl=1&path=\/calendar\/item"}},{"id":"bar","status":201,"headers":{"etag":"W\/\"456==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'CDE==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'CDE==\')","@odata.etag":"W\/\"aHQ+t811Ok+IYnQ4RgjubgACguszQg==\"","Id":"CDE==","LastModifiedDateTime":"2020-11-09T14:40:51.1413001-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=cde&path=\/calendar\/item"}},{"id":"foo1","status":201,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","@odata.etag":"W\/\"123==\"","Id":"test==","LastModifiedDateTime":"2020-11-09T14:40:50.8444665-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=ANC%3D%3D&exvsurl=1&path=\/calendar\/item"}}, {"id":"bar1","status":400,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"error": {"code": "InvalidParams", "message": "Invalid params passed"}}}, {"id":"2323","status":204,"headers":[]}]}'),
             new Response(202, ['Content-Length' => 0]),
             new Response(401, ['Content-Length' => 0], stream_for('Client Error')),
             new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')),
             new RequestException('Error Communicating with Server', new Request('GET', 'test.com')),
         ]);
 
-        $requestOptions = new RequestOptions('test', new RequestType(RequestType::Post));
+        $requestOptions = new RequestOptions('test', new RequestType(RequestType::Post), ['token' => 'ABC12==']);
         $events = [];
 
         foreach (['foo', 'bar', 'foo1', 'bar1'] as $id) {
             $events[] = (new Writer())->setId($id)
                 ->setBody(new ResponseBody(['Content' => 'test', 'ContentType' => 'HTML']))
                 ->setSubject('ABC')
-                ->method(new RequestType(RequestType::Get))
+                ->method(new RequestType(RequestType::Post()))
                 ->setStartDate(new ODateTime(new \DateTime('now'), 'Eastern Standard Time'))
                 ->setEndDate(new ODateTime(new \DateTime('now'), 'Eastern Standard Time'))
                 ->setInternalEventType('PHP');
         }
 
+        $events[] = new Delete('ABC==', '2323');
+
         $requestOptions->addBody($events);
+        $requestOptions->addBatchHeaders();
         $this->createRetryHandler($mock);
 
         $this->connection->expects($this->once())
             ->method('upsertRetryDelay');
 
         $response = $this->connection->batch($requestOptions);
-        $this->assertCount(4, $response);
+        $this->assertInstanceOf(BatchResponse::class, $response);
         foreach ($response as $key => $value) {
             /** @var BatchResponseInterface $oResponse */
             $oResponse = $value['response'];
-            $this->assertInstanceOf(BatchResponseInterface::class, $oResponse);
+            if ($key == 'bar1') {
+                $this->assertInstanceOf(BatchErrorEntity::class, $oResponse);
+            } elseif ($key == '2323') {
+                $this->assertInstanceOf(BatchResponseDeleteEntity::class, $oResponse);
+            } else {
+                $this->assertInstanceOf(BatchResponseReader::class, $oResponse);
+                $this->assertTrue(in_array($value['item']['statusCode'], [200, 201, 204]));
+            }
+
             $this->assertTrue(is_array($value['item']));
             $this->assertArrayHasKey('eventType', $value['item']);
-            $this->assertTrue(in_array($oResponse->getStatus(), [PromiseInterface::FULFILLED, PromiseInterface::REJECTED]));
-            $this->assertTrue(in_array($oResponse->getStatusCode(), [200, 202, 401, 0, 429]));
-        }
-    }
-
-    public function testBatchDelete()
-    {
-        $mock = new MockHandler([
-            new Response(204, [], json_encode(['test'])),
-            new RequestException('Error Communicating with Server', new Request('GET', 'test.com')),
-        ]);
-
-        $requestOptions = new RequestOptions('test', new RequestType(RequestType::Delete));
-
-        $events = [];
-
-        foreach (['foo', 'bar'] as $id) {
-            $events[] = new Delete('123', $id);
-        }
-
-        $requestOptions->addBody($events);
-        $this->createRetryHandler($mock);
-
-        $response = $this->connection->batchDelete($requestOptions);
-        $this->assertCount(2, $response);
-        foreach ($response as $key => $value) {
-            /** @var BatchResponseInterface $oResponse */
-            $oResponse = $value['response'];
-            $this->assertInstanceOf(BatchResponseInterface::class, $oResponse);
-            $this->assertTrue(is_array($value['item']));
-            $this->assertArrayHasKey('eventType', $value['item']);
-            $this->assertArrayHasKey('delete', $value['item']);
-            $this->assertTrue(in_array($oResponse->getStatus(), [PromiseInterface::FULFILLED, PromiseInterface::REJECTED]));
-            $this->assertTrue(in_array($oResponse->getStatusCode(), [204, 0]));
         }
     }
 

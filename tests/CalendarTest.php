@@ -54,7 +54,7 @@ class CalendarTest extends TestCase
                     'connection' => $this->connection
                 ])
             ]
-        ], '', true, true, true, ['handlePoolResponses', 'saveEventLocal']);
+        ], '', true, true, true, ['handleBatchResponse', 'saveEventLocal']);
     }
 
     public function testGetEventInstances()
@@ -137,8 +137,6 @@ class CalendarTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(200),
-            new Response(200),
-            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar'])),
             new Response(200, [], stream_for($this->getStream())),
             new Response(200, [], stream_for($this->getStream()))
         ]);
@@ -146,7 +144,7 @@ class CalendarTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(4))->method('createClientWithRetryHandler')->willReturn($client);
+        $this->connection->expects($this->exactly(3))->method('createClientWithRetryHandler')->willReturn($client);
         $this->connection->expects($this->never())->method('createClient');
 
         $this->stub->isBatchRequest();
@@ -171,7 +169,7 @@ class CalendarTest extends TestCase
             (new \stdClass())
         ]);
 
-        $this->stub->expects($this->exactly(1))->method('handlePoolResponses')->with($this->equalTo($this->fulFilledResponse()));
+        $this->stub->expects($this->exactly(1))->method('handleBatchResponse');
         $this->stub->expects($this->exactly(8))->method('saveEventLocal');
         $this->stub->expects($this->exactly(2))->method('deleteEventLocal');
 

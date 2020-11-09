@@ -181,7 +181,8 @@ abstract class Calendar implements CalendarInterface
     private function setRequestHandler(?Request $requestHandler, array $connectionClientOptions = []): void
     {
         if ($requestHandler === null) {
-            $requestHandler = new Request($this->token, [
+            $token = $this->token;
+            $requestHandler = new Request($token, [
                 'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
                     return new RequestOptions($url, $methodType, $args);
                 },
