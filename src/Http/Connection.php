@@ -17,8 +17,6 @@ use Symplicity\Outlook\Exception\BatchBoundaryMissingException;
 use Symplicity\Outlook\Exception\BatchLimitExceededException;
 use Symplicity\Outlook\Exception\BatchRequestEmptyException;
 use Symplicity\Outlook\Interfaces\Batch\FormatterInterface;
-use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertBatchResponseHandler;
-use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertResponseHandler;
 use Symplicity\Outlook\Utilities\UpsertBatchResponse;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -167,10 +165,12 @@ class Connection implements ConnectionInterface
     {
         $contentToWrite = [];
         $formattedContent = $upsertInputFormatter->format($delete);
-        if (count($formattedContent)) {
+        $internalId = $delete->getId();
+        $guid = $delete->getGuid();
+        if (count($formattedContent) && $internalId && $guid) {
             $contentToWrite = $formattedContent;
-            static::$eventInfo[$delete->getId()] = [
-                'guid' => $delete->getGuid(),
+            static::$eventInfo[$internalId] = [
+                'guid' => $guid,
                 'method' => RequestType::Delete,
                 'eventType' => $delete->getInternalEventType(),
                 'delete' => true
@@ -333,7 +333,9 @@ class Connection implements ConnectionInterface
                 'headers' => $requestOptions->getHeaders(),
                 'body' => new MultipartStream($batchContent, $boundary)
             ]);
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            // If we get a client error, skip the response
+        }
 
         return $responses;
     }

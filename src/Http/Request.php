@@ -6,12 +6,10 @@ namespace Symplicity\Outlook\Http;
 
 use Closure;
 use Psr\Http\Message\ResponseInterface;
-use Ramsey\Uuid\Uuid;
 use Symplicity\Outlook\Batch\Response;
 use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
-use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertBatchResponseHandler;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class Request
@@ -172,6 +170,6 @@ class Request
 
     public static function getBatchApi()
     {
-        return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION . DIRECTORY_SEPARATOR . 'me/$batch';
+        return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION . DIRECTORY_SEPARATOR . self::OUTLOOK_BATCH_ENDPOINT;
     }
 }

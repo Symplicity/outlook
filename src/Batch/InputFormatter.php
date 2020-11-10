@@ -19,7 +19,7 @@ class InputFormatter implements FormatterInterface
     private $stream;
     private $args;
 
-    public function __construct(LoggerInterface $logger, ?OStreamInterface $stream = null, array $args = [])
+    public function __construct(?LoggerInterface $logger = null, ?OStreamInterface $stream = null, array $args = [])
     {
         $this->logger = $logger;
         $this->stream = $stream;
@@ -42,9 +42,11 @@ class InputFormatter implements FormatterInterface
                 ]
             ];
         } catch (\Exception $e) {
-            $this->logger->error('unable to generate stream from data provided', [
-                'data' => (string) $writer
-            ]);
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->error('unable to generate stream from data provided', [
+                    'data' => (string) $writer
+                ]);
+            }
         }
 
         return [];

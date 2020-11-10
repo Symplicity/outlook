@@ -5,7 +5,6 @@ namespace Symplicity\Outlook\Interfaces;
 use Symplicity\Outlook\Batch\Response;
 use Symplicity\Outlook\Exception\ReadError;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
-use Symplicity\Outlook\Utilities\BatchResponseHandler\UpsertBatchResponseHandler;
 
 interface CalendarInterface
 {
@@ -36,10 +35,10 @@ interface CalendarInterface
     public function getLocalEvents() : array;
 
     /**
-     * Passed by handler fulfillment
-     * @param Response $responses
+     * Passed by handler fulfillment on batch response
+     * @param Response|null $responses
      */
-    public function handleBatchResponse(Response $responses) : void;
+    public function handleBatchResponse(?Response $responses) : void;
 
     /**
      * Passed by Guzzle single async requestor

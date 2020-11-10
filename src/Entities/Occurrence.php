@@ -15,6 +15,7 @@ class Occurrence implements ReaderEntityInterface
     protected $date;
     protected $eTag;
     protected $seriesMasterId;
+    protected $extensions = [];
 
     public function hydrate(array $data) : ReaderEntityInterface
     {
