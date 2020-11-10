@@ -31,29 +31,35 @@ class SubscriptionTest extends TestCase
     {
         $this->logger = new Logger('outlook_calendar');
         $this->logger->pushHandler(new NullHandler());
+        $this->connection = $this->getMockBuilder(Connection::class)
+            ->setConstructorArgs([$this->logger])
+            ->setMethods(['createClient', 'createClientWithRetryHandler'])
+            ->getMock();
     }
 
     public function testSubscribe()
     {
+        $subscriptionResponse = $this->getSubscriptionResponse();
+        $uncheckedSubscriptionDate = array_merge($subscriptionResponse, ['SubscriptionExpirationDateTime' => '']);
+        $wrongDateResponse = array_merge($subscriptionResponse, ['SubscriptionExpirationDateTime' => 'wrongdate']);
+
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], stream_for(json_encode($this->getSubscriptionResponse()))),
+            new Response(200, [], stream_for(json_encode($uncheckedSubscriptionDate))),
+            new Response(200, [], stream_for(json_encode($wrongDateResponse))),
             new Response(200, [], ''),
             new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
-        $this->connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([$this->logger])
-            ->setMethods(['createClient', 'createClientWithRetryHandler'])
-            ->getMock();
-
-        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
-
+        $this->connection->expects($this->exactly(4))->method('createClient')->willReturn($client);
         $subscriber = new Subscription($this->logger);
         $subscriber->setConnection($this->connection);
 
         $subscriptionEntity = (new SubscriptionEntity())
+            ->setDataType('#Microsoft.OutlookServices.DeleteNotification')
+            ->setClientState('123-333')
             ->setNotificationUrl('https://test12.symplicity.com/api/v1/outlook')
             ->setResource('https://outlook.office.com/api/v2.0/me/events')
             ->setChangeType([ChangeType::deleted, ChangeType::updated, ChangeType::missed]);
@@ -64,6 +70,12 @@ class SubscriptionTest extends TestCase
         $this->assertNotEmpty($subscriptionResponse->clientState);
         $this->assertInstanceOf(DateTimeImmutable::class, $subscriptionResponse->getSubscriptionExpirationDate());
 
+        $subscriptionResponse = $subscriber->subscribe($subscriptionEntity, 'abc');
+        $this->assertNull($subscriptionResponse->getSubscriptionExpirationDate());
+
+        $subscriptionResponse = $subscriber->subscribe($subscriptionEntity, 'abc');
+        $this->assertNull($subscriptionResponse->getSubscriptionExpirationDate());
+
         $this->expectException(SubscribeFailedException::class);
         $subscriber->subscribe($subscriptionEntity, 'abc');
 
@@ -71,21 +83,31 @@ class SubscriptionTest extends TestCase
         $subscriber->subscribe($subscriptionEntity, 'abc');
     }
 
+    public function testSubscriptionError()
+    {
+        $subscriptionEntity = (new SubscriptionEntity())
+            ->setResource('https://outlook.office.com/api/v2.0/me/events')
+            ->setChangeType([ChangeType::deleted, ChangeType::updated, ChangeType::missed]);
+
+        $this->connection->expects($this->never())->method('createClient');
+
+        $subscriber = new Subscription($this->logger);
+        $subscriber->setConnection($this->connection);
+
+        $this->expectException(\RuntimeException::class);
+        $subscriber->subscribe($subscriptionEntity, 'abc');
+    }
+
     public function testRenewSubscription()
     {
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], stream_for(json_encode($this->getSubscriptionResponse()))),
             new Response(200, [], ''),
             new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
-        $this->connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([$this->logger])
-            ->setMethods(['createClient', 'createClientWithRetryHandler'])
-            ->getMock();
-
         $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
 
         $subscriber = new Subscription($this->logger);
@@ -107,17 +129,12 @@ class SubscriptionTest extends TestCase
     public function testDeleteSubscription()
     {
         $mock = new MockHandler([
-            new Response(204, [], stream_for($this->getStream())),
+            new Response(204, [], stream_for(json_encode($this->getSubscriptionResponse()))),
             new Response(400, [], ''),
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
-        $this->connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([$this->logger])
-            ->setMethods(['createClient', 'createClientWithRetryHandler'])
-            ->getMock();
-
         $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
 
         $subscriber = new Subscription($this->logger);
@@ -127,12 +144,12 @@ class SubscriptionTest extends TestCase
         $this->assertTrue($response);
 
         $this->expectException(ClientException::class);
-        $response = $subscriber->delete('ABC==', 'abc');
+        $subscriber->delete('ABC==', 'abc');
     }
 
-    public function getStream()
+    public function getSubscriptionResponse()
     {
-        return \GuzzleHttp\json_encode([
+        return [
             '@odata.context' => 'https://outlook.office.com/api/v2.0/$metadata#Me/Subscriptions/$entity',
             '@odata.type' => '#Microsoft.OutlookServices.PushSubscription',
             '@odata.id' => 'https://outlook.office.com/api/v2.0/Users(\'123-45\')/Subscriptions(\'ABC==\')',
@@ -142,6 +159,6 @@ class SubscriptionTest extends TestCase
             'NotificationURL' => 'https://test12.symplicity.com/api/v1/outlook',
             'SubscriptionExpirationDateTime' => '2020-09-23T13:58:53.708556Z',
             'ClientState' => '5544434-6e6f-47e1-a611-6b3299ea6a85'
-        ]);
+        ];
     }
 }

@@ -6,9 +6,11 @@
     "homepage": "https://www.symplicity.com",
     "license": "MIT",
     "require": {
+        "ext-json": "*",
         "php": "^7.1",
         "ramsey/uuid" : "^3.8.0",
         "guzzlehttp/guzzle": "^6.2",
+        "guzzlehttp/psr7": "1.6.*",
         "monolog/monolog" : "^1.17",
 	    "myclabs/php-enum": "^1.6.0"
     },

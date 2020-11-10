@@ -2,7 +2,9 @@
 
 namespace Symplicity\Outlook\Utilities;
 
-class DayOfTheWeek
+use MyCLabs\Enum\Enum;
+
+class DayOfTheWeek extends Enum
 {
     public const Sunday = 0;
     public const Monday = 1;

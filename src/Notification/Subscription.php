@@ -43,11 +43,13 @@ class Subscription implements SubscriptionInterface
         $requestOptions = new RequestOptions($url, RequestType::Post(), ['token' => $accessToken]);
         $this->addDefaultHeaders($requestOptions);
 
+        $subscriptionEntityJson = $subscriptionEntity->jsonSerialize();
+
         $response = $this->getConnection()
             ->createClient()
             ->request($requestOptions->getMethod(), $url, [
                 'headers' => $requestOptions->getHeaders(),
-                'json' => $subscriptionEntity->jsonSerialize()
+                'json' => $subscriptionEntityJson
             ]);
 
         $responseArray = ResponseHandler::toArray($response);

@@ -19,7 +19,6 @@ class ResponseIterator implements ResponseIteratorInterface
     public const ItemsKey = 'value';
 
     protected $connection;
-    protected $urlParams;
     protected $firstPage;
     /** @var RequestOptionsInterface $requestOptions */
     protected $requestOptions;

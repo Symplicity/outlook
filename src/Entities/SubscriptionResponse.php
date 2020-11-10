@@ -33,7 +33,7 @@ class SubscriptionResponse implements SubscriptionResponseEntityInterface
 
     public function getSubscriptionExpirationDate(): ?DateTimeImmutable
     {
-        if (!isset($this->subscriptionExpirationDate)) {
+        if (empty($this->subscriptionExpirationDate)) {
             return null;
         }
 

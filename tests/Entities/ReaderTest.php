@@ -10,6 +10,7 @@ use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
+use Symplicity\Outlook\Utilities\DayOfTheWeek;
 use Symplicity\Outlook\Utilities\EventTypes;
 use Symplicity\Outlook\Utilities\PatternType;
 use Symplicity\Outlook\Utilities\RangeType;
@@ -54,6 +55,15 @@ class ReaderTest extends TestCase
         $this->assertEquals(RangeType::EndDate, $reader->getRecurrence()->getRangeType());
         $this->assertEquals(RangeType::EndDate, $reader->getRecurrence()->getRangeType());
         $this->assertEquals(0, $reader->getRecurrence()->getNumberOfOccurrences());
+        $this->assertEquals(0, $reader->getRecurrence()->getMonth());
+        $this->assertEquals(DayOfTheWeek::Sunday, $reader->getRecurrence()->getFirstDayOfWeek()->getValue());
+        $this->assertEquals([], $reader->getRecurrence()->getDaysOfWeek());
+        $this->assertEquals(0, $reader->getRecurrence()->getDayOfMonth());
+        $this->assertInstanceOf(DateEntityInterface::class, $reader->getRecurrence()->getRangeDates());
+        $this->assertEquals('2019-02-25', $reader->getRecurrence()->getRangeDates()->getStartDate());
+        $this->assertEquals('2019-02-28', $reader->getRecurrence()->getRangeDates()->getEndDate());
+        $this->assertEquals('Eastern Standard Time', $reader->getRecurrence()->getRangeDates()->getTimezone());
+        $this->assertEquals(null, $reader->getRecurrence()->getRangeDates()->getModifiedDate());
         $this->assertTrue(is_array($reader->toArray()));
     }
 

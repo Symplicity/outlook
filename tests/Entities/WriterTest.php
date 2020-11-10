@@ -30,6 +30,24 @@ class WriterTest extends TestCase
         $this->assertEquals($expected['method'], $writer->getMethod());
     }
 
+    public function testWriter()
+    {
+        $startDate = new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time');
+        $endDate = new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time');
+        $responseBody = new ResponseBody(['ContentType' => 'HTML', 'Content' => ' foo ']);
+        $endDate->setDateToEndOfDay();
+
+        $writer = (new Writer())
+            ->setBody($responseBody)
+            ->setStartDate($startDate)
+            ->setEndDate($endDate);
+
+        $jsonSerialize = json_encode($writer);
+        $expectedJsonString = '{"Subject":null,"Body":{"ContentType":"HTML","Content":" foo "},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-05T00:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","Recurrence":null,"IsAllDay":false}';
+        $this->assertJsonStringEqualsJsonString($expectedJsonString, $jsonSerialize);
+        $this->assertEquals('foo', $responseBody->getSanitizedContent());
+    }
+
     public function testWriterExtensions()
     {
         /** @var WriterInterface $writer */

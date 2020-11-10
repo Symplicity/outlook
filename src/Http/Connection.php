@@ -37,7 +37,7 @@ use Symplicity\Outlook\Batch\Response as BatchResponseHandler;
 class Connection implements ConnectionInterface
 {
     public const MAX_RETRIES = 3;
-    public const MAX_UPSERT_RETRIES = 10;
+    public const MAX_UPSERT_RETRIES = 5;
 
     private $logger;
     private $clientOptions;
@@ -226,13 +226,13 @@ class Connection implements ConnectionInterface
 
     public function createRetryHandler() : callable
     {
-        $logger = $this->logger;
+        $connection = $this;
         return function (
             $retries,
             Request $request,
-            Response $response = null,
-            RequestException $exception = null
-        ) use ($logger) {
+            ?Response $response = null,
+            ?RequestException $exception = null
+        ) use ($connection) {
             $isGet = $request->getMethod() === RequestType::Get;
             if ($isGet && $retries >= static::MAX_RETRIES) {
                 return false;
@@ -253,29 +253,37 @@ class Connection implements ConnectionInterface
                 }
             }
 
-            $statusCode = 0;
-            $reasonPhrase = '';
+            $connection->logRetry($request, $response, $exception, [
+                'retries' => $retries,
+            ]);
 
-            if ($response instanceof Response) {
-                $statusCode = $response->getStatusCode();
-                $reasonPhrase = $response->getReasonPhrase();
-            } elseif ($exception instanceof RequestException) {
-                $statusCode = $exception->getCode();
-                $reasonPhrase = $exception->getMessage();
-            }
-
-            if ($logger instanceof LoggerInterface) {
-                $logger->warning('Retrying', [
-                    'method' => $request->getMethod(),
-                    'uri' => $request->getUri(),
-                    'retries' => $retries + 1,
-                    'total' => $isGet ? static::MAX_RETRIES : static::MAX_UPSERT_RETRIES,
-                    'responseCode' => $statusCode,
-                    'message' => $reasonPhrase
-                ]);
-            }
             return true;
         };
+    }
+
+    public function logRetry(Request $request, ?Response $response = null, ?RequestException $exception = null, array $args = []): void
+    {
+        $statusCode = 0;
+        $reasonPhrase = '';
+
+        if ($response instanceof Response) {
+            $statusCode = $response->getStatusCode();
+            $reasonPhrase = $response->getReasonPhrase();
+        } elseif ($exception instanceof RequestException) {
+            $statusCode = $exception->getCode();
+            $reasonPhrase = $exception->getMessage();
+        }
+
+        if ($this->logger instanceof LoggerInterface) {
+            $this->logger->warning('Retrying', [
+                'method' => $request->getMethod(),
+                'uri' => $request->getUri(),
+                'retries' => isset($args['retries']) ? $args['retries'] + 1 : 0,
+                'total' => $request->getMethod() === RequestType::Get ? static::MAX_RETRIES : static::MAX_UPSERT_RETRIES,
+                'responseCode' => $statusCode,
+                'message' => $reasonPhrase
+            ]);
+        }
     }
 
     public function retryDelay() : callable
@@ -316,6 +324,8 @@ class Connection implements ConnectionInterface
 
     protected function execBatch(RequestOptionsInterface $requestOptions, array $batchContent, string $boundary): ?Response
     {
+        $responses = null;
+
         try {
             /** @var Client $client */
             $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());

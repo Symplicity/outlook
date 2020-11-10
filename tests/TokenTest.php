@@ -64,6 +64,12 @@ class TokenTest extends TestCase
         $this->assertNotEmpty($token->getAccessToken());
         $this->assertNotEmpty($token->getRefreshToken());
         $this->assertNotEmpty($token->getExpiresIn());
+        $this->assertEquals('foobar@bar.com', $token->getEmailAddress());
+        $this->assertEquals('Foo Bar', $token->getDisplayName());
+        $this->assertEquals('code', $token->getType());
+        $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
+        $this->assertEquals('abc', $token->getIdToken());
+        $this->assertEquals('Foo Bar', (string) $token);
     }
 
     /**

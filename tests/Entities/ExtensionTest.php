@@ -17,7 +17,10 @@ class ExtensionTest extends TestCase
         $extension = new Extension($data);
         $this->assertEquals('Microsoft.OutlookServices.OpenTypeExtension.com.symplicity.outlook', $extension->getId());
         $this->assertEquals('com.symplicity.outlook', $extension->getExtensionName());
-        $this->assertEquals(0E1123, $extension->policyId);
+        $this->assertEquals('0xE1123', $extension->policyId);
+        $this->assertEquals(null, $extension->test123);
+        $this->assertEquals('#Microsoft.OutlookServices.OpenTypeExtension', $extension->getODataType());
+        $this->assertEquals('https://outlook.office.com/api/v2.0/Users(\'ABC\')/Events(\'BCD==\')/Extensions(\'Microsoft.OutlookServices.OpenTypeExtension.com.symplicity.outlook\')', $extension->getODataId());
     }
 
     public function getExtensionData()
@@ -28,7 +31,7 @@ class ExtensionTest extends TestCase
                 "@odata.id" => "https://outlook.office.com/api/v2.0/Users('ABC')/Events('BCD==')/Extensions('Microsoft.OutlookServices.OpenTypeExtension.com.symplicity.outlook')",
                 "Id" => "Microsoft.OutlookServices.OpenTypeExtension.com.symplicity.outlook",
                 "ExtensionName" => "com.symplicity.outlook",
-                "policyId" => 0E1123
+                "policyId" => '0xE1123'
             ]]
         ];
     }

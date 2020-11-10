@@ -118,7 +118,7 @@ class Recurrence implements RecurrenceEntityInterface
 
     public function setFirstDayOfWeek(string $firstDayOfWeek): void
     {
-        $this->firstDayOfWeek = $firstDayOfWeek;
+        $this->firstDayOfWeek = DayOfTheWeek::$firstDayOfWeek();
     }
 
     public function setDayOfMonth(int $dayOfMonth): void

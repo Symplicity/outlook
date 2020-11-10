@@ -45,9 +45,6 @@ class ConnectionTest extends TestCase
             ->getMock();
     }
 
-    /**
-     * @throws \Symplicity\Outlook\Exception\ConnectionException
-     */
     public function testGet()
     {
         $mock = new MockHandler([
@@ -62,7 +59,10 @@ class ConnectionTest extends TestCase
 
         $handler = HandlerStack::create($mock);
         $retryHandler = $this->connection->createRetryHandler();
-        $handler->push(Middleware::retry($retryHandler, $this->connection->retryDelay()));
+        $handler->push(Middleware::retry($retryHandler, function (int $numberOfRetries) {
+            return 10 * $numberOfRetries;
+        }));
+
         $requestOptions = new RequestOptions('test', RequestType::Get());
 
         $client = new Client(['handler' => $handler]);
@@ -126,8 +126,7 @@ class ConnectionTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(200, [], '{"responses":[{"id":"foo","status":201,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","@odata.etag":"W\/\"123==\"","Id":"test==","LastModifiedDateTime":"2020-11-09T14:40:50.8444665-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=ANC%3D%3D&exvsurl=1&path=\/calendar\/item"}},{"id":"bar","status":201,"headers":{"etag":"W\/\"456==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'CDE==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'CDE==\')","@odata.etag":"W\/\"aHQ+t811Ok+IYnQ4RgjubgACguszQg==\"","Id":"CDE==","LastModifiedDateTime":"2020-11-09T14:40:51.1413001-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=cde&path=\/calendar\/item"}},{"id":"foo1","status":201,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","@odata.etag":"W\/\"123==\"","Id":"test==","LastModifiedDateTime":"2020-11-09T14:40:50.8444665-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=ANC%3D%3D&exvsurl=1&path=\/calendar\/item"}}, {"id":"bar1","status":400,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"error": {"code": "InvalidParams", "message": "Invalid params passed"}}}, {"id":"2323","status":204,"headers":[]}]}'),
-            new Response(202, ['Content-Length' => 0]),
-            new Response(401, ['Content-Length' => 0], stream_for('Client Error')),
+            new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')),
             new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')),
             new RequestException('Error Communicating with Server', new Request('GET', 'test.com')),
         ]);
@@ -149,11 +148,13 @@ class ConnectionTest extends TestCase
 
         $requestOptions->addBody($events);
         $requestOptions->addBatchHeaders();
+        $this->assertEquals('odata.continue-on-error', $requestOptions->getHeaders()['Prefer']);
+        $this->assertEquals('application/json', $requestOptions->getHeaders()['Accept']);
+        $this->assertRegExp('/multipart\/mixed; boundary=batch_/', $requestOptions->getHeaders()['Content-Type']);
+
         $this->createRetryHandler($mock);
 
-        $this->connection->expects($this->once())
-            ->method('upsertRetryDelay');
-
+        $this->connection->expects($this->exactly(2))->method('upsertRetryDelay');
         $response = $this->connection->batch($requestOptions);
         $this->assertInstanceOf(BatchResponse::class, $response);
         foreach ($response as $key => $value) {
@@ -161,8 +162,11 @@ class ConnectionTest extends TestCase
             $oResponse = $value['response'];
             if ($key == 'bar1') {
                 $this->assertInstanceOf(BatchErrorEntity::class, $oResponse);
+                $this->assertTrue(isset($value['item']['statusCode']));
+                $this->assertTrue($value['item']['statusCode'] >= 400);
             } elseif ($key == '2323') {
                 $this->assertInstanceOf(BatchResponseDeleteEntity::class, $oResponse);
+                $this->assertTrue($value['item']['statusCode'] == 204);
             } else {
                 $this->assertInstanceOf(BatchResponseReader::class, $oResponse);
                 $this->assertTrue(in_array($value['item']['statusCode'], [200, 201, 204]));
@@ -171,6 +175,9 @@ class ConnectionTest extends TestCase
             $this->assertTrue(is_array($value['item']));
             $this->assertArrayHasKey('eventType', $value['item']);
         }
+
+        $response = $this->connection->batch($requestOptions);
+        $this->assertNull($response);
     }
 
     public function testUpsertRetryDelay()
