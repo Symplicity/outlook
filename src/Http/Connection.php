@@ -135,7 +135,7 @@ class Connection implements ConnectionInterface
         }
 
         $outlookResponse = $this->execBatch($requestOptions, $batchContent, $boundary);
-        if ($outlookResponse instanceof Response) {
+        if ($outlookResponse !== null) {
             $responses = new BatchResponseHandler($outlookResponse, ['eventInfo' => static::$eventInfo]);
         }
 
@@ -237,7 +237,7 @@ class Connection implements ConnectionInterface
                 }
             }
 
-            $connection->logRetry($request, $response, $exception, [
+            $connection->logRetry($request, $response, [
                 'retries' => $retries,
             ]);
 
@@ -245,7 +245,7 @@ class Connection implements ConnectionInterface
         };
     }
 
-    public function logRetry(Request $request, ?Response $response = null, ?RequestException $exception = null, array $args = []): void
+    public function logRetry(Request $request, ?Response $response = null, array $args = []): void
     {
         $statusCode = 0;
         $reasonPhrase = '';

@@ -127,11 +127,12 @@ abstract class Calendar implements CalendarInterface
 
     protected function batch(array $params = []) : void
     {
-        $batch = [];
         $eventsToWrite = $this->getLocalEvents();
         $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
 
         foreach ($chunks as $chunk) {
+            $batch = [];
+
             /** @var WriterInterface $event */
             foreach ($chunk as $event) {
                 if ($event instanceof WriterInterface
@@ -183,7 +184,7 @@ abstract class Calendar implements CalendarInterface
         if ($requestHandler === null) {
             $token = $this->token;
             $requestHandler = new Request($token, [
-                'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
+                'requestOptions' => function(string $url, RequestType $methodType, array $args = []) {
                     return new RequestOptions($url, $methodType, $args);
                 },
                 'connection' => new Connection($this->logger, $connectionClientOptions)
