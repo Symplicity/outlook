@@ -90,7 +90,6 @@ class InputFormatterTest extends TestCase
 
         $delete = new Delete('ABC==', '123');
 
-        $deleteJSON = json_encode($delete);
         $formatter = new InputFormatter($logger);
         $expected = [
             'name' => '123',

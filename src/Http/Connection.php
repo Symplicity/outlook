@@ -180,20 +180,6 @@ class Connection implements ConnectionInterface
         return $contentToWrite;
     }
 
-    /**
-     * @deprecated
-     * @param array $responses
-     */
-    public function setResponses(array $responses)
-    {
-        foreach ($responses as $key => $response) {
-            $this->responses[$key] = [
-                'response' => new BatchResponse($response),
-                'item' => static::$eventInfo[$key] ?? []
-            ];
-        }
-    }
-
     public function createClientWithRetryHandler(?callable $customRetryDelay = null) : ClientInterface
     {
         $stack = $this->getRetryHandler($customRetryDelay);
@@ -227,7 +213,7 @@ class Connection implements ConnectionInterface
     public function createRetryHandler() : callable
     {
         $connection = $this;
-        return function (
+        return function(
             $retries,
             Request $request,
             ?Response $response = null,
@@ -269,9 +255,6 @@ class Connection implements ConnectionInterface
         if ($response instanceof Response) {
             $statusCode = $response->getStatusCode();
             $reasonPhrase = $response->getReasonPhrase();
-        } elseif ($exception instanceof RequestException) {
-            $statusCode = $exception->getCode();
-            $reasonPhrase = $exception->getMessage();
         }
 
         if ($this->logger instanceof LoggerInterface) {
@@ -288,14 +271,14 @@ class Connection implements ConnectionInterface
 
     public function retryDelay() : callable
     {
-        return function ($numberOfRetries) {
+        return function($numberOfRetries) {
             return 1000 * $numberOfRetries;
         };
     }
 
     public function upsertRetryDelay(): callable
     {
-        return function ($numberOfRetries, $response) {
+        return function($numberOfRetries, $response) {
             $retryAfter = $response->getHeaderLine('Retry-After');
             if (!empty($retryAfter) && $retryAfter < 20) {
                 return 1000 * $retryAfter;

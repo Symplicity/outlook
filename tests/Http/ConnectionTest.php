@@ -169,6 +169,7 @@ class ConnectionTest extends TestCase
                 $this->assertTrue($value['item']['statusCode'] == 204);
             } else {
                 $this->assertInstanceOf(BatchResponseReader::class, $oResponse);
+                $this->assertNotNull($oResponse->getLastModifiedDateTime());
                 $this->assertTrue(in_array($value['item']['statusCode'], [200, 201, 204]));
             }
 
