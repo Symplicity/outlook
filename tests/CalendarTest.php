@@ -6,10 +6,8 @@ namespace Symplicity\Outlook\Tests;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
@@ -26,7 +24,6 @@ use Symplicity\Outlook\Entities\Writer;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
-use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class CalendarTest extends TestCase
@@ -262,24 +259,6 @@ class CalendarTest extends TestCase
                 'endDateTime' => date("Y-m-d\TH:i:s", strtotime('2019-02-24'))
             ]
         ]);
-    }
-
-    public function fulFilledResponse()
-    {
-        return [
-            'bar' => [
-                'response' => new BatchResponse(['state' => PromiseInterface::FULFILLED, 'value' => new Response(200, [])]),
-                'item' => \GuzzleHttp\json_decode('{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null,"eventType":"1","Sensitivity":"Personal","IsAllDay": false}', true)
-            ],
-            'foo' => [
-                'response' => new BatchResponse(['state' => PromiseInterface::REJECTED, 'reason' => new ServerException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('POST', 'test'), new Response(500, ['X-Foo' => 'Bar']))]),
-                'item' => \GuzzleHttp\json_decode('{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null,"eventType":"1","Sensitivity":"Personal","IsAllDay": false}', true)
-            ],
-            'fooBar' => [
-                'response' => new BatchResponse(['state' => PromiseInterface::FULFILLED, 'value' => new Response(200, [])]),
-                'item' => \GuzzleHttp\json_decode('{"guid":"x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","eventType":null,"delete":true}', true)
-            ]
-        ];
     }
 
     public function getStream() : string
