@@ -17,7 +17,6 @@ use Symplicity\Outlook\Exception\BatchBoundaryMissingException;
 use Symplicity\Outlook\Exception\BatchLimitExceededException;
 use Symplicity\Outlook\Exception\BatchRequestEmptyException;
 use Symplicity\Outlook\Interfaces\Batch\FormatterInterface;
-use Symplicity\Outlook\Utilities\UpsertBatchResponse;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions as GuzzleRequestOptions;
@@ -28,7 +27,6 @@ use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
-use Symplicity\Outlook\Utilities\BatchResponse;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Batch\Response as BatchResponseHandler;
 
