@@ -75,7 +75,7 @@ abstract class Receiver implements ReceiverInterface
         return $this->entities;
     }
 
-    public function getState(): string
+    public function getState(): ?string
     {
         return $this->state;
     }

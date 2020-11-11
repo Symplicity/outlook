@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Batch\Response;
 use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
+use Symplicity\Outlook\Interfaces\Http\BatchConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
@@ -33,6 +34,9 @@ class Request
     /** @var Response $response */
     protected $response;
 
+    /** @var BatchConnectionInterface $connection */
+    protected $batchConnectionHandler;
+
     public function __construct(string $accessToken, array $args = [])
     {
         $this->rootUrl = static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION;
@@ -40,6 +44,7 @@ class Request
         $this->args = $args;
         $this->setRequestOptions($args['requestOptions']);
         $this->setConnection($args['connection']);
+        $this->setBatchConnectionHandler($args['batchConnectionHandler'] ?? null);
     }
 
     public function getEvents(string $url, array $params = []) : self
@@ -130,12 +135,7 @@ class Request
 
         $requestOptions->addBatchHeaders();
         $requestOptions->addBody($events);
-        return $this->connection->batch($requestOptions);
-    }
-
-    public function getConnection() : ConnectionInterface
-    {
-        return $this->connection;
+        return $this->getBatchConnectionHandler()->batch($requestOptions);
     }
 
     public function getRequestOptions() : Closure
@@ -148,6 +148,21 @@ class Request
         return $this->responseIterator;
     }
 
+    // Mark: Protected
+    protected function getBatchConnectionHandler(): BatchConnectionInterface
+    {
+        if ($this->batchConnectionHandler instanceof Closure) {
+            $this->batchConnectionHandler = $this->batchConnectionHandler->call($this);
+        }
+
+        if (!$this->batchConnectionHandler instanceof BatchConnectionInterface) {
+            throw new \InvalidArgumentException('Batch requested but handler is not set');
+        }
+
+        return $this->batchConnectionHandler;
+    }
+
+    // Mark: Private
     private function setRequestOptions(?Closure $requestOptions): void
     {
         $this->requestOptions = $requestOptions;
@@ -158,11 +173,12 @@ class Request
         $this->connection = $connection;
     }
 
-    public function getResponseFromBatch()
+    private function setBatchConnectionHandler(?Closure $batchConnectionHandler): void
     {
-        return $this->response;
+        $this->batchConnectionHandler = $batchConnectionHandler;
     }
 
+    // Mark Static
     public static function getRootApi()
     {
         return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION;

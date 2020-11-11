@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Exception\ReadError;
+use Symplicity\Outlook\Http\Batch;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
@@ -183,11 +184,15 @@ abstract class Calendar implements CalendarInterface
     {
         if ($requestHandler === null) {
             $token = $this->token;
+            $logger = $this->logger;
             $requestHandler = new Request($token, [
                 'requestOptions' => function(string $url, RequestType $methodType, array $args = []) {
                     return new RequestOptions($url, $methodType, $args);
                 },
-                'connection' => new Connection($this->logger, $connectionClientOptions)
+                'connection' => new Connection($logger, $connectionClientOptions),
+                'batchConnectionHandler' => function() use ($logger, $connectionClientOptions) {
+                    return new Batch($logger, $connectionClientOptions);
+                }
             ]);
         }
 

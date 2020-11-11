@@ -45,15 +45,17 @@ class ReceiverTest extends TestCase
 
     public function testExec()
     {
+        $clientState = '123-345';
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, ['Clientstate' => $clientState], stream_for($this->getStream())),
+            new Response(200, ['Clientstate' => $clientState], stream_for($this->getStream())),
             new Response(400, [], ''),
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
+        $this->connection->expects($this->exactly(4))->method('createClientWithRetryHandler')->willReturn($client);
 
         $calendarStub = $this->getMockForAbstractClass(Calendar::class, [
             'fooToken',
@@ -71,26 +73,70 @@ class ReceiverTest extends TestCase
         $reader = (new Reader())
             ->hydrate(json_decode($this->getStream(), true));
 
-        $this->receiverStub->hydrate($this->getOData());
-        $this->receiverStub->expects($this->exactly(2))->method('validate');
-        $this->receiverStub->expects($this->exactly(2))->method('willWrite')->with($calendarStub, $this->logger, $this->receiverStub->getEntities()[0]);
-        $this->receiverStub->expects($this->once())->method('didWrite')->with($calendarStub, $this->logger, $reader, $this->receiverStub->getEntities()[0]);
-        $this->checkEntity($this->receiverStub->getEntities()[0]);
-        $this->receiverStub->exec($calendarStub, $this->logger, ['skipParams' => true]);
+        $oData = $this->getOData() + ['state' => $clientState];
+        $oData['value'] = array_merge($oData['value'], [new NotificationReaderEntity([
+            '@odata.type' => '#Microsoft.OutlookServices.Notification',
+            'Id' => null,
+            'SubscriptionId' => 'ABC==',
+            'SubscriptionExpirationDateTime' => '2020-09-23T13:58:53.708556Z',
+            'SequenceNumber' => 1,
+            'ChangeType' => 'Updated',
+            'Resource' => 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')',
+            'ResourceData' => [
+                '@odata.type' => '#Microsoft.OutlookServices.Event',
+                '@odata.id' => 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')',
+                '@odata.etag' => 'W/"123"',
+                'Id' => 'ACX2nRLAAAAA=='
+            ]
+        ])]);
 
-        $this->receiverStub->expects($this->once())->method('eventWriteFailed');
+        $this->receiverStub->hydrate($oData);
+        $this->receiverStub->expects($this->exactly(4))->method('validate');
+
+        $this->receiverStub->expects($this->exactly(4))
+            ->method('willWrite')
+            ->withConsecutive([$calendarStub, $this->logger, $this->receiverStub->getEntities()[0], ['skipParams' => true]], [$calendarStub, $this->logger, $this->receiverStub->getEntities()[1]]);
+
+        $this->receiverStub->expects($this->exactly(2))
+            ->method('didWrite')
+            ->withConsecutive([$calendarStub, $this->logger, $reader, $this->receiverStub->getEntities()[0]], [$calendarStub, $this->logger, $reader, $this->receiverStub->getEntities()[1]]);
+
+        $this->checkEntity($this->receiverStub->getEntities()[0]);
+        $this->checkEntity($this->receiverStub->getEntities()[1]);
         $this->receiverStub->exec($calendarStub, $this->logger, ['skipParams' => true]);
+        $this->assertEquals($clientState, $this->receiverStub->getState());
+
+        $this->receiverStub->expects($this->exactly(2))->method('eventWriteFailed');
+        $this->receiverStub->exec($calendarStub, $this->logger, ['skipParams' => true]);
+    }
+
+    public function testValidateException()
+    {
+        $calendarStub = $this->getMockForAbstractClass(Calendar::class, [], '', false);
+        $oData['value'] = [new NotificationReaderEntity([
+            '@odata.type' => '#Microsoft.OutlookServices.Notification',
+            'Id' => null,
+            'SubscriptionExpirationDateTime' => '2020-09-23T13:58:53.708556Z',
+            'SequenceNumber' => 1,
+            'ChangeType' => 'Updated',
+            'Resource' => 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')',
+            'ResourceData' => [
+                '@odata.type' => '#Microsoft.OutlookServices.Event',
+                '@odata.id' => 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')',
+                '@odata.etag' => 'W/"123"',
+                'Id' => 'ACX2nRLAAAAA=='
+            ]
+        ])];
+
+        $this->connection->expects($this->never())->method('createClientWithRetryHandler');
+        $receiverStub = $this->getMockForAbstractClass(Receiver::class, [], '', true, true, true, []);
+        $receiverStub->hydrate($oData);
+        $receiverStub->expects($this->exactly(1))->method('eventWriteFailed');
+        $receiverStub->exec($calendarStub, $this->logger, ['skipParams' => true]);
     }
 
     public function testExecExceptions()
     {
-        $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getStream())),
-            new Response(400, [], '')
-        ]);
-
-        $handler = HandlerStack::create($mock);
-
         $connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs([$this->logger])
             ->setMethods(['createClient', 'createClientWithRetryHandler', 'get'])
@@ -116,11 +162,14 @@ class ReceiverTest extends TestCase
         $receiverStub->hydrate($this->getOData());
 
         $expectedUrl = 'https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')?$expand=Extensions($filter=Id%20eq%20\'Microsoft.OutlookServices.OpenTypeExtension.symplicitytest\')';
-        $connection->expects($this->exactly(2))->method('get')->with($expectedUrl)->willReturnOnConsecutiveCalls(new Response(200, [], $this->getStream()), new Response(200, [], function () {
+        $connection->expects($this->exactly(2))
+            ->method('get')
+            ->with($expectedUrl)
+            ->willReturnOnConsecutiveCalls(new Response(200, [], $this->getStream()), new Response(200, [], function () {
             return [];
         }));
-        $receiverStub->exec($calendarStub, $logger, ['skipParams' => true]);
 
+        $receiverStub->exec($calendarStub, $logger, ['skipParams' => true]);
         $receiverStub = $this->getReceiverClass($receivedFailedWrites);
         $receiverStub->hydrate($this->getOData());
         $receiverStub->exec($calendarStub, $logger, ['skipParams' => true]);
@@ -180,7 +229,7 @@ class ReceiverTest extends TestCase
                             '@odata.etag' => 'W/"123"',
                             'Id' => 'ACX2nRLAAAAA==',
                         ],
-                    ],
+                    ]
                 ]
             ];
     }

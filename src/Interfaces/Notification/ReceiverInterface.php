@@ -44,5 +44,5 @@ interface ReceiverInterface
      * Get client State
      * @return string
      */
-    public function getState(): string;
+    public function getState(): ?string;
 }

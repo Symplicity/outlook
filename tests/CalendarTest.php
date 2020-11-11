@@ -12,6 +12,7 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Exception\ReadError;
+use Symplicity\Outlook\Http\Batch;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -30,7 +31,9 @@ class CalendarTest extends TestCase
 {
     protected $stub;
     protected $connection;
+    protected $batchConnection;
     protected $request;
+    protected $logger;
 
     public function setUp() : void
     {
@@ -41,11 +44,19 @@ class CalendarTest extends TestCase
             ->setMethods(['createClient', 'createClientWithRetryHandler'])
             ->getMock();
 
+        $batchConnection = $this->batchConnection = $this->getMockBuilder(Batch::class)
+            ->setConstructorArgs([$logger])
+            ->setMethods(['createClient', 'createClientWithRetryHandler'])
+            ->getMock();
+
         $this->request = new Request('fooTest', [
             'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
                 return new RequestOptions($url, $methodType, $args);
             },
-            'connection' => $this->connection
+            'connection' => $this->connection,
+            'batchConnectionHandler' => function() use ($batchConnection) {
+                return $batchConnection;
+            }
         ]);
 
         $this->stub = $this->getMockForAbstractClass(Calendar::class, [
@@ -54,6 +65,8 @@ class CalendarTest extends TestCase
                 'request' => $this->request
             ]
         ], '', true, true, true, ['handleBatchResponse', 'saveEventLocal']);
+
+        $this->logger = $logger;
     }
 
     public function testGetEvent()
@@ -190,7 +203,9 @@ class CalendarTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(3))->method('createClientWithRetryHandler')->willReturn($client);
+        $this->batchConnection->expects($this->exactly(1))->method('createClientWithRetryHandler')->willReturn($client);
+        $this->batchConnection->expects($this->never())->method('createClient');
+        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
         $this->connection->expects($this->never())->method('createClient');
 
         $this->stub->isBatchRequest();
@@ -259,6 +274,40 @@ class CalendarTest extends TestCase
                 'endDateTime' => date("Y-m-d\TH:i:s", strtotime('2019-02-24'))
             ]
         ]);
+    }
+
+    public function testBatchExceptionHandler()
+    {
+        $request = new Request('fooTest', [
+            'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
+                return new RequestOptions($url, $methodType, $args);
+            },
+            'connection' => $this->connection,
+            'batchConnectionHandler' => function() {
+                return new \stdClass();
+            }
+        ]);
+
+        $this->stub = $this->getMockForAbstractClass(Calendar::class, [
+            'fooToken', [
+                'logger' => $this->logger,
+                'request' => $request
+            ]
+        ], '', true, true, true, ['handleBatchResponse', 'saveEventLocal']);
+
+        $this->stub->expects($this->once())->method('getLocalEvents')->willReturn([
+            (new Writer())
+                ->setId('bar')
+                ->setSubject('test')
+                ->method(new RequestType(RequestType::Get))
+                ->setInternalEventType('1')
+                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
+                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
+                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time'))
+        ]);
+
+        $this->expectExceptionObject(new \InvalidArgumentException('Batch requested but handler is not set'));
+        $this->stub->push();
     }
 
     public function getStream() : string
