@@ -33,8 +33,6 @@ class Request
 
     /** @var Response $response */
     protected $response;
-
-    /** @var BatchConnectionInterface $connection */
     protected $batchConnectionHandler;
 
     public function __construct(string $accessToken, array $args = [])

@@ -10,7 +10,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\CurlMultiHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions as GuzzleRequestOptions;
 use Psr\Http\Message\ResponseInterface;
@@ -136,7 +136,7 @@ class Connection implements ConnectionInterface
         $connection = $this;
         return function(
             $retries,
-            Request $request,
+            GuzzleRequest $request,
             ?Response $response = null,
             /** @scrutinizer ignore-unused */ ?RequestException $exception = null
         ) use ($connection) {
@@ -168,7 +168,7 @@ class Connection implements ConnectionInterface
         };
     }
 
-    public function logRetry(Request $request, ?Response $response = null, array $args = []): void
+    public function logRetry(GuzzleRequest $request, ?Response $response = null, array $args = []): void
     {
         $statusCode = 0;
         $reasonPhrase = '';
