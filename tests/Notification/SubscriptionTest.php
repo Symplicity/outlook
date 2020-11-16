@@ -11,6 +11,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use function GuzzleHttp\Psr7\stream_for;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -130,12 +131,13 @@ class SubscriptionTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(204, [], stream_for(json_encode($this->getSubscriptionResponse()))),
-            new Response(400, [], ''),
+            new Response(202, [], ''),
+            new Response(404, [], ''),
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
-        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
+        $this->connection->expects($this->exactly(3))->method('createClient')->willReturn($client);
 
         $subscriber = new Subscription($this->logger);
         $subscriber->setConnection($this->connection);
@@ -143,8 +145,22 @@ class SubscriptionTest extends TestCase
         $response = $subscriber->delete('ABC==', 'abc');
         $this->assertTrue($response);
 
+        $response = $subscriber->delete('ABC==', 'abc');
+        $this->assertFalse($response);
+
         $this->expectException(ClientException::class);
         $subscriber->delete('ABC==', 'abc');
+    }
+
+    public function testConnectionHandler()
+    {
+        $subscriber = new Subscription($this->logger);
+        $connection = $subscriber->getConnection();
+        $this->assertInstanceOf(ConnectionInterface::class, $connection);
+        $this->assertInstanceOf(Connection::class, $connection);
+
+        $subscriber->setConnection($this->connection);
+        $this->assertInstanceOf(ConnectionInterface::class, $connection);
     }
 
     public function getSubscriptionResponse()

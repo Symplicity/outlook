@@ -23,7 +23,6 @@ return PhpCsFixer\Config::create()
     ])
     ->setFinder(
         PhpCsFixer\Finder::create()
-            ->exclude('lang')
             ->in(__DIR__)
     )
 ;

@@ -133,7 +133,7 @@ class Request
 
         $requestOptions->addBatchHeaders();
         $requestOptions->addBody($events);
-        return $this->getBatchConnectionHandler()->batch($requestOptions);
+        return $this->getBatchConnectionHandler()->post($requestOptions);
     }
 
     public function getRequestOptions() : Closure

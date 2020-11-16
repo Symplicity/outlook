@@ -10,5 +10,5 @@ interface BatchConnectionInterface extends ConnectionInterface
      * @param RequestOptionsInterface $requestOptions
      * @return mixed
      */
-    public function batch(RequestOptionsInterface $requestOptions);
+    public function post(RequestOptionsInterface $requestOptions);
 }

@@ -145,6 +145,11 @@ class ConnectionTest extends TestCase
         if ($expected) {
             $this->assertTrue($this->handler->hasWarningThatContains('Retrying'));
         }
+
+        $retryDelay = $connectionHandler->retryDelay();
+        $this->assertIsCallable($retryDelay);
+        $response = $retryDelay->call($connectionHandler, $retries);
+        $this->assertEquals(1000 * $retries, $response);
     }
 
     public function createHandler(\Countable $mock)

@@ -19,13 +19,14 @@ use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\BatchConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Http\Request as OutlookHttpRequest;
 
 class Batch extends Connection implements BatchConnectionInterface
 {
-    public function batch(RequestOptionsInterface $requestOptions, array $args = []): ?BatchResponseHandler
+    public function post(RequestOptionsInterface $requestOptions, array $args = []): ?BatchResponseHandler
     {
-        $boundary = $this->getBatchBoundary($requestOptions);
-        $body = $this->getBatchBody($requestOptions);
+        $boundary = $this->getBoundary($requestOptions);
+        $body = $this->getBody($requestOptions);
         $responses = null;
 
         $batchContent = $this->getParsedBody($body, $args);
@@ -33,7 +34,7 @@ class Batch extends Connection implements BatchConnectionInterface
             throw new BatchRequestEmptyException('Batch request is empty');
         }
 
-        $outlookResponse = $this->execBatch($requestOptions, $batchContent, $boundary);
+        $outlookResponse = $this->exec($requestOptions, $batchContent, $boundary);
         if ($outlookResponse !== null) {
             $responses = new BatchResponseHandler($outlookResponse, ['eventInfo' => static::$eventInfo]);
         }
@@ -48,10 +49,10 @@ class Batch extends Connection implements BatchConnectionInterface
         foreach ($body as $writer) {
             switch (true) {
                 case $writer instanceof DeleteInterface:
-                    $batchContent[] = $this->prepareBatchDelete($writer, $upsertInputFormatter);
+                    $batchContent[] = $this->prepareDelete($writer, $upsertInputFormatter);
                     break;
                 default:
-                    $batchContent[] = $this->prepareBatchWrite($writer, $upsertInputFormatter);
+                    $batchContent[] = $this->prepareWrite($writer, $upsertInputFormatter);
             }
 
             unset($writer);
@@ -60,7 +61,7 @@ class Batch extends Connection implements BatchConnectionInterface
         return $batchContent;
     }
 
-    private function prepareBatchWrite(WriterInterface $writer, FormatterInterface $upsertInputFormatter): array
+    private function prepareWrite(WriterInterface $writer, FormatterInterface $upsertInputFormatter): array
     {
         $contentToWrite = [];
         $formattedContent = $upsertInputFormatter->format($writer);
@@ -77,7 +78,7 @@ class Batch extends Connection implements BatchConnectionInterface
         return $contentToWrite;
     }
 
-    private function prepareBatchDelete(DeleteInterface $delete, FormatterInterface $upsertInputFormatter): array
+    private function prepareDelete(DeleteInterface $delete, FormatterInterface $upsertInputFormatter): array
     {
         $contentToWrite = [];
         $formattedContent = $upsertInputFormatter->format($delete);
@@ -96,14 +97,14 @@ class Batch extends Connection implements BatchConnectionInterface
         return $contentToWrite;
     }
 
-    protected function execBatch(RequestOptionsInterface $requestOptions, array $batchContent, string $boundary): ?Response
+    protected function exec(RequestOptionsInterface $requestOptions, array $batchContent, string $boundary): ?Response
     {
         $responses = null;
 
         try {
             /** @var Client $client */
             $client = $this->createClientWithRetryHandler($this->upsertRetryDelay());
-            $responses = $client->request(RequestType::Post, \Symplicity\Outlook\Http\Request::getBatchApi(), [
+            $responses = $client->request(RequestType::Post, OutlookHttpRequest::getBatchApi(), [
                 'headers' => $requestOptions->getHeaders(),
                 'body' => new MultipartStream($batchContent, $boundary)
             ]);
@@ -127,7 +128,7 @@ class Batch extends Connection implements BatchConnectionInterface
     }
 
     // Mark: Private
-    private function getBatchBoundary(RequestOptionsInterface $requestOptions): string
+    private function getBoundary(RequestOptionsInterface $requestOptions): string
     {
         if (($boundary = $requestOptions->getBatchBoundary()) === null) {
             throw new BatchBoundaryMissingException('batch boundary id is missing');
@@ -136,7 +137,7 @@ class Batch extends Connection implements BatchConnectionInterface
         return $boundary;
     }
 
-    private function getBatchBody(RequestOptionsInterface $requestOptions): array
+    private function getBody(RequestOptionsInterface $requestOptions): array
     {
         $body = $requestOptions->getBody();
         if (count($body) > Calendar::BATCH_BY) {

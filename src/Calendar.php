@@ -44,7 +44,7 @@ abstract class Calendar implements CalendarInterface
     {
         $this->token = $token;
         $this->logger = $args['logger'] ?? null;
-        $this->setRequestHandler($args['request'], $args['connectionClientOptions'] ?? []);
+        $this->setRequestHandler($args['request'] ?? null, $args['connectionClientOptions'] ?? []);
         $this->reader = $args['reader'] ?? null;
     }
 

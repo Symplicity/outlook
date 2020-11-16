@@ -78,7 +78,7 @@ class BatchConnectionTest extends TestCase
         $this->createRetryHandler($mock);
 
         $this->connection->expects($this->exactly(2))->method('upsertRetryDelay');
-        $response = $this->connection->batch($requestOptions);
+        $response = $this->connection->post($requestOptions);
         $this->assertInstanceOf(BatchResponse::class, $response);
         foreach ($response as $key => $value) {
             /** @var BatchResponseInterface $oResponse */
@@ -100,7 +100,7 @@ class BatchConnectionTest extends TestCase
             $this->assertArrayHasKey('eventType', $value['item']);
         }
 
-        $response = $this->connection->batch($requestOptions);
+        $response = $this->connection->post($requestOptions);
         $this->assertNull($response);
     }
 
@@ -108,7 +108,7 @@ class BatchConnectionTest extends TestCase
     {
         $requestOptions = new RequestOptions('test', new RequestType(RequestType::Post), ['token' => 'ABC12==']);
         $this->expectExceptionObject(new BatchBoundaryMissingException('batch boundary id is missing'));
-        $this->connection->batch($requestOptions);
+        $this->connection->post($requestOptions);
     }
 
     public function testBatchLimitExceededException()
@@ -124,7 +124,7 @@ class BatchConnectionTest extends TestCase
         $requestOptions->addBatchHeaders();
         $requestOptions->addBody($events);
         $this->expectExceptionObject(new BatchLimitExceededException('batch maximum limit of 20 items was exceeded'));
-        $this->connection->batch($requestOptions);
+        $this->connection->post($requestOptions);
     }
 
     public function testBatchBody()
@@ -149,7 +149,7 @@ class BatchConnectionTest extends TestCase
         $requestOptions->addBatchHeaders();
         $requestOptions->addBody($events);
         $this->expectExceptionObject(new BatchRequestEmptyException('Batch request is empty'));
-        $this->connection->batch($requestOptions, [
+        $this->connection->post($requestOptions, [
             'batchInputFormatter' => $customBatchFormmatter
         ]);
     }
