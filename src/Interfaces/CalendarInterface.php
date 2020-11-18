@@ -58,6 +58,8 @@ interface CalendarInterface
      * url : /me/events/{{eventId}}
      * @param string $url
      * @param array $params
+     * @return ReaderEntityInterface | null
+     * @throws ReadError
      */
     public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface;
 
@@ -68,4 +70,17 @@ interface CalendarInterface
      * @param array $params
      */
     public function getEventInstances(string $url, array $params = []) : void;
+
+    /**
+     * Individual push event handler method, use this if you dont want to use sync
+     * @param array $params
+     */
+    public function push(array $params = []) : void;
+
+    /**
+     * Individual pull event handler method, use this if you dont want to use sync
+     * @param array $params
+     * @throws ReadError
+     */
+    public function pull(array $params = []) : void;
 }

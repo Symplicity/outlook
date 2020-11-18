@@ -60,6 +60,30 @@ abstract class Calendar implements CalendarInterface
         $this->batch($params);
     }
 
+    public function pull(array $params = []) : void
+    {
+        try {
+            $url = $params['endPoint'];
+            /** @var ResponseIteratorInterface $events */
+            $this->requestHandler->getEvents($url, $params);
+            foreach ($this->requestHandler->getResponseIterator()->each() as $event) {
+                if (isset($params['skipOccurrences'], $event['Type'])
+                    && $event['Type'] == EventTypes::Occurrence) {
+                    continue;
+                }
+
+                if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
+                    $this->deleteEventLocal($this->getReader()->deleted($event));
+                    continue;
+                }
+
+                $this->saveEventLocal($this->getEntity($event));
+            }
+        } catch (\Exception $e) {
+            throw new ReadError($e->getMessage(), $e->getCode());
+        }
+    }
+
     public function upsert(WriterInterface $writer, array $params = []): ResponseInterface
     {
         return $this->requestHandler->upsert($writer, $params);
@@ -144,30 +168,6 @@ abstract class Calendar implements CalendarInterface
 
             $responses = $this->requestHandler->batch($batch, $params);
             $this->handleBatchResponse($responses);
-        }
-    }
-
-    protected function pull(array $params = []) : void
-    {
-        try {
-            $url = $params['endPoint'];
-            /** @var ResponseIteratorInterface $events */
-            $this->requestHandler->getEvents($url, $params);
-            foreach ($this->requestHandler->getResponseIterator()->each() as $event) {
-                if (isset($params['skipOccurrences'], $event['Type'])
-                    && $event['Type'] == EventTypes::Occurrence) {
-                    continue;
-                }
-
-                if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
-                    $this->deleteEventLocal($this->getReader()->deleted($event));
-                    continue;
-                }
-
-                $this->saveEventLocal($this->getEntity($event));
-            }
-        } catch (\Exception $e) {
-            throw new ReadError($e->getMessage(), $e->getCode());
         }
     }
 
