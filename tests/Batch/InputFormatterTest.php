@@ -46,7 +46,7 @@ class InputFormatterTest extends TestCase
         // Error Test
         $streamHandler = $this->getMockBuilder(Stream::class)
             ->setConstructorArgs([$writer])
-            ->setMethods(['create'])
+            ->onlyMethods(['create'])
             ->getMock();
 
         $streamHandler->expects($this->once())->method('create')->willThrowException(new \RuntimeException('Unable to stream'));

@@ -12,8 +12,8 @@ use Symplicity\Outlook\Interfaces\Entity\BatchWriterEntityInterface;
 
 class InputFormatter implements FormatterInterface
 {
-    protected const CONTENT_TRANSFER_ENCODING = 'binary';
-    protected const CONTENT_TYPE = 'application/http';
+    public const CONTENT_TRANSFER_ENCODING = 'binary';
+    public const CONTENT_TYPE = 'application/http';
 
     private $logger;
     private $stream;
