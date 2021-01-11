@@ -41,12 +41,12 @@ class CalendarTest extends TestCase
         $logger->pushHandler(new NullHandler());
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs([$logger])
-            ->setMethods(['createClient', 'createClientWithRetryHandler'])
+            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
             ->getMock();
 
         $batchConnection = $this->batchConnection = $this->getMockBuilder(Batch::class)
             ->setConstructorArgs([$logger])
-            ->setMethods(['createClient', 'createClientWithRetryHandler'])
+            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
             ->getMock();
 
         $this->request = new Request('fooTest', [

@@ -99,7 +99,7 @@ class WriterTest extends TestCase
         $this->assertJsonStringEqualsJsonString($expectedJson, json_encode($writer));
         $this->assertEquals('ABC', (string) $writer);
         $this->assertInstanceOf(RequestType::class, $writer->getRequestType());
-        $this->assertRegExp('/ABC/', $writer->getUrl());
+        $this->assertMatchesRegularExpression('/ABC/', $writer->getUrl());
         $this->assertEquals(RequestType::Patch, $writer->getMethod());
         $this->assertEquals('{"@odata.type":"test","ExtensionName":"test123","policyId":"test"}', json_encode($writer->getExtensions()));
         $this->assertEquals('ABC', $writer->getGuid());
