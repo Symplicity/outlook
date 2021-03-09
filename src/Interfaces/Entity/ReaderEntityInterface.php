@@ -5,6 +5,7 @@ namespace Symplicity\Outlook\Interfaces\Entity;
 use Symplicity\Outlook\Entities\Location;
 use Symplicity\Outlook\Entities\Organizer;
 use Symplicity\Outlook\Utilities\EventTypes;
+use Symplicity\Outlook\Utilities\FreeBusy;
 
 interface ReaderEntityInterface
 {
@@ -25,5 +26,6 @@ interface ReaderEntityInterface
     public function getOrganizer() : ?Organizer;
     public function getEventType() : EventTypes;
     public function getSeriesMasterId(): ?string;
+    public function getFreeBusyStatus(): ?string;
     public function getExtensions(): array;
 }

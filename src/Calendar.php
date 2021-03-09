@@ -121,16 +121,16 @@ abstract class Calendar implements CalendarInterface
         }
     }
 
+    /**
+     * @param string $url
+     * @param array $params
+     * @throws ReadError
+     */
     public function getEventInstances(string $url, array $params = []) : void
     {
         try {
-            $response = $this->requestHandler->getEvent($url, $params);
-            $event = ResponseHandler::toArray($response);
-            if (!count($event)) {
-                throw new ReadError('Could not find event', 404);
-            }
-
-            foreach ($event['value'] as $event) {
+            $responseIterator = $this->requestHandler->getEventIterator($url, $params);
+            foreach ($responseIterator->each() as $event) {
                 if (isset($params['skipOccurrences'], $event['Type'])
                     && $event['Type'] == EventTypes::Occurrence) {
                     continue;

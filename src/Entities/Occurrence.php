@@ -7,6 +7,7 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
+use Symplicity\Outlook\Utilities\FreeBusy;
 
 class Occurrence implements ReaderEntityInterface
 {
@@ -107,6 +108,11 @@ class Occurrence implements ReaderEntityInterface
     public function getSeriesMasterId(): ?string
     {
         return $this->seriesMasterId;
+    }
+
+    public function getFreeBusyStatus(): ?string
+    {
+        return null;
     }
 
     public function getExtensions(): array

@@ -12,6 +12,7 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Utilities\DayOfTheWeek;
 use Symplicity\Outlook\Utilities\EventTypes;
+use Symplicity\Outlook\Utilities\FreeBusy;
 use Symplicity\Outlook\Utilities\PatternType;
 use Symplicity\Outlook\Utilities\RangeType;
 use Symplicity\Outlook\Utilities\RecurrenceIndex;
@@ -45,6 +46,7 @@ class ReaderTest extends TestCase
         $this->assertNotEmpty($reader->getDate()->getEndDate());
         $this->assertNotEmpty($reader->getDate()->getModifiedDate());
         $this->assertNotEmpty($reader->getDate()->getTimezone());
+        $this->assertSame(FreeBusy::Free, $reader->getFreeBusyStatus());
         $this->assertTrue($reader->getBody()->isHTML());
         $this->assertFalse($reader->getBody()->isText());
         $this->assertEquals('foo@bar.com', $reader->getOrganizer()->getEmail());
