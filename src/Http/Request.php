@@ -11,6 +11,7 @@ use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Interfaces\Http\BatchConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
+use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 
 class Request
@@ -89,6 +90,32 @@ class Request
 
         return $this->connection->get($url, $requestOptions, ['skipQueryParams' => $params['skipQueryParams'] ?? true]);
     }
+
+    public function getEventIterator(string $url, array $params = []): ResponseIteratorInterface
+    {
+        $options = [
+            'headers' => $params['headers'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'preferenceHeaders' => $params['preferenceHeaders'] ?? [],
+            'token' => $this->accessToken
+        ];
+
+        if (isset($params['queryParams'])) {
+            $options['queryParams'] = $params['queryParams'] ?? [];
+        }
+
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
+
+        $requestOptions->addDefaultHeaders(true);
+        $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
+            'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
+        ]));
+
+        $responseIterator = new ResponseIterator($this->connection);
+        return $responseIterator->setItems($url, $requestOptions, ['skipQueryParams' => $params['skipQueryParams'] ?? true]);
+    }
+
 
     public function upsert(WriterInterface $writer, array $params = [])
     {

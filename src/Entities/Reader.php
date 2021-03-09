@@ -9,6 +9,7 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
+use Symplicity\Outlook\Utilities\FreeBusy;
 
 class Reader implements ReaderEntityInterface
 {
@@ -27,6 +28,7 @@ class Reader implements ReaderEntityInterface
     protected $organizer;
     protected $eventType;
     protected $seriesMasterId;
+    protected $freeBusy;
     protected $extensions = [];
 
     public function hydrate(array $data = []) : ReaderEntityInterface
@@ -54,6 +56,7 @@ class Reader implements ReaderEntityInterface
         $this->setPrivate($data['Sensitivity']);
         $this->setOrganizer($data['Organizer'] ?? []);
         $this->setSeriesMasterId($data['SeriesMasterId'] ?? null);
+        $this->setFreeBusy($data['ShowAs']);
         $this->setExtensions($data['Extensions'] ?? []);
         return $this;
     }
@@ -145,6 +148,11 @@ class Reader implements ReaderEntityInterface
         return $this->seriesMasterId;
     }
 
+    public function getFreeBusyStatus(): ?string
+    {
+        return $this->freeBusy;
+    }
+
     public function getExtensions(): array
     {
         return $this->extensions;
@@ -229,6 +237,14 @@ class Reader implements ReaderEntityInterface
         $this->eventType = EventTypes::Single;
         if ($value = EventTypes::search($eventType)) {
             $this->eventType = EventTypes::$value();
+        }
+    }
+
+    public function setFreeBusy(string $freeBusy): void
+    {
+        $this->freeBusy = FreeBusy::Busy;
+        if ($value = FreeBusy::search($freeBusy)) {
+            $this->freeBusy = $value;
         }
     }
 
