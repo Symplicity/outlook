@@ -11,6 +11,7 @@ use Symplicity\Outlook\Entities\Writer;
 use Symplicity\Outlook\Interfaces\Entity\ExtensionWriterInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
 use Symplicity\Outlook\Utilities\ChangeType;
+use Symplicity\Outlook\Utilities\FreeBusy;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Utilities\SensitivityType;
 
@@ -40,12 +41,18 @@ class WriterTest extends TestCase
         $writer = (new Writer())
             ->setBody($responseBody)
             ->setStartDate($startDate)
-            ->setEndDate($endDate);
+            ->setEndDate($endDate)
+            ->setFreeBusy(new FreeBusy(FreeBusy::Free));
 
         $jsonSerialize = json_encode($writer);
-        $expectedJsonString = '{"Subject":null,"Body":{"ContentType":"HTML","Content":" foo "},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-05T00:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","Recurrence":null,"IsAllDay":false}';
+        $expectedJsonString = '{"Subject":null,"Body":{"ContentType":"HTML","Content":" foo "},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-05T00:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","ShowAs": "Free","Recurrence":null,"IsAllDay":false}';
         $this->assertJsonStringEqualsJsonString($expectedJsonString, $jsonSerialize);
         $this->assertEquals('foo', $responseBody->getSanitizedContent());
+
+        $writer->setFreeBusy(new FreeBusy(FreeBusy::Busy));
+        $jsonSerialize = json_encode($writer);
+        $expectedJsonString = '{"Subject":null,"Body":{"ContentType":"HTML","Content":" foo "},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-05T00:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","ShowAs": "Busy","Recurrence":null,"IsAllDay":false}';
+        $this->assertJsonStringEqualsJsonString($expectedJsonString, $jsonSerialize);
     }
 
     public function testWriterExtensions()
@@ -84,7 +91,7 @@ class WriterTest extends TestCase
             ])
             ->setExtensions($this->getExtensionWriter());
 
-        $expectedJson = '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"NY"},"Sensitivity":"Confidential","Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}},"IsAllDay":true,"Extensions":[{"@odata.type":"test","ExtensionName":"test123","policyId":"test"}]}';
+        $expectedJson = '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"NY"},"Sensitivity":"Confidential","Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}},"ShowAs": "Busy","IsAllDay":true,"Extensions":[{"@odata.type":"test","ExtensionName":"test123","policyId":"test"}]}';
         $this->assertJsonStringEqualsJsonString($expectedJson, json_encode($writer));
         $this->assertEquals('ABC', (string) $writer);
         $this->assertInstanceOf(RequestType::class, $writer->getRequestType());
@@ -110,7 +117,7 @@ class WriterTest extends TestCase
                     'url' => '/Me/events',
                     'method' => 'POST',
                     'id' => 'foo',
-                    'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","Recurrence":null,"IsAllDay":false,"Extensions":[{"@odata.type":"test","ExtensionName":"test123","policyId":"test"}]}'
+                    'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","ShowAs": "Busy","Recurrence":null,"IsAllDay":false,"Extensions":[{"@odata.type":"test","ExtensionName":"test123","policyId":"test"}]}'
             ]],
             [(new Writer())
                 ->setId('foo')
@@ -124,7 +131,7 @@ class WriterTest extends TestCase
                 'url' => '/Me/events',
                 'method' => 'POST',
                 'id' => 'foo',
-                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T09:00:00","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Personal", "IsAllDay": true}'
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T09:00:00","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Personal","ShowAs": "Busy","IsAllDay": true}'
             ]],
             [(new Writer())
                 ->setId('foo')
@@ -138,7 +145,7 @@ class WriterTest extends TestCase
                 'url' => '/Me/events',
                 'method' => 'POST',
                 'id' => 'foo',
-                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Private", "IsAllDay": false}'
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":null, "Sensitivity":"Private","ShowAs": "Busy","IsAllDay": false}'
             ]],
             [(new Writer())
                 ->setGuid('ABC')
@@ -171,7 +178,7 @@ class WriterTest extends TestCase
                 'url' => '/Me/events/ABC',
                 'id' => 'ABC',
                 'method' => 'PATCH',
-                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}}, "Sensitivity": "Personal", "IsAllDay": false}'
+                'json' => '{"Subject":"test","Body":{"ContentType":"HTML","Content":"foo"},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-04T16:50:36","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Recurrence":{"Pattern":{"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First","Type":"Daily","Interval":1},"Range":{"NumberOfOccurrences":"3","Type":"Numbered","StartDate":"2019-05-29","RecurrenceTimeZone":"Eastern Standard Time","EndDate":"2019-06-01"}}, "Sensitivity": "Personal","ShowAs": "Busy","IsAllDay": false}'
             ]]
         ];
     }

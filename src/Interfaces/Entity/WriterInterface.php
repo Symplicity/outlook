@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces\Entity;
 
 use JsonSerializable;
+use Symplicity\Outlook\Utilities\FreeBusy;
 use Symplicity\Outlook\Utilities\RequestType;
 
 interface WriterInterface extends JsonSerializable
@@ -22,6 +23,7 @@ interface WriterInterface extends JsonSerializable
     public function setLocation(LocationInterface $location): WriterInterface;
     public function setInternalEventType(string $eventType): WriterInterface;
     public function setSensitivity(string $sensitivity): WriterInterface;
+    public function setFreeBusy(FreeBusy $freeBusy): WriterInterface;
     public function method(RequestType $requestType) : WriterInterface;
     public function setExtensions(ExtensionWriterInterface $extensions);
 
