@@ -10,6 +10,7 @@ use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ODateTimeInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
 use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
+use Symplicity\Outlook\Utilities\FreeBusy;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Utilities\SensitivityType;
 
@@ -31,6 +32,7 @@ class Writer implements WriterInterface, BatchWriterEntityInterface
     protected $url;
     protected $internalEventType;
     protected $sensitivity;
+    protected $freeBusy;
 
     /** @var ResponseBodyInterface */
     protected $body;
@@ -65,7 +67,8 @@ class Writer implements WriterInterface, BatchWriterEntityInterface
             ],
             'Sensitivity' => $this->getSensitivity(),
             'Recurrence' => $this->recurrence,
-            'IsAllDay' => $this->isAllDay
+            'IsAllDay' => $this->isAllDay,
+            'ShowAs' => $this->freeBusy ?? FreeBusy::Busy
         ];
 
         if ($this->extensions instanceof ExtensionWriterInterface) {
@@ -180,6 +183,12 @@ class Writer implements WriterInterface, BatchWriterEntityInterface
     public function setExtensions(ExtensionWriterInterface $extensions): WriterInterface
     {
         $this->extensions = $extensions;
+        return $this;
+    }
+
+    public function setFreeBusy(FreeBusy $freeBusy): WriterInterface
+    {
+        $this->freeBusy = $freeBusy->getValue();
         return $this;
     }
 
