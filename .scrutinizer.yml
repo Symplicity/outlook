@@ -49,7 +49,7 @@ checks:
 
 build:
   nodes:
-    unit-tests:
+    php74-unit-tests:
       environment:
         php:
           version: 7.4
@@ -59,3 +59,13 @@ build:
             coverage:
               file: clover.xml
               format: php-clover
+    php80-unit-tests:
+        environment:
+            php:
+                version: 8.0
+        tests:
+            override:
+                -   command: ./vendor/bin/phpunit --coverage-clover=clover.xml
+                    coverage:
+                        file: clover.xml
+                        format: php-clover
