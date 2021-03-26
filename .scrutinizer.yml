@@ -59,6 +59,7 @@ build:
             coverage:
               file: clover.xml
               format: php-clover
+
     php80-unit-tests:
         environment:
             php:
