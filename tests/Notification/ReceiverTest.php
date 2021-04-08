@@ -184,7 +184,8 @@ class ReceiverTest extends TestCase
         $entity
             ->setSequenceNumber(2)
             ->setResource('test.com')
-            ->setId('123');
+            ->setId('123')
+            ->setSubscriptionId('ABC==');
 
         $json = $entity->jsonSerialize();
         $this->assertArrayHasKey('res', $json);
@@ -203,6 +204,8 @@ class ReceiverTest extends TestCase
         $this->assertEquals('#Microsoft.OutlookServices.Notification', $entity->getType());
         $this->assertEquals('ABC==', $entity->getSubscriptionId());
         $this->assertEquals('2020-09-23T13:58:53.708556Z', $entity->getSubscriptionExpirationDateTime());
+        $this->assertEquals('https://outlook.office.com/api/v2.0/Users(\'123\')/Events(\'CDE==\')', $entity->getODataId());
+        $this->assertNull($entity->getOutlookId());
         $this->assertEquals('#Microsoft.OutlookServices.Event', $entity->getODataType());
         $this->assertEquals('W/"123"', $entity->getEtag());
         $this->assertEquals('123', $entity->getId());

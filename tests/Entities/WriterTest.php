@@ -42,12 +42,16 @@ class WriterTest extends TestCase
             ->setBody($responseBody)
             ->setStartDate($startDate)
             ->setEndDate($endDate)
-            ->setFreeBusy(new FreeBusy(FreeBusy::Free));
+            ->setFreeBusy(new FreeBusy(FreeBusy::Free))
+            ->setGuid('ABC==')
+            ->cancel();
 
         $jsonSerialize = json_encode($writer);
         $expectedJsonString = '{"Subject":null,"Body":{"ContentType":"HTML","Content":" foo "},"Start":{"DateTime":"2019-02-04T16:40:36","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-05T00:00:00","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":null},"Sensitivity":"Personal","ShowAs": "Free","Recurrence":null,"IsAllDay":false}';
         $this->assertJsonStringEqualsJsonString($expectedJsonString, $jsonSerialize);
         $this->assertEquals('foo', $responseBody->getSanitizedContent());
+        $this->assertTrue($writer->hasOutlookId());
+        $this->assertTrue($writer->isCancelled());
 
         $writer->setFreeBusy(new FreeBusy(FreeBusy::Busy));
         $jsonSerialize = json_encode($writer);
