@@ -8,6 +8,7 @@ use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
 use Symplicity\Outlook\Utilities\EventTypes;
 use Symplicity\Outlook\Utilities\FreeBusy;
+use Symplicity\Outlook\Utilities\SensitivityType;
 
 class Occurrence implements ReaderEntityInterface
 {
@@ -16,6 +17,9 @@ class Occurrence implements ReaderEntityInterface
     protected $date;
     protected $eTag;
     protected $seriesMasterId;
+    protected $visibility;
+    protected $freeBusy;
+    protected $allDay;
     protected $extensions = [];
 
     public function hydrate(array $data) : ReaderEntityInterface
@@ -24,6 +28,9 @@ class Occurrence implements ReaderEntityInterface
         $this->setId($data['Id']);
         $this->setETag($data['@odata.etag']);
         $this->setSeriesMasterId($data['SeriesMasterId']);
+        $this->setAllDay($data['IsAllDay'] ?? false);
+        $this->setFreeBusy($data['ShowAs'] ?? FreeBusy::Busy);
+        $this->setVisibility($data['Importance'] ?? '');
 
         $this->setDate([
             'start' => $data['Start']['DateTime'],
@@ -77,7 +84,7 @@ class Occurrence implements ReaderEntityInterface
 
     public function isAllDay(): bool
     {
-        return false;
+        return $this->allDay;
     }
 
     public function getSensitivityStatus(): string
@@ -87,7 +94,7 @@ class Occurrence implements ReaderEntityInterface
 
     public function getVisibility(): string
     {
-        return '';
+        return $this->visibility;
     }
 
     public function getRecurrence(): ?RecurrenceEntityInterface
@@ -112,12 +119,12 @@ class Occurrence implements ReaderEntityInterface
 
     public function getFreeBusyStatus(): ?string
     {
-        return null;
+        return $this->freeBusy;
     }
 
     public function getExtensions(): array
     {
-        return [];
+        return $this->extensions;
     }
 
     public function setSeriesMasterId(string $seriesMasterId): void
@@ -155,5 +162,23 @@ class Occurrence implements ReaderEntityInterface
         }
 
         return $this;
+    }
+
+    private function setAllDay(bool $allDay): void
+    {
+        $this->allDay = $allDay;
+    }
+
+    private function setFreeBusy(string $freeBusy): void
+    {
+        $this->freeBusy = FreeBusy::Busy;
+        if ($value = FreeBusy::search($freeBusy)) {
+            $this->freeBusy = $value;
+        }
+    }
+
+    private function setVisibility(string $visibility): void
+    {
+        $this->visibility = $visibility;
     }
 }

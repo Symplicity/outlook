@@ -27,7 +27,7 @@ class Writer implements WriterInterface, BatchWriterEntityInterface
     protected $guid;
     protected $id;
     protected $subject;
-    protected $isCancelled;
+    protected $isCancelled = false;
     protected $isAllDay = false;
     protected $url;
     protected $internalEventType;
