@@ -10,8 +10,8 @@
         "php": ">=7.4",
         "ramsey/uuid" : "^3.8.0",
         "guzzlehttp/guzzle": "^6.2",
-        "monolog/monolog" : "^1.17",
-	    "myclabs/php-enum": "^1.6.0"
+        "monolog/monolog" : "^2.3",
+        "myclabs/php-enum": "^1.6.0"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^2.5",
