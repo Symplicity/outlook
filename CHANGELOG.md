@@ -1,3 +1,9 @@
+## [3.0.0]
+
+### Updates
+- Update PHPUnit to ^9.0.0
+- Update Monolog to ^2.3
+
 ## [2.0.0]
 
 ### Added
