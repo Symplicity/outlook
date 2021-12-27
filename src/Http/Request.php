@@ -88,7 +88,14 @@ class Request
             'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
         ]));
 
-        return $this->connection->get($url, $requestOptions, ['skipQueryParams' => $params['skipQueryParams'] ?? true]);
+        $args = [
+            'skipQueryParams' => $params['skipQueryParams'] ?? true,
+            'accessToken' => $this->accessToken,
+            'RequestObj' => $this,
+            'params' => $params
+        ];
+
+        return $this->connection->get($url, $requestOptions, $args);
     }
 
     public function getEventIterator(string $url, array $params = []): ResponseIteratorInterface
@@ -212,5 +219,32 @@ class Request
     public static function getBatchApi()
     {
         return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION . DIRECTORY_SEPARATOR . self::OUTLOOK_BATCH_ENDPOINT;
+    }
+
+    public function setAccessToken(string $accessToken): void
+    {
+        $this->accessToken = $accessToken;
+    }
+
+    public function getNewHeader(string $url, array $params = []): array
+    {
+        $options = [
+            'headers' => $params['headers'] ?? [],
+            'timezone' => $params['preferredTimezone'] ?? RequestOptions::DEFAULT_TIMEZONE,
+            'preferenceHeaders' => $params['preferenceHeaders'] ?? [],
+            'token' => $this->accessToken
+        ];
+        if (isset($params['queryParams'])) {
+            $options['queryParams'] = $params['queryParams'] ?? [];
+        }
+
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
+        $requestOptions->addDefaultHeaders(true);
+        $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
+            'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
+        ]));
+
+        return $requestOptions->getHeaders();
     }
 }
