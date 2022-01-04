@@ -19,9 +19,6 @@ use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Accommodate\Plugins\CalendarSync\OutlookUserMapping;
-use Symplicity\Accommodate\Plugins\CalendarSync\Outlook;
-use Symplicity\Accommodate\App;
 
 class Connection implements ConnectionInterface
 {
@@ -43,11 +40,8 @@ class Connection implements ConnectionInterface
 
     public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface
     {
-        $this->requestArgs = [
-            'url' => $url,
-            'requestOptions' => $requestOptions,
-            'args' => $args,
-        ];
+        $this->requestArgs = $args;
+        $this->requestArgs['url'] = $url;
 
         $client = $this->createClientWithRetryHandler();
         $options = [
@@ -61,13 +55,17 @@ class Connection implements ConnectionInterface
 
         try {
             $response = $client->request(RequestType::Get, $url, $options);
-            if ($this->shouldRetry($response->getStatusCode())) {
+            if ($this->shouldRefreshToken($response->getStatusCode())) {
                 $newHeader = $this->tryRefreshHeaderToken();
                 if (!empty($newHeader)) {
                     $options['headers'] = $newHeader;
                     $options['http_errors'] = true;
                     $response = $client->request(RequestType::Get, $url, $options);
                 }
+            }
+
+            if ($response->getStatusCode() !== 200) {
+                throw new ConnectionException(sprintf('Unable to GET for URL %s', $url));
             }
 
             return $response;
@@ -236,35 +234,24 @@ class Connection implements ConnectionInterface
         return in_array($statusCode, [401, 403, 408, 429]) || $statusCode >= 500;
     }
 
+    protected function shouldRefreshToken(int $statusCode) : bool
+    {
+        return in_array($statusCode, [401, 403]);
+    }
+
     public function tryRefreshHeaderToken(): array
     {
-        if (!empty($this->requestArgs['args']['accessToken']) 
-            && !empty($this->requestArgs['args']['RequestObj'])
+        if (!empty($this->requestArgs['RequestObj']) 
             && !empty($this->requestArgs['url'])
-            && !empty($this->requestArgs['args']['params'])) {
+            && !empty($this->requestArgs['token'])) {
+            $requestObj = $this->requestArgs['RequestObj'];
+            $params = [
+                'token' => $this->requestArgs['token'],
+                'logger' => $this->logger,
+            ];
+            $newHeader = $requestObj->getNewHeader($this->requestArgs['url'], $params);
 
-            if (method_exists(App::class, 'getContainer')
-                && method_exists(Outlook::class, 'getToken')
-                && method_exists(Outlook::class, 'init')
-                && method_exists(OutlookUserMapping::class, 'getUserInfoByAccessToken')) {
-
-                $app = new App();
-                $c = $app->getContainer();
-                $accessToken = $this->requestArgs['args']['accessToken'];
-                $userInfo = OutlookUserMapping::getUserInfoByAccessToken($c, $accessToken);
-                if (!empty($userInfo)) {
-                    $outlook = Outlook::init($c, $userInfo['user'], $userInfo);
-                    if (!empty($outlook)) {
-                        $newAccessToken = $outlook->getToken();
-                        $requestObj = $this->requestArgs['args']['RequestObj'];
-                        $requestObj->setAccessToken($newAccessToken);
-                        $params = $this->requestArgs['args']['params'];
-                        $newHeader = $requestObj->getNewHeader($this->requestArgs['url'], $params);
-
-                        return $newHeader;
-                    }
-                }
-            }
+            return $newHeader;
         }
 
         return [];
