@@ -7,6 +7,7 @@ namespace Symplicity\Outlook\Interfaces\Http;
 use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
+use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
 interface ConnectionInterface
 {
@@ -52,5 +53,5 @@ interface ConnectionInterface
     /**
      * Set Request Handler Obj
      */
-    public function setRequestHandler($requestHandler) : void;
+    public function setRequestHandler(RequestInterface $requestHandler) : void;
 }

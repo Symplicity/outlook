@@ -14,8 +14,9 @@ use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Token;
+use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
-class Request
+class Request implements RequestInterface
 {
     public const OUTLOOK_VERSION = 'v2.0';
     public const OUTLOOK_ROOT_URL = 'https://outlook.office.com/api/';
@@ -223,7 +224,7 @@ class Request
     public function getHeadersWithToken(string $url, array $params = []): array
     {
         $token = isset($params['token']) ? $params['token'] : [];
-        if (isset($token['clientID']) && isset($token['clientSecret']) && isset($token['outlookProxyUrl'])) {
+        if (isset($token['clientID'], $token['clientSecret'], $token['outlookProxyUrl'])) {
             $tokenObj = new Token($token['clientID'], $token['clientSecret'], ['logger' => $params['logger']]);
             $tokenEntity = $tokenObj->refresh($token['refreshToken'], $token['outlookProxyUrl']);
             $accessToken = $tokenEntity->getAccessToken();

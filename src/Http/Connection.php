@@ -19,6 +19,7 @@ use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
 class Connection implements ConnectionInterface
 {
@@ -32,6 +33,7 @@ class Connection implements ConnectionInterface
 
     protected static $eventInfo = [];
 
+    /** @var RequestInterface $requestHandler */
     private $requestHandler;
 
     public function __construct(?LoggerInterface $logger, array $clientOptions = [])
@@ -63,16 +65,21 @@ class Connection implements ConnectionInterface
                     'code' => $e->getCode()
                 ]);
             }
+            $responseCode = $e->getCode();
         }
 
-        return $this->retryConnection($client, $url);
+        if ($responseCode == 401) {
+            return $this->retryConnection($client, $url);
+        }
+
+        throw new ConnectionException(sprintf('Unable to GET for URL %s', $url), $e->getCode());
     }
 
     public function retryConnection(ClientInterface $client, string $url): ResponseInterface
     {
         try {
-            $newHeader = $this->tryRefreshHeaderToken();
-            return $client->request(RequestType::Get, $url, ['headers' => $newHeader]);
+            $headers = $this->tryRefreshHeaderToken();
+            return $client->request(RequestType::Get, $url, ['headers' => $headers]);
         } catch (\Exception $e) {
             if ($this->logger instanceof LoggerInterface) {
                 $this->logger->warning('Get Request Failed', [
@@ -240,7 +247,7 @@ class Connection implements ConnectionInterface
 
     public function tryRefreshHeaderToken(): array
     {
-        if (is_object($this->requestHandler) && isset($this->requestArgs['url']) && isset($this->requestArgs['token'])) {
+        if ($this->requestHandler instanceof RequestInterface && isset($this->requestArgs['url'], $this->requestArgs['token'])) {
             return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
                 'token' => $this->requestArgs['token'],
                 'logger' => $this->logger
@@ -250,7 +257,7 @@ class Connection implements ConnectionInterface
         return [];
     }
 
-    public function setRequestHandler($requestHandler) : void
+    public function setRequestHandler(RequestInterface $requestHandler) : void
     {
         $this->requestHandler = $requestHandler;
     }
