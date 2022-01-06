@@ -250,7 +250,7 @@ class Connection implements ConnectionInterface
         return [];
     }
 
-    public function setRequestHandler($requestHandler)
+    public function setRequestHandler($requestHandler) : void
     {
         $this->requestHandler = $requestHandler;
     }

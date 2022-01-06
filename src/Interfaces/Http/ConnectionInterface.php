@@ -48,4 +48,9 @@ interface ConnectionInterface
      * @return ResponseInterface
      */
     public function delete(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface;
+
+    /**
+     * Set Request Handler Obj
+     */
+    public function setRequestHandler($requestHandler) : void;
 }
