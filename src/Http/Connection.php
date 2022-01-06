@@ -24,11 +24,11 @@ class Connection implements ConnectionInterface
 {
     public const MAX_RETRIES = 3;
     public const MAX_UPSERT_RETRIES = 5;
+    public $requestArgs;
 
     protected $clientOptions;
     protected $responses;
     protected $logger;
-    protected $requestArgs;
 
     protected static $eventInfo = [];
 
@@ -47,7 +47,7 @@ class Connection implements ConnectionInterface
 
         $client = $this->createClientWithRetryHandler();
         $options = [
-            'headers' => $requestOptions->getHeaders(),
+            'headers' => $requestOptions->getHeaders()
         ];
 
         if (empty($args['skipQueryParams'])) {
@@ -58,7 +58,7 @@ class Connection implements ConnectionInterface
             return $client->request(RequestType::Get, $url, $options);
         } catch (\Exception $e) {
             if ($this->logger instanceof LoggerInterface) {
-                $this->logger->warning('First Get Request Failed', [
+                $this->logger->warning('Get Request Failed', [
                     'error' => $e->getMessage(),
                     'code' => $e->getCode()
                 ]);
@@ -75,7 +75,7 @@ class Connection implements ConnectionInterface
             return $client->request(RequestType::Get, $url, ['headers' => $newHeader]);
         } catch (\Exception $e) {
             if ($this->logger instanceof LoggerInterface) {
-                $this->logger->warning('Retry Get Request Failed', [
+                $this->logger->warning('Get Request Failed', [
                     'error' => $e->getMessage(),
                     'code' => $e->getCode()
                 ]);

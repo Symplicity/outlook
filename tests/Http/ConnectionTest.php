@@ -86,7 +86,7 @@ class ConnectionTest extends TestCase
             $this->assertTrue($this->handler->hasWarningRecords());
             $this->assertTrue($this->handler->hasRecordThatMatches('/Get Request Failed/', Logger::WARNING));
             $this->assertTrue($this->handler->hasRecordThatMatches('/Retrying/', Logger::WARNING));
-            $this->assertCount(3, $this->handler->getRecords());
+            $this->assertCount(5, $this->handler->getRecords());
         }
 
         try {
@@ -96,7 +96,7 @@ class ConnectionTest extends TestCase
             $this->assertTrue($this->handler->hasWarningRecords());
             $this->assertTrue($this->handler->hasRecordThatMatches('/Get Request Failed/', Logger::WARNING));
             $this->assertTrue($this->handler->hasRecordThatMatches('/Retrying/', Logger::WARNING));
-            $this->assertCount(4, $this->handler->getRecords());
+            $this->assertCount(7, $this->handler->getRecords());
         }
     }
 
