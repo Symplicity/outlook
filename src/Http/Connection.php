@@ -32,6 +32,8 @@ class Connection implements ConnectionInterface
 
     protected static $eventInfo = [];
 
+    private $requestHandler;
+
     public function __construct(?LoggerInterface $logger, array $clientOptions = [])
     {
         $this->logger = $logger;
@@ -46,7 +48,6 @@ class Connection implements ConnectionInterface
         $client = $this->createClientWithRetryHandler();
         $options = [
             'headers' => $requestOptions->getHeaders(),
-            'http_errors' => false,
         ];
 
         if (empty($args['skipQueryParams'])) {
@@ -54,24 +55,27 @@ class Connection implements ConnectionInterface
         }
 
         try {
-            $response = $client->request(RequestType::Get, $url, $options);
-            if ($this->shouldRefreshToken($response->getStatusCode())) {
-                $newHeader = $this->tryRefreshHeaderToken();
-                if (!empty($newHeader)) {
-                    $options['headers'] = $newHeader;
-                    $options['http_errors'] = true;
-                    $response = $client->request(RequestType::Get, $url, $options);
-                }
-            }
-
-            if ($response->getStatusCode() !== 200) {
-                throw new ConnectionException(sprintf('Unable to GET for URL %s', $url));
-            }
-
-            return $response;
+            return $client->request(RequestType::Get, $url, $options);
         } catch (\Exception $e) {
             if ($this->logger instanceof LoggerInterface) {
-                $this->logger->warning('Get Request Failed', [
+                $this->logger->warning('First Get Request Failed', [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+            }
+        }
+
+        return $this->retryConnection($client, $url);
+    }
+
+    public function retryConnection(ClientInterface $client, string $url): ResponseInterface
+    {
+        try {
+            $newHeader = $this->tryRefreshHeaderToken();
+            return $client->request(RequestType::Get, $url, ['headers' => $newHeader]);
+        } catch (\Exception $e) {
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->warning('Retry Get Request Failed', [
                     'error' => $e->getMessage(),
                     'code' => $e->getCode()
                 ]);
@@ -234,26 +238,20 @@ class Connection implements ConnectionInterface
         return in_array($statusCode, [401, 403, 408, 429]) || $statusCode >= 500;
     }
 
-    protected function shouldRefreshToken(int $statusCode) : bool
-    {
-        return in_array($statusCode, [401, 403]);
-    }
-
     public function tryRefreshHeaderToken(): array
     {
-        if (!empty($this->requestArgs['RequestObj']) 
-            && !empty($this->requestArgs['url'])
-            && !empty($this->requestArgs['token'])) {
-            $requestObj = $this->requestArgs['RequestObj'];
-            $params = [
+        if (is_object($this->requestHandler) && isset($this->requestArgs['url']) && isset($this->requestArgs['token'])) {
+            return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
                 'token' => $this->requestArgs['token'],
-                'logger' => $this->logger,
-            ];
-            $newHeader = $requestObj->getNewHeader($this->requestArgs['url'], $params);
-
-            return $newHeader;
+                'logger' => $this->logger
+            ]);
         }
 
         return [];
+    }
+
+    public function setRequestHandler($requestHandler)
+    {
+        $this->requestHandler = $requestHandler;
     }
 }

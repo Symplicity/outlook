@@ -91,10 +91,9 @@ class Request
 
         $args = [
             'skipQueryParams' => $params['skipQueryParams'] ?? true,
-            'RequestObj' => $this,
             'token' => !empty($params['token']) ? $params['token'] : '',
         ];
-
+        $this->connection->setRequestHandler($this);
         return $this->connection->get($url, $requestOptions, $args);
     }
 
@@ -221,32 +220,35 @@ class Request
         return static::OUTLOOK_ROOT_URL . static::OUTLOOK_VERSION . DIRECTORY_SEPARATOR . self::OUTLOOK_BATCH_ENDPOINT;
     }
 
-    public function getNewHeader(string $url, array $params = []): array
+    public function getHeadersWithToken(string $url, array $params = []): array
     {
-        $token = !empty($params['token']) ? $params['token'] : null;
-        if (!empty($token['clientID']) && !empty($token['clientSecret']) && !empty(OUTLOOK_PROXY_URL)) {
+        $token = isset($params['token']) ? $params['token'] : [];
+        if (isset($token['clientID']) && isset($token['clientSecret']) && isset($token['outlookProxyUrl'])) {
             $tokenObj = new Token($token['clientID'], $token['clientSecret'], ['logger' => $params['logger']]);
-            $tokenEntity = $tokenObj->refresh($token['refreshToken'], OUTLOOK_PROXY_URL, $params);
+            $tokenEntity = $tokenObj->refresh($token['refreshToken'], $token['outlookProxyUrl']);
             $accessToken = $tokenEntity->getAccessToken();
-            if (!empty($accessToken)) {
-                $options = [
+            if ($accessToken) {
+                return $this->getHeaders($url, [
                     'headers' => [],
                     'timezone' => RequestOptions::DEFAULT_TIMEZONE,
                     'preferenceHeaders' => [],
                     'token' => $accessToken
-                ];
-
-                /** @var RequestOptions $requestOptions */
-                $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
-                $requestOptions->addDefaultHeaders(true);
-                $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
-                    'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
-                ]));
-
-                return $requestOptions->getHeaders();
+                ]);
             }
         }
 
         return [];
+    }
+
+    public function getHeaders(string $url, array $options): array
+    {
+        /** @var RequestOptions $requestOptions */
+        $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
+        $requestOptions->addDefaultHeaders(true);
+        $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
+            'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
+        ]));
+
+        return $requestOptions->getHeaders();
     }
 }
