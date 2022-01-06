@@ -33,7 +33,7 @@ class ConnectionTest extends TestCase
         $logger = new Logger('outlook-calendar', [$this->handler]);
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs(['logger' => $logger])
-            ->setMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
+            ->onlyMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
             ->getMock();
     }
 
