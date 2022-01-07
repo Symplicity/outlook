@@ -19,17 +19,22 @@ use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
+use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
 class Connection implements ConnectionInterface
 {
     public const MAX_RETRIES = 3;
     public const MAX_UPSERT_RETRIES = 5;
+    public $requestArgs;
 
     protected $clientOptions;
     protected $responses;
     protected $logger;
 
     protected static $eventInfo = [];
+
+    /** @var RequestInterface $requestHandler */
+    private $requestHandler;
 
     public function __construct(?LoggerInterface $logger, array $clientOptions = [])
     {
@@ -39,6 +44,9 @@ class Connection implements ConnectionInterface
 
     public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface
     {
+        $this->requestArgs = $args;
+        $this->requestArgs['url'] = $url;
+
         $client = $this->createClientWithRetryHandler();
         $options = [
             'headers' => $requestOptions->getHeaders()
@@ -50,6 +58,28 @@ class Connection implements ConnectionInterface
 
         try {
             return $client->request(RequestType::Get, $url, $options);
+        } catch (\Exception $e) {
+            if ($this->logger instanceof LoggerInterface) {
+                $this->logger->warning('Get Request Failed', [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+            }
+            $responseCode = $e->getCode();
+        }
+
+        if ($responseCode === 401) {
+            return $this->retryConnection($client, $url);
+        }
+
+        throw new ConnectionException(sprintf('Unable to GET for URL %s', $url), $e->getCode());
+    }
+
+    public function retryConnection(ClientInterface $client, string $url): ResponseInterface
+    {
+        try {
+            $headers = $this->tryRefreshHeaderToken();
+            return $client->request(RequestType::Get, $url, ['headers' => $headers]);
         } catch (\Exception $e) {
             if ($this->logger instanceof LoggerInterface) {
                 $this->logger->warning('Get Request Failed', [
@@ -213,5 +243,22 @@ class Connection implements ConnectionInterface
     protected function shouldRetry(int $statusCode) : bool
     {
         return in_array($statusCode, [401, 403, 408, 429]) || $statusCode >= 500;
+    }
+
+    public function tryRefreshHeaderToken(): array
+    {
+        if ($this->requestHandler instanceof RequestInterface && isset($this->requestArgs['url'], $this->requestArgs['token'])) {
+            return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
+                'token' => $this->requestArgs['token'],
+                'logger' => $this->logger
+            ]);
+        }
+
+        return [];
+    }
+
+    public function setRequestHandler(RequestInterface $requestHandler) : void
+    {
+        $this->requestHandler = $requestHandler;
     }
 }
