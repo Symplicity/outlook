@@ -68,7 +68,7 @@ class Connection implements ConnectionInterface
             $responseCode = $e->getCode();
         }
 
-        if ($responseCode == 401) {
+        if ($responseCode === 401) {
             return $this->retryConnection($client, $url);
         }
 

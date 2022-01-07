@@ -45,9 +45,9 @@ class RequestTest extends TestCase
 
     public function testGetHeadersWithToken()
     {
-         $connection = $this->getMockBuilder(Connection::class)
+        $connection = $this->getMockBuilder(Connection::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['get', 'batch'])
+            ->onlyMethods(['get'])
             ->getMock();
 
         $constructorArgs = [
@@ -67,7 +67,7 @@ class RequestTest extends TestCase
     {
         $connection = $this->getMockBuilder(Connection::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['get', 'batch'])
+            ->onlyMethods(['get'])
             ->getMock();
 
         $request = new Request('foo', [
