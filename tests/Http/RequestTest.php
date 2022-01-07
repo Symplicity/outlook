@@ -42,4 +42,52 @@ class RequestTest extends TestCase
         $this->assertInstanceOf(RequestOptionsInterface::class, $requestOptions);
         $this->assertEquals(RequestType::Get, $requestOptions->getMethod());
     }
+
+    public function testGetHeadersWithToken()
+    {
+        $connection = $this->getMockBuilder(Connection::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['get'])
+            ->getMock();
+
+        $constructorArgs = [
+            'requestOptions' => function () {
+                return new RequestOptions('test.com', RequestType::Get(), [
+                    'token' => 'foo'
+                ]);
+            },
+            'connection' => $connection
+        ];
+        $request = new Request('foo', $constructorArgs);
+
+        $this->assertEmpty($request->getHeadersWithToken('test.com'));
+    }
+
+    public function testGetHeaders()
+    {
+        $connection = $this->getMockBuilder(Connection::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['get'])
+            ->getMock();
+
+        $request = new Request('foo', [
+            'requestOptions' => function () {
+                return new RequestOptions('test.com', RequestType::Get(), [
+                    'token' => 'foo'
+                ]);
+            },
+            'connection' => $connection
+        ]);
+
+        $this->assertNotEmpty($request->getHeaders('test.com', [
+            'headers' => [],
+            'timezone' => RequestOptions::DEFAULT_TIMEZONE,
+            'preferenceHeaders' => [],
+            'token' => '123'
+        ]));
+
+        $this->assertNotEmpty($request->getHeaders('test.com', []));
+
+        $this->assertNotEmpty($request->getHeaders('', []));
+    }
 }

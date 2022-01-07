@@ -7,6 +7,7 @@ namespace Symplicity\Outlook\Interfaces\Http;
 use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
+use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
 interface ConnectionInterface
 {
@@ -48,4 +49,9 @@ interface ConnectionInterface
      * @return ResponseInterface
      */
     public function delete(string $url, RequestOptionsInterface $requestOptions) : ResponseInterface;
+
+    /**
+     * Set Request Handler Obj
+     */
+    public function setRequestHandler(RequestInterface $requestHandler) : void;
 }
