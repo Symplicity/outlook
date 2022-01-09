@@ -28,13 +28,13 @@ class SubscriptionTest extends TestCase
     private $connection;
     private $logger;
 
-    public function setUp(): void
+    public function setUp()
     {
         $this->logger = new Logger('outlook_calendar');
         $this->logger->pushHandler(new NullHandler());
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs([$this->logger])
-            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
+            ->setMethods(['createClient', 'createClientWithRetryHandler'])
             ->getMock();
     }
 

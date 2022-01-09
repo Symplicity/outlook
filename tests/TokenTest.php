@@ -22,20 +22,19 @@ class TokenTest extends TestCase
     protected $tokenHandler;
     protected $connection;
 
-    public function setUp(): void
+    public function setUp()
     {
         $logger = new Logger('outlook_calendar');
         $logger->pushHandler(new NullHandler());
 
         $this->tokenHandler = $this->getMockBuilder(Token::class)
             ->setConstructorArgs(['foo', 'bar', ['logger' => $logger]])
-            ->onlyMethods(['getConnectionHandler'])
+            ->setMethods(['getConnectionHandler'])
             ->getMock();
 
         $this->connection = $this->getMockBuilder(Connection::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['createClient'])
-            ->addMethods(['request'])
+            ->setMethods(['request', 'createClient'])
             ->getMock();
     }
 

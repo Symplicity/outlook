@@ -31,13 +31,13 @@ class ReceiverTest extends TestCase
     private $receiverStub;
     private $connection;
 
-    protected function setUp(): void
+    protected function setUp()
     {
         $this->logger = new Logger('outlook_calendar');
         $this->logger->pushHandler(new NullHandler());
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs([$this->logger])
-            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
+            ->setMethods(['createClient', 'createClientWithRetryHandler'])
             ->getMock();
 
         $this->receiverStub = $this->getMockForAbstractClass(Receiver::class, [], '', true, true, true, ['validate', 'didWrite', 'willWrite', 'eventWriteFailed']);
@@ -139,7 +139,7 @@ class ReceiverTest extends TestCase
     {
         $connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs([$this->logger])
-            ->onlyMethods(['createClient', 'createClientWithRetryHandler', 'get'])
+            ->setMethods(['createClient', 'createClientWithRetryHandler', 'get'])
             ->getMock();
 
         $calendarStub = $this->getMockForAbstractClass(Calendar::class, [

@@ -27,13 +27,13 @@ class ConnectionTest extends TestCase
     private $connection;
     private $handler;
 
-    public function setUp(): void
+    public function setUp()
     {
         $this->handler = new TestHandler();
         $logger = new Logger('outlook-calendar', [$this->handler]);
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs(['logger' => $logger])
-            ->onlyMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
+            ->setMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
             ->getMock();
     }
 

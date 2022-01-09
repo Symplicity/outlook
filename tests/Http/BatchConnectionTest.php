@@ -33,14 +33,15 @@ use Symplicity\Outlook\Utilities\RequestType;
 class BatchConnectionTest extends TestCase
 {
     private $connection;
+    private $handler;
 
-    public function setUp(): void
+    public function setUp()
     {
-        $handler = new TestHandler();
-        $logger = new Logger('outlook-calendar', [$handler]);
+        $this->handler = new TestHandler();
+        $logger = new Logger('outlook-calendar', [$this->handler]);
         $this->connection = $this->getMockBuilder(Batch::class)
             ->setConstructorArgs(['logger' => $logger])
-            ->onlyMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
+            ->setMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
             ->getMock();
     }
 
@@ -72,7 +73,7 @@ class BatchConnectionTest extends TestCase
         $requestOptions->addBatchHeaders();
         $this->assertEquals('odata.continue-on-error', $requestOptions->getHeaders()['Prefer']);
         $this->assertEquals('application/json', $requestOptions->getHeaders()['Accept']);
-        $this->assertMatchesRegularExpression('/multipart\/mixed; boundary=batch_/', $requestOptions->getHeaders()['Content-Type']);
+        $this->assertRegExp('/multipart\/mixed; boundary=batch_/', $requestOptions->getHeaders()['Content-Type']);
 
         $this->createRetryHandler($mock);
 
