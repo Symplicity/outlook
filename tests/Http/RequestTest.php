@@ -47,7 +47,7 @@ class RequestTest extends TestCase
     {
         $connection = $this->getMockBuilder(Connection::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['get'])
+            ->setMethods(['get'])
             ->getMock();
 
         $constructorArgs = [
@@ -67,7 +67,7 @@ class RequestTest extends TestCase
     {
         $connection = $this->getMockBuilder(Connection::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['get'])
+            ->setMethods(['get'])
             ->getMock();
 
         $request = new Request('foo', [
