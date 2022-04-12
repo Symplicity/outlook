@@ -66,3 +66,4 @@ build:
                     version: 8.0
                     ini:
                         "xdebug.mode": coverage
+                    compile_options: '--with-openssl'
