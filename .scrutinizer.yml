@@ -61,6 +61,7 @@ build:
                 php: 7.4
 
         php80-unit-tests:
+            image: default-bionic
             environment:
                 php:
                     version: 8.1.2
