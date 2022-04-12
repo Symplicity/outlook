@@ -42,8 +42,8 @@ abstract class Receiver implements ReceiverInterface
                 }
 
                 $outlookEntity = $calendar->getEvent($url, $params);
-                $token = $params['token'] ?? [];
-                $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity, $token);
+                $args = ['token' => $params['token'] ?? []];
+                $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity, $args);
             } catch (\Exception $e) {
                 $eventInfo = [
                     'resource' => $notificationEntity->getResource(),
@@ -98,5 +98,5 @@ abstract class Receiver implements ReceiverInterface
     abstract protected function validateSequenceNumber(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $entity): void;
     abstract protected function eventWriteFailed(CalendarInterface $calender, LoggerInterface $logger, array $info): void;
     abstract protected function willWrite(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $notificationReaderEntity, array &$params = []): void;
-    abstract protected function didWrite(CalendarInterface $calendar, LoggerInterface $logger, ?ReaderEntityInterface $entity, NotificationReaderEntity $notificationReaderEntity, array $token = []): void;
+    abstract protected function didWrite(CalendarInterface $calendar, LoggerInterface $logger, ?ReaderEntityInterface $entity, NotificationReaderEntity $notificationReaderEntity, array $args = []): void;
 }

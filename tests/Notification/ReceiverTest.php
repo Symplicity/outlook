@@ -285,7 +285,7 @@ class ReceiverTest extends TestCase
                 LoggerInterface $logger,
                 ?ReaderEntityInterface $entity,
                 NotificationReaderEntity $notificationReaderEntity,
-                array $token = []
+                array $args = []
             ): void {
                 // TODO: Implement didWrite() method.
             }
