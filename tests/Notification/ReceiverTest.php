@@ -284,8 +284,7 @@ class ReceiverTest extends TestCase
                 CalendarInterface $calendar,
                 LoggerInterface $logger,
                 ?ReaderEntityInterface $entity,
-                NotificationReaderEntity $notificationReaderEntity,
-                array $token
+                NotificationReaderEntity $notificationReaderEntity
             ): void {
                 // TODO: Implement didWrite() method.
             }
