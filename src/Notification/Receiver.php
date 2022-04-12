@@ -42,7 +42,7 @@ abstract class Receiver implements ReceiverInterface
                 }
 
                 $outlookEntity = $calendar->getEvent($url, $params);
-                $token = isset($params['token']) ? $params['token'] : [];
+                $token = $params['token'] ?? [];
                 $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity, $token);
             } catch (\Exception $e) {
                 $eventInfo = [
