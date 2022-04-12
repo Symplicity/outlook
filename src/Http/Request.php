@@ -92,7 +92,7 @@ class Request implements RequestInterface
 
         $args = [
             'skipQueryParams' => $params['skipQueryParams'] ?? true,
-            'token' => !empty($params['token']) ? $params['token'] : [],
+            'token' => $params['token'] ?? [],
         ];
         $this->connection->setRequestHandler($this);
         return $this->connection->get($url, $requestOptions, $args);
@@ -122,7 +122,7 @@ class Request implements RequestInterface
         $responseIterator = new ResponseIterator($this->connection);
         $args = [
             'skipQueryParams' => $params['skipQueryParams'] ?? true,
-            'token' => !empty($params['token']) ? $params['token'] : [],
+            'token' => $params['token'] ?? [],
         ];
 
         return $responseIterator->setItems($url, $requestOptions, $args);
