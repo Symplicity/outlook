@@ -10,6 +10,6 @@ class FreeBusy extends Enum
     public const Busy = 'Busy';
     public const Free = 'Free';
     public const WorkingElsewhere = 'WorkingElsewhere';
-    public const Tentative = 'Oof';
+    public const Tentative = 'Tentative';
     public const Away = 'Away';
 }
