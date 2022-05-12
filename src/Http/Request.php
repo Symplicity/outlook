@@ -13,7 +13,6 @@ use Symplicity\Outlook\Interfaces\Http\BatchConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Token;
 use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
 class Request implements RequestInterface
@@ -77,7 +76,7 @@ class Request implements RequestInterface
             'preferenceHeaders' => $params['preferenceHeaders'] ?? [],
             'token' => $this->accessToken
         ];
-
+        
         if (isset($params['queryParams'])) {
             $options['queryParams'] = $params['queryParams'] ?? [];
         }
@@ -228,19 +227,13 @@ class Request implements RequestInterface
 
     public function getHeadersWithToken(string $url, array $params = []): array
     {
-        $token = isset($params['token']) ? $params['token'] : [];
-        if (isset($token['clientID'], $token['clientSecret'], $token['outlookProxyUrl'])) {
-            $tokenObj = new Token($token['clientID'], $token['clientSecret'], ['logger' => $params['logger']]);
-            $tokenEntity = $tokenObj->refresh($token['refreshToken'], $token['outlookProxyUrl']);
-            $accessToken = $tokenEntity->getAccessToken();
-            if ($accessToken) {
-                return $this->getHeaders($url, [
-                    'headers' => [],
-                    'timezone' => RequestOptions::DEFAULT_TIMEZONE,
-                    'preferenceHeaders' => [],
-                    'token' => $accessToken
-                ]);
-            }
+        if ($params['access_token']) {
+            return $this->getHeaders($url, [
+                'headers' => [],
+                'timezone' => RequestOptions::DEFAULT_TIMEZONE,
+                'preferenceHeaders' => [],
+                'token' => $params['access_token']
+            ]);
         }
 
         return [];

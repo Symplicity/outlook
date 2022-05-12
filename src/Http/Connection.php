@@ -20,6 +20,7 @@ use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Interfaces\Http\RequestInterface;
+use Symplicity\Outlook\Token;
 
 class Connection implements ConnectionInterface
 {
@@ -44,12 +45,14 @@ class Connection implements ConnectionInterface
 
     public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface
     {
-        $this->requestArgs = $args;
+        if (!isset($this->requestArgs['token'])) {
+            $this->requestArgs = $args;
+        }
         $this->requestArgs['url'] = $url;
 
         $client = $this->createClientWithRetryHandler();
         $options = [
-            'headers' => $requestOptions->getHeaders()
+            'headers' => $this->getHeaders($requestOptions)
         ];
 
         if (empty($args['skipQueryParams'])) {
@@ -247,9 +250,10 @@ class Connection implements ConnectionInterface
 
     public function tryRefreshHeaderToken(): array
     {
-        if ($this->requestHandler instanceof RequestInterface && isset($this->requestArgs['url'], $this->requestArgs['token'])) {
+        if ($this->requestHandler instanceof RequestInterface && isset($this->requestArgs['url'])) {
+            $acessToken = $this->getNewAccessToken();
             return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
-                'token' => $this->requestArgs['token'],
+                'access_token' => $acessToken,
                 'logger' => $this->logger
             ]);
         }
@@ -260,5 +264,55 @@ class Connection implements ConnectionInterface
     public function setRequestHandler(RequestInterface $requestHandler) : void
     {
         $this->requestHandler = $requestHandler;
+    }
+
+    public function getHeaders($requestOptions) : array
+    {
+        if ($this->shouldRefreshToken()) {
+            return $this->tryRefreshHeaderToken();
+        }
+
+         return $requestOptions->getHeaders();
+    }
+
+    public function shouldRefreshToken() : bool
+    {
+        if (isset($this->requestArgs['token']['token_received_on'], $this->requestArgs['token']['expires_in'])) {
+            $token = $this->requestArgs['token'];
+            if ((strtotime('now') - strtotime($token['token_received_on'])) > ($token['expires_in'] - 60)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getNewAccessToken() : string
+    {
+        if (isset($this->requestArgs['token']['clientID'], $this->requestArgs['token']['clientSecret'], $this->requestArgs['token']['outlookProxyUrl'])) {
+            $newToken = $this->getNewToken($this->requestArgs['token']);
+            $this->requestArgs['token']['token_received_on'] = $newToken['token_received_on'];
+            $this->requestArgs['token']['expires_in'] = $newToken['expires_in'];
+            $this->requestArgs['token']['access_token'] = $newToken['access_token'];
+            $this->requestArgs['token']['refresh_token'] = $newToken['refresh_token'];
+
+            return $newToken['access_token'];
+        }
+
+        return '';
+    }
+
+    public function getNewToken(array $token) : array
+    {
+        $tokenObj = new Token($token['clientID'], $token['clientSecret'], ['logger' => $this->logger]);
+        $tokenEntity = $tokenObj->refresh($token['refreshToken'], $token['outlookProxyUrl']);
+        $date = $tokenEntity->tokenReceivedOn();
+
+        return [
+            'token_received_on' => $date->format('Y-m-d H:i:s') ?? '',
+            'expires_in' => $tokenEntity->getExpiresIn() ?? '',
+            'access_token' => $tokenEntity->getAccessToken() ?? '',
+            'refresh_token' => $tokenEntity->getRefreshToken() ?? '',
+        ];
     }
 }
