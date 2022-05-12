@@ -241,13 +241,17 @@ class Request implements RequestInterface
 
     public function getHeaders(string $url, array $options): array
     {
-        /** @var RequestOptions $requestOptions */
-        $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
-        $requestOptions->addDefaultHeaders(true);
-        $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
-            'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
-        ]));
+        if ($this->requestOptions) {
+            /** @var RequestOptions $requestOptions */
+            $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
+            $requestOptions->addDefaultHeaders(true);
+            $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
+                'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
+            ]));
 
-        return $requestOptions->getHeaders();
+            return $requestOptions->getHeaders();
+        }
+
+        return [];
     }
 }
