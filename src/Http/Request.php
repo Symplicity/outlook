@@ -76,7 +76,7 @@ class Request implements RequestInterface
             'preferenceHeaders' => $params['preferenceHeaders'] ?? [],
             'token' => $this->accessToken
         ];
-        
+
         if (isset($params['queryParams'])) {
             $options['queryParams'] = $params['queryParams'] ?? [];
         }
@@ -227,7 +227,7 @@ class Request implements RequestInterface
 
     public function getHeadersWithToken(string $url, array $params = []): array
     {
-        if ($params['access_token']) {
+        if (isset($params['access_token'])) {
             return $this->getHeaders($url, [
                 'headers' => [],
                 'timezone' => RequestOptions::DEFAULT_TIMEZONE,
