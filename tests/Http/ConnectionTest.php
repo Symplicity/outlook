@@ -21,7 +21,6 @@ use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Http\Request as outlookRequest;
 use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Token;
 
 class ConnectionTest extends TestCase
 {
@@ -34,7 +33,7 @@ class ConnectionTest extends TestCase
         $logger = new Logger('outlook-calendar', [$this->handler]);
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs(['logger' => $logger])
-            ->setMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay', 'getNewAccessToken'])
+            ->onlyMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
             ->getMock();
     }
 
@@ -183,111 +182,5 @@ class ConnectionTest extends TestCase
             [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
             [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 11, false]
         ];
-    }
-
-    public function testTryRefreshHeaderToken()
-    {
-        $logger = new Logger('outlook-calendar', [$this->handler]);
-        $connectionHandler = new Connection($logger);
-        $this->assertEmpty($connectionHandler->tryRefreshHeaderToken());
-
-        $requestObj = new outlookRequest('123', ['connection' => $this->connection, 'requestOptions' => null]);
-        $connectionHandler->setRequestHandler($requestObj);
-        $connectionHandler->requestArgs = [
-            'url' => 'test.com',
-            'token' => 'test',
-        ];
-        $this->assertEmpty($connectionHandler->tryRefreshHeaderToken());
-
-        $requestObj = $this->createMock(outlookRequest::class);
-        $requestObj->method('getHeadersWithToken')
-             ->willReturn(['foo']);
-        $this->connection->setRequestHandler($requestObj);
-        $this->connection->requestArgs = [
-            'url' => 'test.com',
-            'token' => [
-                'clientID' => '123',
-                'clientSecret' => '456',
-                'refreshToken' => '789',
-                'outlookProxyUrl' => 'https://test.com/',
-            ],
-            'logger' => $logger,
-        ];
-        $this->connection->expects($this->any())
-            ->method('getNewAccessToken')
-            ->willReturn('123456789');
-        $this->assertEquals(['foo'], $this->connection->tryRefreshHeaderToken());
-    }
-
-    public function testGetNewAccessToken()
-    {
-        $logger = new Logger('outlook-calendar', [$this->handler]);
-        $connectionHandler = new Connection($logger);
-        $this->assertEmpty($connectionHandler->getNewAccessToken());
-
-        $requestObj = new outlookRequest('123', ['connection' => $this->connection, 'requestOptions' => null]);
-        $connectionHandler->setRequestHandler($requestObj);
-        $connectionHandler->requestArgs = [
-            'url' => 'test.com',
-            'token' => 'test',
-        ];
-        $this->assertEmpty($connectionHandler->getNewAccessToken());
-
-
-        $connectionHandler = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs(['logger' => $logger])
-            ->setMethods(['getNewToken'])
-            ->getMock();
-
-        $connectionHandler->requestArgs = [
-            'url' => 'test.com',
-            'token' => [
-                'clientID' => '123',
-                'clientSecret' => '456',
-                'refreshToken' => '789',
-                'outlookProxyUrl' => 'https://test.com/',
-            ],
-            'logger' => $logger,
-        ];
-
-        $connectionHandler->expects($this->any())
-            ->method('getNewToken')
-            ->willReturn([
-                'token_received_on' => date('Y-m-d H:i:s'),
-                'expires_in' => 3600,
-                'access_token' => '123456789',
-                'refresh_token' => '987654321'
-            ]);
-
-        $this->assertEquals('123456789', $connectionHandler->getNewAccessToken());
-    }
-
-    public function testShouldRefreshToken()
-    {
-        $this->assertFalse($this->connection->shouldRefreshToken());
-
-        $this->connection->requestArgs = [
-            'token' => [
-                'token_received_on' => date('Y-m-d H:i:s', strtotime("-50 minutes")),
-                'expires_in' => 3600,
-            ],
-        ];
-        $this->assertFalse($this->connection->shouldRefreshToken());
-
-        $this->connection->requestArgs = [
-            'token' => [
-                'token_received_on' => date('Y-m-d H:i:s', strtotime("-59 minutes")),
-                'expires_in' => 3600,
-            ],
-        ];
-        $this->assertFalse($this->connection->shouldRefreshToken());
-
-        $this->connection->requestArgs = [
-            'token' => [
-                'token_received_on' => date('Y-m-d H:i:s', strtotime("-60 minutes")),
-                'expires_in' => 3600,
-            ],
-        ];
-        $this->assertTrue($this->connection->shouldRefreshToken());
     }
 }
