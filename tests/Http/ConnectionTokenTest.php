@@ -21,7 +21,6 @@ class ConnectionTokenTest extends TestCase
         $logger = new Logger('outlook-calendar', [$this->handler]);
         $this->connection = $this->getMockBuilder(Connection::class)
             ->setConstructorArgs(['logger' => $logger])
-            ->setMethods(['createClientWithRetryHandler', 'createClient', 'upsertRetryDelay'])
             ->getMock();
     }
 
@@ -29,7 +28,14 @@ class ConnectionTokenTest extends TestCase
     {
         $logger = new Logger('outlook-calendar', [$this->handler]);
         $requestObj = new outlookRequest('123', ['connection' => $this->connection, 'requestOptions' => null]);
-        $connectionToken = new ConnectionToken($logger, $requestObj);
+        $requestArgs = [
+            'url' => 'test.com',
+            'token' => [
+                'token_received_on' => date('Y-m-d H:i:s', strtotime("-59 minutes")),
+                'expires_in' => 3600,
+            ],
+        ];
+        $connectionToken = new ConnectionToken($logger, $requestObj, $requestArgs);
         $this->assertEmpty($connectionToken->tryRefreshHeaderToken());
 
         $requestObj = new outlookRequest('123', ['connection' => $this->connection, 'requestOptions' => null]);
@@ -56,7 +62,7 @@ class ConnectionTokenTest extends TestCase
 
         $connectionToken = $this->getMockBuilder(ConnectionToken::class)
             ->setConstructorArgs([$logger, $requestObj, $requestArgs])
-            ->setMethods(['getNewAccessToken'])
+            ->onlyMethods(['getNewAccessToken'])
             ->getMock();
 
         $connectionToken->expects($this->any())

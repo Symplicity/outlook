@@ -28,7 +28,12 @@ class ConnectionToken implements ConnectionTokenInterface
     public function tryRefreshHeaderToken() : array
     {
         if (isset($this->requestArgs['url'], $this->requestHandler)) {
-            $this->logger->info('Refresh Token');
+            if (isset($this->requestArgs['token']['token_received_on'], $this->requestArgs['token']['expires_in'])) {
+                $this->logger->info('Refresh Token', [
+                    'token_received_on' => $this->requestArgs['token']['token_received_on'],
+                    'expires_in' => $this->requestArgs['token']['expires_in']
+                ]);
+            }
             $acessToken = $this->getNewAccessToken();
             return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
                 'access_token' => $acessToken,
@@ -61,10 +66,9 @@ class ConnectionToken implements ConnectionTokenInterface
 
             $this->requestArgs['token']['token_received_on'] = $date->format('Y-m-d H:i:s') ?? '';
             $this->requestArgs['token']['expires_in'] = $tokenEntity->getExpiresIn() ?? '';
-            $this->requestArgs['token']['access_token'] = $tokenEntity->getAccessToken() ?? '';
-            $this->requestArgs['token']['refresh_token'] = $tokenEntity->getRefreshToken() ?? '';
+            $this->requestArgs['token']['refreshToken'] = $tokenEntity->getRefreshToken() ?? '';
 
-            return $this->requestArgs['token']['access_token'];
+            return $tokenEntity->getAccessToken() ?? '';
         }
 
         return null;
