@@ -64,11 +64,11 @@ class ConnectionToken implements ConnectionTokenInterface
             $tokenEntity = $tokenObj->refresh($token['refreshToken'], $token['outlookProxyUrl']);
             $date = $tokenEntity->tokenReceivedOn();
 
-            $this->requestArgs['token']['token_received_on'] = $date->format('Y-m-d H:i:s') ?? '';
-            $this->requestArgs['token']['expires_in'] = $tokenEntity->getExpiresIn() ?? '';
-            $this->requestArgs['token']['refreshToken'] = $tokenEntity->getRefreshToken() ?? '';
+            $this->requestArgs['token']['token_received_on'] = $date->format('Y-m-d H:i:s');
+            $this->requestArgs['token']['expires_in'] = $tokenEntity->getExpiresIn();
+            $this->requestArgs['token']['refreshToken'] = $tokenEntity->getRefreshToken();
 
-            return $tokenEntity->getAccessToken() ?? '';
+            return $tokenEntity->getAccessToken();
         }
 
         return null;
