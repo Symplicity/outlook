@@ -28,10 +28,7 @@ class ConnectionToken implements ConnectionTokenInterface
     public function tryRefreshHeaderToken() : array
     {
         if (isset($this->requestArgs['url'], $this->requestHandler)) {
-            $this->logger->info('Refresh Token', [
-                'token_received_on' => $this->requestArgs['token']['token_received_on'],
-                'expires_in' => $this->requestArgs['token']['expires_in']
-            ]);
+            $this->logger->info('Refresh Token');
             $acessToken = $this->getNewAccessToken();
             return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
                 'access_token' => $acessToken,
