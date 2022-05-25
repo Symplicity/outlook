@@ -16,7 +16,7 @@ interface ResponseIteratorInterface
      * Returns a generator callback for accessing entities from outlook
      * @return \Generator|null
      */
-    public function each() : ?\Generator;
+    public function each(array $args = []) : ?\Generator;
 
     /**
      * Gets the delta link once the items from generator is completed.

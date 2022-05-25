@@ -183,35 +183,4 @@ class ConnectionTest extends TestCase
             [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 11, false]
         ];
     }
-
-    public function testTryRefreshHeaderToken()
-    {
-        $logger = new Logger('outlook-calendar', [$this->handler]);
-        $connectionHandler = new Connection($logger);
-        $this->assertEmpty($connectionHandler->tryRefreshHeaderToken());
-
-        $requestObj = new outlookRequest('123', ['connection' => $this->connection, 'requestOptions' => null]);
-        $connectionHandler->setRequestHandler($requestObj);
-        $connectionHandler->requestArgs = [
-            'url' => 'test.com',
-            'token' => 'test',
-        ];
-        $this->assertEmpty($connectionHandler->tryRefreshHeaderToken());
-
-        $requestObj = $this->createMock(outlookRequest::class);
-        $requestObj->method('getHeadersWithToken')
-             ->willReturn(['foo']);
-        $connectionHandler->setRequestHandler($requestObj);
-        $connectionHandler->requestArgs = [
-            'url' => 'test.com',
-            'token' => [
-                'clientID' => '123',
-                'clientSecret' => '456',
-                'refreshToken' => '789',
-                'outlookProxyUrl' => 'https://test.com/',
-            ],
-            'logger' => $logger,
-        ];
-        $this->assertEquals(['foo'], $connectionHandler->tryRefreshHeaderToken());
-    }
 }

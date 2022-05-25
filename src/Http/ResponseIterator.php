@@ -42,7 +42,7 @@ class ResponseIterator implements ResponseIteratorInterface
         return $this;
     }
 
-    public function each() : ?Generator
+    public function each(array $args = []) : ?Generator
     {
         $page = $this->firstPage;
 
@@ -64,7 +64,11 @@ class ResponseIterator implements ResponseIteratorInterface
                 'outlook.timezone="' . $this->requestOptions->getPreferredTimezone() . '"'
             ]));
 
-            $page = $this->getPage($page[static::NextPageLink], ['skipQueryParams' => true]);
+            $args = [
+                'skipQueryParams' => true,
+                'token' => $args['token'] ?? [],
+            ];
+            $page = $this->getPage($page[static::NextPageLink], $args);
 
             // Loop complete if we get a deltaLink
             if (isset($page[static::DeltaLink])) {
