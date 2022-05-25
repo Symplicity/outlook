@@ -20,12 +20,12 @@ use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Utilities\RequestType;
 use Symplicity\Outlook\Interfaces\Http\RequestInterface;
+use Symplicity\Outlook\Interfaces\Http\ConnectionTokenInterface;
 
 class Connection implements ConnectionInterface
 {
     public const MAX_RETRIES = 3;
     public const MAX_UPSERT_RETRIES = 5;
-    public $requestArgs;
 
     protected $clientOptions;
     protected $responses;
@@ -36,6 +36,9 @@ class Connection implements ConnectionInterface
     /** @var RequestInterface $requestHandler */
     private $requestHandler;
 
+    /** @var ConnectionTokenInterface $connectionToken */
+    private $connectionToken;
+
     public function __construct(?LoggerInterface $logger, array $clientOptions = [])
     {
         $this->logger = $logger;
@@ -44,12 +47,14 @@ class Connection implements ConnectionInterface
 
     public function get(string $url, RequestOptionsInterface $requestOptions, array $args = []) : ResponseInterface
     {
-        $this->requestArgs = $args;
-        $this->requestArgs['url'] = $url;
+        if (!($this->connectionToken instanceof ConnectionTokenInterface)) {
+            $this->connectionToken = new ConnectionToken($this->logger, $this->requestHandler, $args);
+        }
+        $this->connectionToken->setRequestURL($url);
 
         $client = $this->createClientWithRetryHandler();
         $options = [
-            'headers' => $requestOptions->getHeaders()
+            'headers' => $this->getHeaders($requestOptions)
         ];
 
         if (empty($args['skipQueryParams'])) {
@@ -78,7 +83,7 @@ class Connection implements ConnectionInterface
     public function retryConnection(ClientInterface $client, string $url): ResponseInterface
     {
         try {
-            $headers = $this->tryRefreshHeaderToken();
+            $headers = $this->connectionToken->tryRefreshHeaderToken();
             return $client->request(RequestType::Get, $url, ['headers' => $headers]);
         } catch (\Exception $e) {
             if ($this->logger instanceof LoggerInterface) {
@@ -245,20 +250,17 @@ class Connection implements ConnectionInterface
         return in_array($statusCode, [401, 403, 408, 429]) || $statusCode >= 500;
     }
 
-    public function tryRefreshHeaderToken(): array
-    {
-        if ($this->requestHandler instanceof RequestInterface && isset($this->requestArgs['url'], $this->requestArgs['token'])) {
-            return $this->requestHandler->getHeadersWithToken($this->requestArgs['url'], [
-                'token' => $this->requestArgs['token'],
-                'logger' => $this->logger
-            ]);
-        }
-
-        return [];
-    }
-
     public function setRequestHandler(RequestInterface $requestHandler) : void
     {
         $this->requestHandler = $requestHandler;
+    }
+
+    public function getHeaders($requestOptions) : array
+    {
+        if ($this->connectionToken->shouldRefreshToken()) {
+            return $this->connectionToken->tryRefreshHeaderToken();
+        }
+
+         return $requestOptions->getHeaders();
     }
 }

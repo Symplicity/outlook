@@ -13,7 +13,6 @@ use Symplicity\Outlook\Interfaces\Http\BatchConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\Http\ResponseIteratorInterface;
 use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Token;
 use Symplicity\Outlook\Interfaces\Http\RequestInterface;
 
 class Request implements RequestInterface
@@ -228,19 +227,13 @@ class Request implements RequestInterface
 
     public function getHeadersWithToken(string $url, array $params = []): array
     {
-        $token = isset($params['token']) ? $params['token'] : [];
-        if (isset($token['clientID'], $token['clientSecret'], $token['outlookProxyUrl'])) {
-            $tokenObj = new Token($token['clientID'], $token['clientSecret'], ['logger' => $params['logger']]);
-            $tokenEntity = $tokenObj->refresh($token['refreshToken'], $token['outlookProxyUrl']);
-            $accessToken = $tokenEntity->getAccessToken();
-            if ($accessToken) {
-                return $this->getHeaders($url, [
-                    'headers' => [],
-                    'timezone' => RequestOptions::DEFAULT_TIMEZONE,
-                    'preferenceHeaders' => [],
-                    'token' => $accessToken
-                ]);
-            }
+        if (isset($params['access_token'])) {
+            return $this->getHeaders($url, [
+                'headers' => [],
+                'timezone' => RequestOptions::DEFAULT_TIMEZONE,
+                'preferenceHeaders' => [],
+                'token' => $params['access_token']
+            ]);
         }
 
         return [];
@@ -248,13 +241,17 @@ class Request implements RequestInterface
 
     public function getHeaders(string $url, array $options): array
     {
-        /** @var RequestOptions $requestOptions */
-        $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
-        $requestOptions->addDefaultHeaders(true);
-        $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
-            'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
-        ]));
+        if ($this->requestOptions) {
+            /** @var RequestOptions $requestOptions */
+            $requestOptions = $this->requestOptions->call($this, $url, RequestType::Get(), $options);
+            $requestOptions->addDefaultHeaders(true);
+            $requestOptions->addPreferenceHeaders(array_merge($requestOptions->getDefaultPreferenceHeaders(), [
+                'outlook.timezone="' . $requestOptions->getPreferredTimezone() . '"'
+            ]));
 
-        return $requestOptions->getHeaders();
+            return $requestOptions->getHeaders();
+        }
+
+        return [];
     }
 }
