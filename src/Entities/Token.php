@@ -19,8 +19,10 @@ class Token implements TokenInterface
 
     public function __construct(array $data)
     {
-        $this->setEmailAddress($data['userInfo']['EmailAddress']);
-        $this->setDisplayName($data['userInfo']['DisplayName']);
+        if (isset($data['userInfo'])) {
+            $this->setEmailAddress($data['userInfo']['EmailAddress']);
+            $this->setDisplayName($data['userInfo']['DisplayName']);
+        }
         $this->setType($data['token_type']);
         $this->setAccessToken($data['access_token']);
         $this->setRefreshToken($data['refresh_token']);
