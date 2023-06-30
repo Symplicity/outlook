@@ -6,7 +6,7 @@ namespace Symplicity\Outlook\Tests\Http;
 
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Symplicity\Outlook\Http\Connection;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Http\RequestOptions;
@@ -32,7 +32,7 @@ class RequestTest extends TestCase
             'connection' => $connection
         ]);
 
-        $connection->expects($this->once())->method('get')->willReturn(new Response(200, ['foo' => 'bar'], stream_for('test')));
+        $connection->expects($this->once())->method('get')->willReturn(new Response(200, ['foo' => 'bar'], Utils::streamFor('test')));
         $response = $request->getEvents('test.com', ['headers' => ['foo' => 'bar']]);
         $this->assertInstanceOf(ResponseIteratorInterface::class, $response->getResponseIterator());
         $this->assertInstanceOf(\Closure::class, $response->getRequestOptions());

@@ -13,7 +13,7 @@ use Symplicity\Outlook\Entities\NotificationReaderEntity;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Utilities\ChangeType;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -47,8 +47,8 @@ class ReceiverTest extends TestCase
     {
         $clientState = '123-345';
         $mock = new MockHandler([
-            new Response(200, ['Clientstate' => $clientState], stream_for($this->getStream())),
-            new Response(200, ['Clientstate' => $clientState], stream_for($this->getStream())),
+            new Response(200, ['Clientstate' => $clientState], Utils::streamFor($this->getStream())),
+            new Response(200, ['Clientstate' => $clientState], Utils::streamFor($this->getStream())),
             new Response(400, [], ''),
         ]);
 

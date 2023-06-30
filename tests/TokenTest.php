@@ -9,7 +9,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use Psr\Http\Message\StreamInterface;
@@ -114,7 +114,7 @@ class TokenTest extends TestCase
     {
         return [
             [
-                stream_for('{
+                Utils::streamFor('{
                   "token_type": "code",
                   "access_token": "abc",
                   "refresh_token": "bcf",
@@ -127,7 +127,7 @@ class TokenTest extends TestCase
                 }'), null
             ],
             [
-                stream_for('test'), new \RuntimeException('Wrong Info', 400)
+                Utils::streamFor('test'), new \RuntimeException('Wrong Info', 400)
             ]
         ];
     }

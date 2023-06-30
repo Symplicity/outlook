@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 use Symplicity\Outlook\Exception\ConnectionException;
 use Symplicity\Outlook\Exception\ReadError;
 use Symplicity\Outlook\Http\Batch;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -77,10 +77,10 @@ class CalendarTest extends TestCase
         $deleteStream = json_encode($responses['value'][4]);
 
         $mock = new MockHandler([
-            new Response(200, [], stream_for($singleEventStream)),
-            new Response(200, [], stream_for($occurrenceStream)),
-            new Response(200, [], stream_for($deleteStream)),
-            new Response(200, [], stream_for('{}'))
+            new Response(200, [], Utils::streamFor($singleEventStream)),
+            new Response(200, [], Utils::streamFor($occurrenceStream)),
+            new Response(200, [], Utils::streamFor($deleteStream)),
+            new Response(200, [], Utils::streamFor('{}'))
         ]);
 
         $handler = HandlerStack::create($mock);
@@ -102,8 +102,8 @@ class CalendarTest extends TestCase
     public function testGetEventInstances()
     {
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getEventInstancesStream())),
-            new Response(200, [], stream_for('{}'))
+            new Response(200, [], Utils::streamFor($this->getEventInstancesStream())),
+            new Response(200, [], Utils::streamFor('{}'))
         ]);
 
         $handler = HandlerStack::create($mock);
@@ -123,7 +123,7 @@ class CalendarTest extends TestCase
     public function testExceptionOnEventInstances()
     {
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getEventInstancesStream())),
+            new Response(200, [], Utils::streamFor($this->getEventInstancesStream())),
             new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
@@ -144,7 +144,7 @@ class CalendarTest extends TestCase
     public function testUpsertEvent()
     {
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], Utils::streamFor($this->getStream())),
             new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
@@ -196,8 +196,8 @@ class CalendarTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(200),
-            new Response(200, [], stream_for($this->getStream())),
-            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], Utils::streamFor($this->getStream())),
+            new Response(200, [], Utils::streamFor($this->getStream())),
         ]);
 
         $handler = HandlerStack::create($mock);
@@ -252,7 +252,7 @@ class CalendarTest extends TestCase
     public function testSyncError()
     {
         $mock = new MockHandler([
-            new Response(200, [], stream_for($this->getStream())),
+            new Response(200, [], Utils::streamFor($this->getStream())),
             new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 

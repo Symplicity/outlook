@@ -12,7 +12,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -45,9 +45,9 @@ class SubscriptionTest extends TestCase
         $wrongDateResponse = array_merge($subscriptionResponse, ['SubscriptionExpirationDateTime' => 'wrongdate']);
 
         $mock = new MockHandler([
-            new Response(200, [], stream_for(json_encode($this->getSubscriptionResponse()))),
-            new Response(200, [], stream_for(json_encode($uncheckedSubscriptionDate))),
-            new Response(200, [], stream_for(json_encode($wrongDateResponse))),
+            new Response(200, [], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
+            new Response(200, [], Utils::streamFor(json_encode($uncheckedSubscriptionDate))),
+            new Response(200, [], Utils::streamFor(json_encode($wrongDateResponse))),
             new Response(200, [], ''),
             new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
@@ -102,7 +102,7 @@ class SubscriptionTest extends TestCase
     public function testRenewSubscription()
     {
         $mock = new MockHandler([
-            new Response(200, [], stream_for(json_encode($this->getSubscriptionResponse()))),
+            new Response(200, [], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
             new Response(200, [], ''),
             new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
@@ -130,7 +130,7 @@ class SubscriptionTest extends TestCase
     public function testDeleteSubscription()
     {
         $mock = new MockHandler([
-            new Response(204, [], stream_for(json_encode($this->getSubscriptionResponse()))),
+            new Response(204, [], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
             new Response(202, [], ''),
             new Response(404, [], ''),
         ]);

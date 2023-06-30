@@ -5,7 +5,7 @@ namespace Symplicity\Outlook\Batch;
 
 use GuzzleHttp\Psr7\AppendStream;
 use Symplicity\Outlook\Interfaces\Batch\OStreamInterface;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\StreamInterface;
 use Symplicity\Outlook\Http\Request;
 use Symplicity\Outlook\Interfaces\Entity\BatchWriterEntityInterface;
@@ -27,12 +27,12 @@ class Stream implements OStreamInterface
     public function create(): StreamInterface
     {
         $stream = new AppendStream();
-        $stream->addStream(stream_for($this->getRequestLine()));
-        $stream->addStream(stream_for("\r\n"));
-        $stream->addStream(stream_for($this->getContentTypeHeader()));
-        $stream->addStream(stream_for("\r\n\r\n"));
-        $stream->addStream(stream_for(json_encode($this->writer)));
-        $stream->addStream(stream_for("\r\n"));
+        $stream->addStream(Utils::streamFor($this->getRequestLine()));
+        $stream->addStream(Utils::streamFor("\r\n"));
+        $stream->addStream(Utils::streamFor($this->getContentTypeHeader()));
+        $stream->addStream(Utils::streamFor("\r\n\r\n"));
+        $stream->addStream(Utils::streamFor(json_encode($this->writer)));
+        $stream->addStream(Utils::streamFor("\r\n"));
         return $stream;
     }
 

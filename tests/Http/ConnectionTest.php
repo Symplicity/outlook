@@ -11,7 +11,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -42,9 +42,9 @@ class ConnectionTest extends TestCase
         $mock = new MockHandler([
             new Response(200, [], json_encode(['test'])),
             new Response(202, ['Content-Length' => 0]),
-            new Response(400, ['Content-Length' => 0], stream_for('Client Error')),
-            new Response(401, ['Content-Length' => 0], stream_for('Dates not valid')),
-            new Response(401, ['Content-Length' => 0], stream_for('Dates not valid')),
+            new Response(400, ['Content-Length' => 0], Utils::streamFor('Client Error')),
+            new Response(401, ['Content-Length' => 0], Utils::streamFor('Dates not valid')),
+            new Response(401, ['Content-Length' => 0], Utils::streamFor('Dates not valid')),
             new Response(202, ['Content-Length' => 0]),
             new RequestException('Error Communicating with Server', new Request('GET', 'test.com')),
         ]);
@@ -120,10 +120,10 @@ class ConnectionTest extends TestCase
         $this->assertInstanceOf(Client::class, $connectionHandler->createClientWithRetryHandler());
         $this->assertInstanceOf(Client::class, $connectionHandler->createClient());
         $retryHandler = $connectionHandler->upsertRetryDelay();
-        $response = $retryHandler->call($connectionHandler, 3, new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')));
+        $response = $retryHandler->call($connectionHandler, 3, new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], Utils::streamFor('Client Error')));
         $this->assertEquals(2000, $response);
 
-        $response = $retryHandler->call($connectionHandler, 1, new Response(429, ['Content-Length' => 0], stream_for('Client Error')));
+        $response = $retryHandler->call($connectionHandler, 1, new Response(429, ['Content-Length' => 0], Utils::streamFor('Client Error')));
         $this->assertEquals(1000, $response);
     }
 
@@ -173,14 +173,14 @@ class ConnectionTest extends TestCase
     public function getRetryHandlerData(): array
     {
         return [
-            [new Request(RequestType::Get, 'outlook.com'), new Response(200, ['Content-Length' => 0], stream_for(''))],
-            [new Request(RequestType::Get, 'outlook.com'), new Response(401, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
-            [new Request(RequestType::Get, 'outlook.com'), new Response(401, ['Content-Length' => 0], stream_for('Client Error')), 4, false],
-            [new Request(RequestType::Post, 'outlook.com'), new Response(401, ['Content-Length' => 0], stream_for('Client Error')), 2, false],
-            [new Request(RequestType::Post, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
-            [new Request(RequestType::Put, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
-            [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 2, true],
-            [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], stream_for('Client Error')), 11, false]
+            [new Request(RequestType::Get, 'outlook.com'), new Response(200, ['Content-Length' => 0], Utils::streamFor(''))],
+            [new Request(RequestType::Get, 'outlook.com'), new Response(401, ['Content-Length' => 0], Utils::streamFor('Client Error')), 2, true],
+            [new Request(RequestType::Get, 'outlook.com'), new Response(401, ['Content-Length' => 0], Utils::streamFor('Client Error')), 4, false],
+            [new Request(RequestType::Post, 'outlook.com'), new Response(401, ['Content-Length' => 0], Utils::streamFor('Client Error')), 2, false],
+            [new Request(RequestType::Post, 'outlook.com'), new Response(429, ['Content-Length' => 0], Utils::streamFor('Client Error')), 2, true],
+            [new Request(RequestType::Put, 'outlook.com'), new Response(429, ['Content-Length' => 0], Utils::streamFor('Client Error')), 2, true],
+            [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], Utils::streamFor('Client Error')), 2, true],
+            [new Request(RequestType::Delete, 'outlook.com'), new Response(429, ['Content-Length' => 0], Utils::streamFor('Client Error')), 11, false]
         ];
     }
 }

@@ -9,7 +9,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -48,8 +48,8 @@ class BatchConnectionTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(200, [], '{"responses":[{"id":"foo","status":201,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","@odata.etag":"W\/\"123==\"","Id":"test==","LastModifiedDateTime":"2020-11-09T14:40:50.8444665-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=ANC%3D%3D&exvsurl=1&path=\/calendar\/item"}},{"id":"bar","status":201,"headers":{"etag":"W\/\"456==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'CDE==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'CDE==\')","@odata.etag":"W\/\"aHQ+t811Ok+IYnQ4RgjubgACguszQg==\"","Id":"CDE==","LastModifiedDateTime":"2020-11-09T14:40:51.1413001-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=cde&path=\/calendar\/item"}},{"id":"foo1","status":201,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/Events(Id,Subject,WebLink,Type,SeriesMasterId,LastModifiedDateTime)\/$entity","@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","@odata.etag":"W\/\"123==\"","Id":"test==","LastModifiedDateTime":"2020-11-09T14:40:50.8444665-05:00","Subject":"ABC","SeriesMasterId":null,"Type":"SingleInstance","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=ANC%3D%3D&exvsurl=1&path=\/calendar\/item"}}, {"id":"bar1","status":400,"headers":{"etag":"W\/\"123==\"","location":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'123@345\')\/Events(\'ABC==\')","odata-version":"4.0","content-type":"application\/json;odata.metadata=minimal;odata.streaming=true;IEEE754Compatible=false;charset=utf-8"},"body":{"error": {"code": "InvalidParams", "message": "Invalid params passed"}}}, {"id":"2323","status":204,"headers":[]}]}'),
-            new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')),
-            new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], stream_for('Client Error')),
+            new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], Utils::streamFor('Client Error')),
+            new Response(429, ['Content-Length' => 0, 'Retry-After' => 2], Utils::streamFor('Client Error')),
             new RequestException('Error Communicating with Server', new Request('GET', 'test.com')),
         ]);
 

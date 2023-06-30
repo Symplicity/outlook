@@ -9,7 +9,7 @@
         "ext-json": "*",
         "php": ">=7.4",
         "ramsey/uuid" : "^3.8.0",
-        "guzzlehttp/guzzle": "^6.2",
+        "guzzlehttp/guzzle": "^6.2 || ^7.2",
         "monolog/monolog" : "^2.3",
         "myclabs/php-enum": "^1.6.0"
     },
