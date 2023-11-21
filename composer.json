@@ -7,8 +7,9 @@
     "license": "MIT",
     "require": {
         "ext-json": "*",
-        "php": ">=7.4",
-        "ramsey/uuid" : "^3.8.0",
+        "php": "^8.1",
+        "microsoft/microsoft-graph": "^2.0.0",
+        "ramsey/uuid" : "^4.0",
         "guzzlehttp/guzzle": "^6.2 || ^7.2",
         "monolog/monolog" : "^2.3",
         "myclabs/php-enum": "^1.6.0"
@@ -29,10 +30,9 @@
             "Symplicity\\Outlook\\Tests\\": "tests/"
         }
     },
-    "scripts": {
-      "test": [
-        "phpunit",
-        "phpcs"
-      ]
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
     }
 }
