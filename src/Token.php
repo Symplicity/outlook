@@ -20,10 +20,10 @@ class Token implements TokenInterface
 
     public const TENANT_ID = 'common';
 
-    protected const VERSION = 'v2.0';
-    protected const AUTHORITY = 'https://login.microsoftonline.com';
-    protected const AUTHORIZE = 'authorize';
-    protected const TOKEN = 'token';
+    protected const OAUTH_AUTHORIZE = 'authorize';
+    protected const OAUTH_TOKEN = 'token';
+    protected const OAUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
+    protected const OAUTH_USER_INFO_URL = 'https://graph.microsoft.com/oidc/userinfo';
 
     protected array $scopes = [
         'openid',
@@ -91,17 +91,15 @@ class Token implements TokenInterface
 
     public function getAuthorizationUrl(array $state, string $redirectUrl): string
     {
-        $baseUrl = static::AUTHORITY . DIRECTORY_SEPARATOR . static::TENANT_ID . DIRECTORY_SEPARATOR . 'oauth2' . DIRECTORY_SEPARATOR . static::VERSION . DIRECTORY_SEPARATOR;
-
         $tokenAuthorizationProvider = new GenericProvider([
             'clientId' => $this->clientId,
             'clientSecret' => $this->clientSecret,
             'redirectUri' => $redirectUrl,
             'scope' => $this->scopes,
             'scopeSeparator' => ' ',
-            'urlAuthorize' => $baseUrl . static::AUTHORIZE,
-            'urlAccessToken' => $baseUrl . static::TOKEN,
-            'urlResourceOwnerDetails' => 'https://graph.microsoft.com/oidc/userinfo'
+            'urlAuthorize' => static::OAUTH_URL . static::OAUTH_AUTHORIZE,
+            'urlAccessToken' => static::OAUTH_URL . static::OAUTH_TOKEN,
+            'urlResourceOwnerDetails' => static::OAUTH_USER_INFO_URL
         ]);
 
         $state = \json_encode($state);
