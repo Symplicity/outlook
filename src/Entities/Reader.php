@@ -130,7 +130,7 @@ class Reader implements ReaderEntityInterface
         return $this->allDay;
     }
 
-    public function getLocation(): Location
+    public function getLocation(): ?Location
     {
         return $this->location;
     }
@@ -170,7 +170,7 @@ class Reader implements ReaderEntityInterface
         return $this->extensions;
     }
 
-    public function getSensitivityStatus(): Sensitivity
+    public function getSensitivityStatus(): ?Sensitivity
     {
         return $this->private;
     }
@@ -191,7 +191,7 @@ class Reader implements ReaderEntityInterface
         $this->id = $id;
     }
 
-    protected function setWebLink(string $webLink): void
+    protected function setWebLink(?string $webLink): void
     {
         $this->webLink = $webLink;
     }
@@ -201,7 +201,7 @@ class Reader implements ReaderEntityInterface
         $this->title = $title;
     }
 
-    protected function setBody(ItemBody $body): void
+    protected function setBody(?ItemBody $body): void
     {
         $this->body = $body;
     }
@@ -221,7 +221,7 @@ class Reader implements ReaderEntityInterface
         $this->allDay = $allDay;
     }
 
-    protected function setLocation(Location $location): void
+    protected function setLocation(?Location $location): void
     {
         $this->location = $location;
     }

@@ -29,13 +29,13 @@ interface ReaderEntityInterface
 
     public function getDate(): DateEntityInterface;
 
-    public function getLocation(): Location;
+    public function getLocation(): ?Location;
 
     public function getETag(): string;
 
     public function isAllDay(): bool;
 
-    public function getSensitivityStatus(): Sensitivity;
+    public function getSensitivityStatus(): ?Sensitivity;
 
     public function getVisibility(): ?Importance;
 
