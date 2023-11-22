@@ -4,141 +4,158 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
+use Microsoft\Graph\Generated\Models\Event;
+use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Models\Extension as Extension;
+use Microsoft\Graph\Generated\Models\FreeBusyStatus;
+use Microsoft\Graph\Generated\Models\Importance;
+use Microsoft\Graph\Generated\Models\ItemBody;
+use Microsoft\Graph\Generated\Models\Location as Location;
+use Microsoft\Graph\Generated\Models\Recipient;
+use Microsoft\Graph\Generated\Models\Sensitivity;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
-use Symplicity\Outlook\Utilities\EventTypes;
-use Symplicity\Outlook\Utilities\FreeBusy;
 
 class Reader implements ReaderEntityInterface
 {
-    protected $id;
-    protected $webLink;
-    protected $title;
-    protected $description;
-    protected $body;
-    protected $date;
-    protected $allDay = false;
-    protected $location;
-    protected $eTag;
-    protected $visibility;
-    protected $recurrence;
-    protected $private;
-    protected $organizer;
-    protected $eventType;
-    protected $seriesMasterId;
-    protected $freeBusy;
-    protected $extensions = [];
+    protected ?string $id = null;
 
-    public function hydrate(array $data = []) : ReaderEntityInterface
+    protected ?string $webLink = null;
+
+    protected ?string $title = null;
+
+    protected ?string $description = null;
+
+    protected ?ItemBody $body = null;
+
+    protected DateEntityInterface $date;
+
+    protected bool $allDay = false;
+
+    protected ?Location $location = null;
+
+    protected ?string $eTag = null;
+
+    protected ?Importance $visibility = null;
+
+    protected ?RecurrenceEntityInterface $recurrence = null;
+
+    protected ?Sensitivity $private = null;
+
+    protected ?Recipient $organizer = null;
+
+    protected ?EventType $eventType = null;
+
+    protected ?string $seriesMasterId = null;
+
+    protected ?FreeBusyStatus $freeBusy;
+
+    /** @var array<Extension> $extensions */
+    protected ?array $extensions = [];
+
+    public function hydrate(?Event $event = null): ReaderEntityInterface
     {
-        $this->setEventType($data['Type']);
-        $this->setId($data['Id']);
-        $this->setWebLink($data['WebLink']);
-        $this->setTitle($data['Subject']);
-        $this->setDescription($data['BodyPreview']);
-        $this->setBody($data['Body']);
-
+        $this->setId($event->getId());
+        $this->setEventType($event->getType());
+        $this->setWebLink($event->getWebLink());
+        $this->setETag($event->getAdditionalData()['@odata.etag'] ?? null);
+        $this->setTitle($event->getSubject());
+        $this->setDescription($event->getBodyPreview());
+        $this->setBody($event->getBody());
+        $this->setAllDay($event->getIsAllDay() ?? false);
+        $this->setLocation($event->getLocation());
+        $this->setVisibility($event->getImportance());
+        $this->setPrivate($event->getSensitivity());
+        $this->setOrganizer($event->getOrganizer());
+        $this->setSeriesMasterId($event->getSeriesMasterId());
+        $this->setFreeBusy($event->getShowAs());
+        $this->setExtensions($event->getExtensions());
+        $this->setRecurrence($event);
         $this->setDate([
-            'start' => $data['Start']['DateTime'],
-            'end' => $data['End']['DateTime'],
-            'originalTimezone' => $data['OriginalStartTimeZone'],
-            'timezone' => $data['Start']['TimeZone'],
-            'modified' => $data['LastModifiedDateTime']
+            'start' => $event->getStart()?->getDateTime(),
+            'end' => $event->getEnd()?->getDateTime(),
+            'originalTimezone' => $event->getOriginalStartTimeZone(),
+            'timezone' => $event->getStart()?->getTimeZone(),
+            'modified' => $event->getLastModifiedDateTime()
         ]);
 
-        $this->setAllDay($data['IsAllDay']);
-        $this->setLocation($data['Location']);
-        $this->setETag($data['@odata.etag']);
-        $this->setVisibility($data['Importance']);
-        $this->setRecurrence($data);
-        $this->setPrivate($data['Sensitivity']);
-        $this->setOrganizer($data['Organizer'] ?? []);
-        $this->setSeriesMasterId($data['SeriesMasterId'] ?? null);
-        $this->setFreeBusy($data['ShowAs']);
-        $this->setExtensions($data['Extensions'] ?? []);
         return $this;
     }
 
-    public function deleted(array $data = []) : self
+    public function deleted(?Event $data = null): self
     {
-        $this->setId($data['id']);
+        $this->setId($data->getId());
         return $this;
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return get_object_vars($this);
     }
 
     // Mark: Getters
-    public function getId() : string
+    public function getId(): ?string
     {
         return $this->id;
     }
 
-    public function getWebLink() : string
+    public function getWebLink(): ?string
     {
         return $this->webLink;
     }
 
-    public function getTitle() : ?string
+    public function getTitle(): ?string
     {
         return $this->title;
     }
 
-    public function getBody() : ?ResponseBodyInterface
-    {
-        return $this->body;
-    }
-
-    public function getDescription() : ?string
+    public function getDescription(): ?string
     {
         return $this->description;
     }
 
-    public function getDate() : DateEntityInterface
+    public function getBody(): ?ItemBody
+    {
+        return $this->body;
+    }
+
+    public function getDate(): DateEntityInterface
     {
         return $this->date;
     }
 
-    public function isAllDay() : bool
+    public function isAllDay(): bool
     {
         return $this->allDay;
     }
 
-    public function getLocation() : ?Location
+    public function getLocation(): Location
     {
         return $this->location;
     }
 
-    public function getETag() : string
+    public function getETag(): string
     {
         return $this->eTag;
     }
 
-    public function getVisibility() : string
+    public function getVisibility(): ?Importance
     {
         return $this->visibility;
     }
 
-    public function getRecurrence() : ?RecurrenceEntityInterface
+    public function getRecurrence(): ?RecurrenceEntityInterface
     {
         return $this->recurrence;
     }
 
-    public function getSensitivityStatus() : string
-    {
-        return $this->private;
-    }
-
-    public function getOrganizer() : ?Organizer
+    public function getOrganizer(): ?Recipient
     {
         return $this->organizer;
     }
 
-    public function getEventType() : EventTypes
+    public function getEventType(): ?EventType
     {
         return $this->eventType;
     }
@@ -148,14 +165,19 @@ class Reader implements ReaderEntityInterface
         return $this->seriesMasterId;
     }
 
-    public function getFreeBusyStatus(): ?string
-    {
-        return $this->freeBusy;
-    }
-
     public function getExtensions(): array
     {
         return $this->extensions;
+    }
+
+    public function getSensitivityStatus(): Sensitivity
+    {
+        return $this->private;
+    }
+
+    public function getFreeBusyStatus(): ?FreeBusyStatus
+    {
+        return $this->freeBusy;
     }
 
     // Mark: Setters
@@ -179,12 +201,12 @@ class Reader implements ReaderEntityInterface
         $this->title = $title;
     }
 
-    protected function setBody(array $body): void
+    protected function setBody(ItemBody $body): void
     {
-        $this->body = new ResponseBody($body);
+        $this->body = $body;
     }
 
-    protected function setDescription(?string $description) : void
+    protected function setDescription(?string $description): void
     {
         $this->description = $description;
     }
@@ -199,61 +221,52 @@ class Reader implements ReaderEntityInterface
         $this->allDay = $allDay;
     }
 
-    protected function setLocation(array $location): void
+    protected function setLocation(Location $location): void
     {
-        $this->location = new Location($location);
+        $this->location = $location;
     }
 
-    protected function setETag(string $eTag): void
+    protected function setETag(?string $eTag): void
     {
         $this->eTag = $eTag;
     }
 
-    protected function setVisibility(string $visibility): void
+    protected function setVisibility(?Importance $visibility): void
     {
         $this->visibility = $visibility;
     }
 
-    protected function setRecurrence(array $data): void
+    protected function setRecurrence(Event $event): void
     {
-        if (isset($data['Type'], $data['Recurrence'])
-            && $data['Type'] == EventTypes::Master) {
-            $this->recurrence = new Recurrence($data['Recurrence']);
+        if ($event->getRecurrence() !== null
+            && $event->getType() === EventType::SERIES_MASTER) {
+            $this->recurrence = new Recurrence($event->getRecurrence());
         }
     }
 
-    protected function setPrivate(string $private): void
+    protected function setPrivate(?Sensitivity $private): void
     {
         $this->private = $private;
     }
 
-    protected function setOrganizer(array $organizer): void
+    protected function setOrganizer(?Recipient $organizer): void
     {
-        $this->organizer = new Organizer($organizer);
+        $this->organizer = $organizer;
     }
 
-    protected function setEventType(string $eventType) : void
+    protected function setEventType(?EventType $eventType): void
     {
-        $this->eventType = EventTypes::Single;
-        if ($value = EventTypes::search($eventType)) {
-            $this->eventType = EventTypes::$value();
-        }
+        $this->eventType = $eventType;
     }
 
-    public function setFreeBusy(string $freeBusy): void
+    public function setFreeBusy(?FreeBusyStatus $freeBusy): void
     {
-        $this->freeBusy = FreeBusy::Busy;
-        if ($value = FreeBusy::search($freeBusy)) {
-            $this->freeBusy = $value;
-        }
+        $this->freeBusy = $freeBusy;
     }
 
-    protected function setExtensions(array $extensions = []): ReaderEntityInterface
+    protected function setExtensions(?array $extensions = []): ReaderEntityInterface
     {
-        foreach ($extensions as $extension) {
-            $this->extensions[] = new Extension($extension);
-        }
-
+        $this->extensions = $extensions;
         return $this;
     }
 }

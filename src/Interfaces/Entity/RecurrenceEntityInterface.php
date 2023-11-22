@@ -5,20 +5,32 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces\Entity;
 
 use Closure;
-use Symplicity\Outlook\Utilities\PatternType;
-use Symplicity\Outlook\Utilities\RangeType;
-use Symplicity\Outlook\Utilities\RecurrenceIndex;
+use Microsoft\Graph\Generated\Models\DayOfWeek;
+use Microsoft\Graph\Generated\Models\RecurrencePatternType;
+use Microsoft\Graph\Generated\Models\RecurrenceRangeType;
+use Microsoft\Graph\Generated\Models\WeekIndex;
 
 interface RecurrenceEntityInterface
 {
-    public function getType() : PatternType;
-    public function getInterval() : int;
-    public function getMonth() : int;
-    public function getIndex() : RecurrenceIndex;
-    public function getDaysOfWeek() : array;
-    public function getDayOfMonth() : int;
-    public function getRangeDates() : DateEntityInterface;
-    public function getNumberOfOccurrences(): int;
-    public function getOccurrence() : Closure;
-    public function getRangeType() : RangeType;
+    public function getType(): ?RecurrencePatternType;
+
+    public function getInterval(): ?int;
+
+    public function getMonth(): ?int;
+
+    public function getIndex(): ?WeekIndex;
+
+    public function getFirstDayOfWeek(): ?DayOfWeek;
+
+    public function getDaysOfWeek(): array;
+
+    public function getDayOfMonth(): ?int;
+
+    public function getRangeDates(): ?DateEntityInterface;
+
+    public function getNumberOfOccurrences(): ?int;
+
+    public function getOccurrence(): Closure;
+
+    public function getRangeType(): RecurrenceRangeType;
 }

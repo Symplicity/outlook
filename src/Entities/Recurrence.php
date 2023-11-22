@@ -5,82 +5,98 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Entities;
 
 use Closure;
+use Microsoft\Graph\Generated\Models\DayOfWeek;
+use Microsoft\Graph\Generated\Models\PatternedRecurrence;
+use Microsoft\Graph\Generated\Models\RecurrencePatternType;
+use Microsoft\Graph\Generated\Models\RecurrenceRange;
+use Microsoft\Graph\Generated\Models\RecurrenceRangeType;
+use Microsoft\Graph\Generated\Models\WeekIndex;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
-use Symplicity\Outlook\Utilities\DayOfTheWeek;
-use Symplicity\Outlook\Utilities\PatternType;
-use Symplicity\Outlook\Utilities\RangeType;
-use Symplicity\Outlook\Utilities\RecurrenceIndex;
 
 class Recurrence implements RecurrenceEntityInterface
 {
-    protected $type;
-    protected $interval;
-    protected $month;
-    protected $index;
-    protected $firstDayOfWeek;
-    protected $dayOfMonth;
-    protected $daysOfWeek;
-    protected $rangeType;
-    protected $rangeDates;
-    protected $numberOfOccurrences = 0;
-    protected $occurrence;
+    protected ?RecurrencePatternType $type = null;
 
-    public function __construct(array $data = [])
+    protected ?int $interval = null;
+
+    protected ?int $month = null;
+
+    protected ?WeekIndex $index = null;
+
+    protected ?DayOfWeek $firstDayOfWeek = null;
+
+    protected ?int $dayOfMonth;
+
+    protected ?RecurrenceRangeType $rangeType = null;
+
+    protected ?DateEntityInterface $rangeDates = null;
+
+    protected ?int $numberOfOccurrences = 0;
+
+    protected ?Closure $occurrence = null;
+
+    /** @var array<DayOfWeek> */
+    protected array $daysOfWeek;
+
+    public function __construct(?PatternedRecurrence $recurrence)
     {
-        $this->setType($data['Pattern']['Type']);
-        $this->setInterval($data['Pattern']['Interval']);
-        $this->setMonth($data['Pattern']['Month']);
-        $this->setIndex($data['Pattern']['Index']);
-        $this->setFirstDayOfWeek($data['Pattern']['FirstDayOfWeek']);
-        $this->setDayOfMonth($data['Pattern']['DayOfMonth']);
-        $this->setDaysOfWeek($data['Pattern']['DaysOfWeek'] ?? []);
-        $this->setRangeType($data['Range']['Type']);
-        $this->setRangeDates($data);
-        $this->setNumberOfOccurrences($data['Range']['NumberOfOccurrences']);
+        $pattern = $recurrence->getPattern();
+        $range = $recurrence->getRange();
+
+        $this->setType($pattern->getType());
+        $this->setInterval($pattern->getInterval());
+        $this->setMonth($pattern->getMonth());
+        $this->setIndex($pattern->getIndex());
+        $this->setFirstDayOfWeek($pattern->getFirstDayOfWeek());
+        $this->setDayOfMonth($pattern->getDayOfMonth());
+        $this->setDaysOfWeek($pattern->getDaysOfWeek());
+        $this->setRangeType($range->getType());
+        $this->setRangeDates($range);
+        $this->setNumberOfOccurrences($range->getNumberOfOccurrences());
     }
 
-    public function getType() : PatternType
+    public function getType(): ?RecurrencePatternType
     {
         return $this->type;
     }
 
-    public function getInterval() : int
+    public function getInterval(): ?int
     {
         return $this->interval;
     }
 
-    public function getMonth() : int
+    public function getMonth(): ?int
     {
         return $this->month;
     }
 
-    public function getIndex() : RecurrenceIndex
+    public function getIndex(): ?WeekIndex
     {
         return $this->index;
     }
 
-    public function getFirstDayOfWeek() : DayOfTheWeek
+    public function getFirstDayOfWeek(): ?DayOfWeek
     {
         return $this->firstDayOfWeek;
     }
 
-    public function getDayOfMonth() : int
+    public function getDayOfMonth(): ?int
     {
         return $this->dayOfMonth;
     }
 
-    public function getDaysOfWeek() : array
+    public function getDaysOfWeek(): array
     {
         return $this->daysOfWeek;
     }
 
-    public function getRangeType() : RangeType
+    public function getRangeType(): RecurrenceRangeType
     {
         return $this->rangeType;
     }
 
-    public function getRangeDates() : DateEntityInterface
+    public function getRangeDates(): DateEntityInterface
     {
         return $this->rangeDates;
     }
@@ -90,38 +106,38 @@ class Recurrence implements RecurrenceEntityInterface
         return $this->numberOfOccurrences;
     }
 
-    public function getOccurrence() : Closure
+    public function getOccurrence(): Closure
     {
         return $this->occurrence;
     }
 
     // Mark: Mutator/Private
-    public function setType(string $type): void
+    public function setType(?RecurrencePatternType $type): void
     {
-        $this->type = new PatternType($type);
+        $this->type = $type;
     }
 
-    public function setInterval(int $interval): void
+    public function setInterval(?int $interval): void
     {
         $this->interval = $interval;
     }
 
-    public function setMonth(int $month): void
+    public function setMonth(?int $month): void
     {
         $this->month = $month;
     }
 
-    public function setIndex(string $index): void
+    public function setIndex(?WeekIndex $index): void
     {
-        $this->index = new RecurrenceIndex($index);
+        $this->index = $index;
     }
 
-    public function setFirstDayOfWeek(string $firstDayOfWeek): void
+    public function setFirstDayOfWeek(?DayOfWeek $firstDayOfWeek): void
     {
-        $this->firstDayOfWeek = DayOfTheWeek::$firstDayOfWeek();
+        $this->firstDayOfWeek = $firstDayOfWeek;
     }
 
-    public function setDayOfMonth(int $dayOfMonth): void
+    public function setDayOfMonth(?int $dayOfMonth): void
     {
         $this->dayOfMonth = $dayOfMonth;
     }
@@ -131,21 +147,21 @@ class Recurrence implements RecurrenceEntityInterface
         $this->daysOfWeek = $daysOfWeek ?? [];
     }
 
-    public function setRangeType(string $rangeType): void
+    public function setRangeType(?RecurrenceRangeType $rangeType): void
     {
-        $this->rangeType = new RangeType($rangeType);
+        $this->rangeType = $rangeType;
     }
 
-    public function setRangeDates(array $range): void
+    public function setRangeDates(?RecurrenceRange $range): void
     {
         $this->rangeDates = new DateEntity([
-            'start' => $range['Range']['StartDate'],
-            'end' => $range['Range']['EndDate'],
-            'timezone' => $range['Range']['RecurrenceTimeZone']
+            'start' => $range->getStartDate(),
+            'end' => $range->getEndDate(),
+            'timezone' => $range->getRecurrenceTimeZone()
         ]);
     }
 
-    public function setNumberOfOccurrences(int $numberOfOccurrences): void
+    public function setNumberOfOccurrences(?int $numberOfOccurrences): void
     {
         $this->numberOfOccurrences = $numberOfOccurrences;
     }
