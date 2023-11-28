@@ -26,6 +26,8 @@ interface CalendarViewParamsInterface
 
     public function getHeaders(): ?array;
 
+    public function getPreferHeaders(): ?string;
+
     public function setStartDateTime(string $startDateTime): self;
 
     public function setEndDateTime(string $endDateTime): self;

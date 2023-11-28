@@ -18,7 +18,7 @@ class GraphServiceCalendarView
 {
     use AuthorizationContextTrait;
 
-    private ?RequestAdapter $requestAdapter;
+    protected ?RequestAdapter $requestAdapter;
 
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token)
     {

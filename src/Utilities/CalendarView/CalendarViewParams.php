@@ -4,20 +4,15 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Utilities\CalendarView;
 
+use Microsoft\Graph\Generated\Users\Item\CalendarView\CalendarViewRequestBuilderGetQueryParameters;
 use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
 
-class CalendarViewParams implements CalendarViewParamsInterface
+class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters implements CalendarViewParamsInterface
 {
-    private string $startDateTime;
-    private string $endDateTime;
-    private ?string $filter = null;
-    private ?array $orderBy = null;
-    private ?int $top = null;
-    private ?int $skip = null;
-    private ?bool $count = null;
-    private ?array $select = null;
     private ?string $deltaToken = null;
     private ?array $headers = [];
+    private ?string $preferHeaders = null;
+    private ?string $timezone = 'Eastern Standard Time';
 
     public function getStartDateTime(): string
     {
@@ -36,7 +31,7 @@ class CalendarViewParams implements CalendarViewParamsInterface
 
     public function getOrderBy(): ?array
     {
-        return $this->orderBy;
+        return $this->orderby;
     }
 
     public function getTop(): ?int
@@ -69,6 +64,11 @@ class CalendarViewParams implements CalendarViewParamsInterface
         return $this->headers;
     }
 
+    public function getPreferHeaders(): ?string
+    {
+        return $this->preferHeaders ?? 'odata.maxpagesize=1,odata.track-changes,outlook.timezone="' . $this->timezone . '"';
+    }
+
     public function setStartDateTime(string $startDateTime): CalendarViewParams
     {
         $this->startDateTime = $startDateTime;
@@ -89,7 +89,7 @@ class CalendarViewParams implements CalendarViewParamsInterface
 
     public function setOrderBy(?array $orderBy): CalendarViewParams
     {
-        $this->orderBy = $orderBy;
+        $this->orderby = $orderBy;
         return $this;
     }
 
@@ -126,6 +126,18 @@ class CalendarViewParams implements CalendarViewParamsInterface
     public function setHeaders(?array $headers): CalendarViewParams
     {
         $this->headers = $headers;
+        return $this;
+    }
+
+    public function setPreferHeaders(?string $preferHeaders): CalendarViewParams
+    {
+        $this->preferHeaders = $preferHeaders;
+        return $this;
+    }
+
+    public function setTimezone(?string $timezone): CalendarViewParams
+    {
+        $this->timezone = $timezone;
         return $this;
     }
 }
