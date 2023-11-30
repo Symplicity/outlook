@@ -14,12 +14,12 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
     private ?string $preferHeaders = null;
     private ?string $timezone = 'Eastern Standard Time';
 
-    public function getStartDateTime(): string
+    public function getStartDateTime(): ?string
     {
         return $this->startDateTime;
     }
 
-    public function getEndDateTime(): string
+    public function getEndDateTime(): ?string
     {
         return $this->endDateTime;
     }

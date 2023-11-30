@@ -1,86 +1,77 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Symplicity\Outlook\Interfaces;
 
-use Symplicity\Outlook\Batch\Response;
+use Microsoft\Graph\Core\Requests\BatchResponseContent;
+use Microsoft\Graph\Generated\Groups\Item\Events\EventsRequestBuilderGetQueryParameters;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Symplicity\Outlook\Exception\ReadError;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
+use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
+use Symplicity\Outlook\Models\Event;
 
 interface CalendarInterface
 {
     /**
-     * Set request as pool request
-     * @return CalendarInterface
-     */
-    public function isBatchRequest(): CalendarInterface;
-
-    /**
-     * Once event has been accessed from outlook, use the method to save event to your database
+     * Once event has been received from outlook, this method will be called so that it can be saved to a persistant storage.
      * @param ReaderEntityInterface $reader
      * @return void
      */
-    public function saveEventLocal(ReaderEntityInterface $reader) : void;
+    public function saveEventLocal(ReaderEntityInterface $reader): void;
 
     /**
      * When event is deleted, this method will be called.
-     * @param ReaderEntityInterface $event
+     * @param string $eventId
      * @return void
      */
-    public function deleteEventLocal(ReaderEntityInterface $event) : void;
+    public function deleteEventLocal(string $eventId): void;
 
     /**
-     * Gets all the events to be sent to outlook
-     * @return array Return array of WriteInterface Entities, example [Write(....), Write(....)]
+     * Gets all the events that needs to go to Outlook
+     * @return array<Event>
      */
-    public function getLocalEvents() : array;
+    public function getLocalEvents(): array;
 
     /**
      * Passed by handler fulfillment on batch response
-     * @param Response|null $responses
+     * @param BatchResponseContent|null $responses
      */
-    public function handleBatchResponse(?Response $responses) : void;
+    public function handleBatchResponse(?BatchResponseContent $responses): void;
 
     /**
      * Passed by Guzzle single async requestor
      * @param $failedToWrite
      */
-    public function handleResponse(array $failedToWrite = []) : void;
-
-    /**
-     * Method that handles the sync
-     * @throws ReadError
-     * @param array $params
-     */
-    public function sync(array $params = []) : void;
+    public function handleResponse(array $failedToWrite = []): void;
 
     /**
      * Method to get & process a single event
-     * url : /me/events/{{eventId}}
-     * @param string $url
-     * @param array $params
+     * @param string $id
+     * @param ?EventsRequestBuilderGetQueryParameters $params
      * @return ReaderEntityInterface | null
      * @throws ReadError
      */
-    public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface;
+    public function getEventBy(string $id, ?EventsRequestBuilderGetQueryParameters $params = null): ?ReaderEntityInterface;
 
     /**
      * Method to get all instances of a series master
-     * url : /me/events/{{eventId}}/instances
-     * @param string $url
-     * @param array $params
+     * @param string $id
+     * @param InstancesRequestBuilderGetQueryParameters $params
      */
-    public function getEventInstances(string $url, array $params = []) : void;
+    public function getEventInstances(string $id, InstancesRequestBuilderGetQueryParameters $params): void;
 
     /**
      * Individual push event handler method, use this if you dont want to use sync
      * @param array $params
      */
-    public function push(array $params = []) : void;
+    public function push(array $params = []): void;
 
     /**
      * Individual pull event handler method, use this if you dont want to use sync
-     * @param array $params
+     * @param CalendarViewParamsInterface $params
      * @throws ReadError
      */
-    public function pull(array $params = []) : void;
+    public function pull(CalendarViewParamsInterface $params): void;
 }

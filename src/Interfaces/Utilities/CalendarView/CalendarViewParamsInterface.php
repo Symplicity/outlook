@@ -6,9 +6,9 @@ namespace Symplicity\Outlook\Interfaces\Utilities\CalendarView;
 
 interface CalendarViewParamsInterface
 {
-    public function getStartDateTime(): string;
+    public function getStartDateTime(): ?string;
 
-    public function getEndDateTime(): string;
+    public function getEndDateTime(): ?string;
 
     public function getFilter(): ?string;
 

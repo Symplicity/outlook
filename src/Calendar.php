@@ -4,117 +4,119 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook;
 
+use Closure;
+use Http\Promise\Promise;
+use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
+use Microsoft\Graph\BatchRequestBuilder;
+use Microsoft\Graph\Core\Requests\BatchRequestContent;
+use Microsoft\Graph\Generated\Groups\Item\Events\EventsRequestBuilderGetQueryParameters;
+use Microsoft\Graph\Generated\Models\Event as GraphEvent;
+use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaGetResponse;
+use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaRequestBuilderGetRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\EventsRequestBuilderPostRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDeleteRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
+use Microsoft\Kiota\Abstractions\RequestInformation;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Exception\ReadError;
-use Symplicity\Outlook\Http\Batch;
-use Symplicity\Outlook\Http\Connection;
-use Symplicity\Outlook\Http\Request;
-use Symplicity\Outlook\Http\RequestOptions;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
-use Symplicity\Outlook\Interfaces\Entity\DeleteInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\WriterInterface;
-use Symplicity\Outlook\Utilities\EventTypes;
-use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Utilities\ResponseHandler;
+use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
+use Symplicity\Outlook\Models\Event;
+use Symplicity\Outlook\Utilities\CalendarView\GraphServiceCalendarView;
+use Symplicity\Outlook\Utilities\CalendarView\PageIterator;
+use Symplicity\Outlook\Utilities\EventView\GraphServiceEvent;
 
+/**
+ * @property-read GraphServiceEvent $graphService
+ */
 abstract class Calendar implements CalendarInterface
 {
-    protected const EVENT_DELETED = 'deleted';
+    use BearerAuthorizationTrait;
+    use AuthorizationContextTrait;
+    use RequestConfigurationTrait;
+
+    // Maximum events allowed for graph batch api
     public const BATCH_BY = 20;
 
-    private $token;
+    protected LoggerInterface | null $logger;
 
-    /** @var bool $batch */
-    protected $batch = false;
-
-    /** @var Request $requestHandler */
-    protected $requestHandler;
-
-    /** @var LoggerInterface | null $logger */
-    protected $logger;
-
-    /** @var Reader $reader */
-    public $reader;
-
-    public function __construct(string $token, array $args = [])
+    public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
-        $this->token = $token;
         $this->logger = $args['logger'] ?? null;
-        $this->setRequestHandler($args['request'] ?? null, $args['connectionClientOptions'] ?? []);
-        $this->reader = $args['reader'] ?? null;
     }
 
-    public function sync(array $params = []) : void
+    public function __get(string $property)
     {
-        $this->push($params);
-        $this->pull($params);
+        if ($property === 'graphService') {
+            $this->graphService = new GraphServiceEvent(
+                $this->clientId,
+                $this->clientSecret,
+                $this->token
+            );
+
+            return $this->graphService;
+        }
+
+        return null;
     }
 
-    public function push(array $params = []) : void
-    {
-        // TODO: add individual sync later
-        $this->batch($params);
-    }
+    /// MARK: Calendar Event Reads
 
-    public function pull(array $params = []) : void
+    public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null): void
     {
         try {
-            $url = $params['endPoint'];
-            /** @var ResponseIteratorInterface $events */
-            $this->requestHandler->getEvents($url, $params);
-            foreach ($this->requestHandler->getResponseIterator()->each() as $event) {
-                if (isset($params['skipOccurrences'], $event['Type'])
-                    && $event['Type'] == EventTypes::Occurrence) {
-                    continue;
-                }
+            $graphServiceClient = new GraphServiceCalendarView(
+                $this->clientId,
+                $this->clientSecret,
+                $this->token
+            );
 
-                if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
-                    $this->deleteEventLocal($this->getReader()->deleted($event));
-                    continue;
-                }
+            $requestConfiguration = $this->getCalendarViewRequestConfiguration($params);
 
-                $this->saveEventLocal($this->getEntity($event));
-            }
+            $events = $graphServiceClient
+                ->client($params)
+                ->me()
+                ->calendarView()
+                ->delta()
+                ->get($requestConfiguration)
+                ->wait();
+
+            $this->iterateThrough(
+                $events,
+                $graphServiceClient,
+                $requestConfiguration,
+                $deltaLinkStore
+            );
         } catch (\Exception $e) {
             throw new ReadError($e->getMessage(), $e->getCode());
         }
     }
 
-    public function upsert(WriterInterface $writer, array $params = []): ResponseInterface
-    {
-        return $this->requestHandler->upsert($writer, $params);
-    }
-
-    public function delete(DeleteInterface $writer, array $params = []): ResponseInterface
-    {
-        return $this->requestHandler->delete($writer, $params);
-    }
-
-    public function getEvent(string $url, array $params = []) : ?ReaderEntityInterface
+    /**
+     *
+     * @throws ReadError
+     */
+    public function getEventBy(string $id, ?EventsRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
     {
         try {
-            $response = $this->requestHandler->getEvent($url, $params);
-            $event = ResponseHandler::toArray($response);
-            if (!count($event)) {
-                throw new ReadError('Could not find event', 404);
-            }
+            $requestConfiguration = $this->getEventViewRequestConfiguration($params);
 
-            if (isset($params['skipOccurrences'], $event['Type'])
-                && $event['Type'] == EventTypes::Occurrence) {
-                return null;
-            }
-
-            if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
-                $this->deleteEventLocal($this->getReader()->deleted($event));
-                return null;
-            }
+            $event = $this->graphService
+                ->client($params)
+                ->me()
+                ->events()
+                ->byEventId($id)
+                ->get($requestConfiguration)
+                ->wait();
 
             $entity = $this->getEntity($event);
-            $this->saveEventLocal($entity);
+            $beforeReturn?->call($this, $entity, $event);
             return $entity;
         } catch (\Exception $e) {
             throw new ReadError($e->getMessage(), $e->getCode());
@@ -122,26 +124,23 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
-     * @param string $url
-     * @param array $params
      * @throws ReadError
      */
-    public function getEventInstances(string $url, array $params = []) : void
+    public function getEventInstances(string $id, InstancesRequestBuilderGetQueryParameters $params): void
     {
         try {
-            $responseIterator = $this->requestHandler->getEventIterator($url, $params);
-            foreach ($responseIterator->each() as $event) {
-                if (isset($params['skipOccurrences'], $event['Type'])
-                    && $event['Type'] == EventTypes::Occurrence) {
-                    continue;
-                }
+            $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
 
-                if (isset($event['reason']) && $event['reason'] === static::EVENT_DELETED) {
-                    $event = $this->getReader()->deleted($event);
-                    $this->deleteEventLocal($event);
-                    continue;
-                }
+            $events = $this->graphService
+                ->client()
+                ->me()
+                ->events()
+                ->byEventId($id)
+                ->instances()
+                ->get($requestConfiguration)
+                ->wait();
 
+            foreach ($events->getValue() ?? [] as $event) {
                 $entity = $this->getEntity($event);
                 $this->saveEventLocal($entity);
             }
@@ -150,73 +149,174 @@ abstract class Calendar implements CalendarInterface
         }
     }
 
-    protected function batch(array $params = []) : void
+    // MARK: Event writes
+
+    /**
+     * @throws \JsonException
+     * @throws \Exception
+     */
+    public function push(array $params = []): void
     {
+        $postRequestConfiguration = $this->getEventPostRequestConfiguration();
+        $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
+        $deleteRequestConfiguration = $this->getEventDeleteRequestConfiguration();
+
+        $batchRequestConfiguration = $this->getEventPostBatchRequestConfiguration();
+
         $eventsToWrite = $this->getLocalEvents();
         $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
+        $batch = [];
 
         foreach ($chunks as $chunk) {
-            $batch = [];
-
-            /** @var WriterInterface $event */
+            /** @var Event $event */
             foreach ($chunk as $event) {
-                if ($event instanceof WriterInterface
-                    || $event instanceof DeleteInterface) {
-                    $batch[] = $event;
+                if ($event instanceof Event) {
+                    $batch[] = $this->prepareBatchUpsert(
+                        $event,
+                        $postRequestConfiguration,
+                        $patchRequestConfiguration,
+                        $deleteRequestConfiguration
+                    );
                 }
             }
 
-            $responses = $this->requestHandler->batch($batch, $params);
+            $responses = null;
+            if (\count($batch)) {
+                $batchRequestContent = new BatchRequestContent($batch);
+                $batchRequestBuilder = new BatchRequestBuilder($this->graphService->getRequestAdapter());
+                $responses = $batchRequestBuilder
+                    ->postAsync($batchRequestContent, $batchRequestConfiguration)
+                    ->wait();
+            }
+
             $this->handleBatchResponse($responses);
         }
     }
 
-    protected function getEntity(array $event) : ReaderEntityInterface
+    /**
+     * @throws \Exception
+     */
+    public function upsert(Event $event): ?Event
     {
-        if ($event['Type'] == EventTypes::Occurrence) {
+        $postRequestConfiguration = $this->getEventPostRequestConfiguration();
+        $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
+
+        $eventUpsertRequest = $this->prepareUpsertAsync(
+            $event,
+            $postRequestConfiguration,
+            $patchRequestConfiguration
+        );
+
+        return $eventUpsertRequest->wait();
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function delete(string $id): ResponseInterface
+    {
+        $requestConfiguration = new EventItemRequestBuilderDeleteRequestConfiguration();
+        $requestConfiguration->headers = $this->getAuthorizationHeaders($this->token);
+
+        return $this->graphService
+            ->client()
+            ->me()
+            ->events()
+            ->byEventId($id)
+            ->delete($requestConfiguration)
+            ->wait();
+    }
+
+    protected function getEntity(GraphEvent $event): ReaderEntityInterface
+    {
+        if ($event->getType()->value() === EventType::OCCURRENCE) {
             return $this->getOccurrenceReader()->hydrate($event);
         }
 
         return  $this->getReader()->hydrate($event);
     }
 
-    private function setRequestHandler(?Request $requestHandler, array $connectionClientOptions = []): void
+    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration): RequestInformation
     {
-        if ($requestHandler === null) {
-            $token = $this->token;
-            $logger = $this->logger;
-            $requestHandler = new Request($token, [
-                'requestOptions' => function(string $url, RequestType $methodType, array $args = []) {
-                    return new RequestOptions($url, $methodType, $args);
-                },
-                'connection' => new Connection($logger, $connectionClientOptions),
-                'batchConnectionHandler' => function() use ($logger, $connectionClientOptions) {
-                    return new Batch($logger, $connectionClientOptions);
-                }
-            ]);
+        $me = $this->graphService
+            ->client()
+            ->me();
+
+        if (!empty($eventId = $event->getId())) {
+            if ($event->getIsDelete()) {
+                $request = $me->events()->byEventId($eventId)->toDeleteRequestInformation($deleteRequestConfiguration);
+            } else {
+                $request = $me->events()
+                    ->byEventId($eventId)
+                    ->toPatchRequestInformation($event, $patchRequestConfiguration);
+            }
+        } else {
+            $request = $me->events()
+                ->toPostRequestInformation($event, $postRequestConfiguration);
         }
 
-        $this->requestHandler = $requestHandler;
+        return $request;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function prepareUpsertAsync(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration): Promise
+    {
+        $me = $this->graphService
+            ->client()
+            ->me();
+
+        if (!empty($eventId = $event->getId())) {
+            $request = $me->events()
+                ->byEventId($eventId)
+                ->patch($event, $patchRequestConfiguration);
+        } else {
+            $request = $me->events()
+                ->post($event, $postRequestConfiguration);
+        }
+
+        return $request;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function iterateThrough(DeltaGetResponse $events, GraphServiceCalendarView $graphServiceClient, DeltaRequestBuilderGetRequestConfiguration $requestConfiguration, ?Closure $deltaLinkStore = null): void
+    {
+        $iterator = new PageIterator(
+            $events,
+            $graphServiceClient->getRequestAdapter()
+        );
+
+        $iterator->setHeaders($requestConfiguration->headers);
+
+        $iterator->iterate(function (?GraphEvent $event) {
+            if (null === $event) {
+                return true;
+            }
+
+            $additionalData = $event->getAdditionalData();
+            if (isset($additionalData['@removed']['reason'])
+                && $additionalData['@removed']['reason'] === 'deleted') {
+                $this->deleteEventLocal($event->getId());
+                return true;
+            }
+
+            $this->saveEventLocal($this->getEntity($event));
+            return true;
+        });
+
+        $deltaLinkStore?->call($this, $iterator->getDeltaLink());
     }
 
     protected function getReader(): ReaderEntityInterface
     {
-        return new Reader;
+        return new Reader();
     }
 
     protected function getOccurrenceReader(): ReaderEntityInterface
     {
-        return new Occurrence;
-    }
-
-    protected function getExceptionReader(): ReaderEntityInterface
-    {
-        return new Reader;
-    }
-
-    public function isBatchRequest(): CalendarInterface
-    {
-        $this->batch = true;
-        return $this;
+        return new Occurrence();
     }
 }
