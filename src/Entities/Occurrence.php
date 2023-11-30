@@ -21,6 +21,12 @@ class Occurrence implements ReaderEntityInterface
 
     protected ?string $id = null;
 
+    protected ?string $title = null;
+
+    protected ?string $description = null;
+
+    protected ?ItemBody $body = null;
+
     protected DateEntityInterface $date;
 
     protected string $eTag;
@@ -35,6 +41,9 @@ class Occurrence implements ReaderEntityInterface
     public function hydrate(?Event $event = null): ReaderEntityInterface
     {
         $this->setEventType($event->getType());
+        $this->setTitle($event->getSubject());
+        $this->setDescription($event->getBodyPreview());
+        $this->setBody($event->getBody());
         $this->setId($event->getId());
         $this->setETag($event->getAdditionalData()['@odata.etag'] ?? null);
         $this->setSeriesMasterId($event->getSeriesMasterId());
@@ -72,17 +81,17 @@ class Occurrence implements ReaderEntityInterface
 
     public function getTitle(): ?string
     {
-        return null;
+        return $this->title;
     }
 
     public function getDescription(): ?string
     {
-        return null;
+        return $this->description;
     }
 
     public function getBody(): ?ItemBody
     {
-        return null;
+        return $this->body;
     }
 
     public function getLocation(): ?Location
@@ -158,6 +167,21 @@ class Occurrence implements ReaderEntityInterface
     private function setETag(?string $eTag): void
     {
         $this->eTag = $eTag ?? '';
+    }
+
+    protected function setTitle(?string $title): void
+    {
+        $this->title = $title;
+    }
+
+    protected function setBody(?ItemBody $body): void
+    {
+        $this->body = $body;
+    }
+
+    protected function setDescription(?string $description): void
+    {
+        $this->description = $description;
     }
 
     private function setExtensions(array $extensions = []): ReaderEntityInterface
