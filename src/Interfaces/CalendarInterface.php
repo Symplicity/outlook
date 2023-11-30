@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces;
 
 use Microsoft\Graph\Core\Requests\BatchResponseContent;
-use Microsoft\Graph\Generated\Groups\Item\Events\EventsRequestBuilderGetQueryParameters;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Symplicity\Outlook\Exception\ReadError;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
@@ -49,11 +49,11 @@ interface CalendarInterface
     /**
      * Method to get & process a single event
      * @param string $id
-     * @param ?EventsRequestBuilderGetQueryParameters $params
+     * @param ?EventItemRequestBuilderGetQueryParameters $params
      * @return ReaderEntityInterface | null
      * @throws ReadError
      */
-    public function getEventBy(string $id, ?EventsRequestBuilderGetQueryParameters $params = null): ?ReaderEntityInterface;
+    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null): ?ReaderEntityInterface;
 
     /**
      * Method to get all instances of a series master

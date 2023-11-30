@@ -9,13 +9,13 @@ use Http\Promise\Promise;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\BatchRequestBuilder;
 use Microsoft\Graph\Core\Requests\BatchRequestContent;
-use Microsoft\Graph\Generated\Groups\Item\Events\EventsRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Models\Event as GraphEvent;
 use Microsoft\Graph\Generated\Models\EventType;
 use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaGetResponse;
 use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaRequestBuilderGetRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\EventsRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDeleteRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestInformation;
@@ -102,7 +102,7 @@ abstract class Calendar implements CalendarInterface
      *
      * @throws ReadError
      */
-    public function getEventBy(string $id, ?EventsRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
+    public function getEventBy(string $id, EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
     {
         try {
             $requestConfiguration = $this->getEventViewRequestConfiguration($params);
