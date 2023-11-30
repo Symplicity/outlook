@@ -244,7 +244,9 @@ abstract class Calendar implements CalendarInterface
 
         if (!empty($eventId = $event->getId())) {
             if ($event->getIsDelete()) {
-                $request = $me->events()->byEventId($eventId)->toDeleteRequestInformation($deleteRequestConfiguration);
+                $request = $me->events()
+                    ->byEventId($eventId)
+                    ->toDeleteRequestInformation($deleteRequestConfiguration);
             } else {
                 $request = $me->events()
                     ->byEventId($eventId)
