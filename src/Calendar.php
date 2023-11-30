@@ -196,7 +196,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws \Exception
      */
-    public function upsert(Event $event): ?Event
+    public function upsert(Event $event): ?GraphEvent
     {
         $postRequestConfiguration = $this->getEventPostRequestConfiguration();
         $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
