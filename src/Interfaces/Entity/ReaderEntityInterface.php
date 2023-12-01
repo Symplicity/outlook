@@ -49,5 +49,5 @@ interface ReaderEntityInterface
 
     public function getFreeBusyStatus(): ?FreeBusyStatus;
 
-    public function getExtensions(): array;
+    public function getExtensions(): ?array;
 }

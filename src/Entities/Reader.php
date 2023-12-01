@@ -165,7 +165,7 @@ class Reader implements ReaderEntityInterface
         return $this->seriesMasterId;
     }
 
-    public function getExtensions(): array
+    public function getExtensions(): ?array
     {
         return $this->extensions;
     }
