@@ -334,16 +334,20 @@ abstract class Calendar implements CalendarInterface
      */
     private function convertToReadableError(\Exception $e)
     {
+        $message = null;
         if ($e instanceof ODataError) {
             /** @var MainError $errorInfo */
             $errorInfo = $e->getBackingStore()->get('error');
-            $code = $errorInfo->getCode();
-            $message = $errorInfo->getMessage();
+            $code = 0;
+            $localizedDescription = $errorInfo->getMessage();
+            $message = $errorInfo->getCode();
         } else {
             $code = $e->getCode();
-            $message = $e->getMessage();
+            $localizedDescription = $e->getMessage();
         }
 
-        throw new ReadError($message, $code);
+        $error = new ReadError($localizedDescription, $code);
+        $error->setOdataErrorMessage($message);
+        throw $error;
     }
 }
