@@ -11,6 +11,8 @@ use Microsoft\Graph\BatchRequestBuilder;
 use Microsoft\Graph\Core\Requests\BatchRequestContent;
 use Microsoft\Graph\Generated\Models\Event as GraphEvent;
 use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Models\ODataErrors\MainError;
+use Microsoft\Graph\Generated\Models\ODataErrors\ODataError;
 use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaGetResponse;
 use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaRequestBuilderGetRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\EventsRequestBuilderPostRequestConfiguration;
@@ -68,6 +70,11 @@ abstract class Calendar implements CalendarInterface
 
     /// MARK: Calendar Event Reads
 
+    /** Pull all events from outlook in an iterative manner
+     *  Set prefer headers like odata.maxpagesize and timezone to control the data received
+     *  Calls saveEventLocal/deleteEventLocal methods
+     * @throws ReadError
+     */
     public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null): void
     {
         try {
@@ -94,12 +101,12 @@ abstract class Calendar implements CalendarInterface
                 $deltaLinkStore
             );
         } catch (\Exception $e) {
-            throw new ReadError($e->getMessage(), $e->getCode());
+            $this->convertToReadableError($e);
         }
     }
 
     /**
-     *
+     * Get Event by event id (extract extension as well)
      * @throws ReadError
      */
     public function getEventBy(string $id, EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
@@ -145,7 +152,7 @@ abstract class Calendar implements CalendarInterface
                 $this->saveEventLocal($entity);
             }
         } catch (\Exception $e) {
-            throw new ReadError($e->getMessage(), $e->getCode());
+            $this->convertToReadableError($e);
         }
     }
 
@@ -320,5 +327,23 @@ abstract class Calendar implements CalendarInterface
     protected function getOccurrenceReader(): ReaderEntityInterface
     {
         return new Occurrence();
+    }
+
+    /**
+     * @throws ReadError
+     */
+    private function convertToReadableError(\Exception $e)
+    {
+        if ($e instanceof ODataError) {
+            /** @var MainError $errorInfo */
+            $errorInfo = $e->getBackingStore()->get('error');
+            $code = $errorInfo->getCode();
+            $message = $errorInfo->getMessage();
+        } else {
+            $code = $e->getCode();
+            $message = $e->getMessage();
+        }
+
+        throw new ReadError($message, $code);
     }
 }
