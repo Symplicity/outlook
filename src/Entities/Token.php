@@ -11,13 +11,12 @@ use Symplicity\Outlook\Interfaces\Entity\TokenInterface;
 
 class Token implements TokenInterface, Stringable
 {
-    protected string $type;
     protected string $accessToken;
     protected string $refreshToken;
     protected int $expiresIn;
     protected string $idToken;
     protected DateTimeImmutable $tokenReceivedOn;
-
+    protected ?string $type = null;
     protected ?string $emailAddress = null;
     protected ?string $displayName = null;
 
@@ -34,7 +33,7 @@ class Token implements TokenInterface, Stringable
         return $this;
     }
 
-    public function setType(string $type): Token
+    public function setType(?string $type): Token
     {
         $this->type = $type;
         return $this;
@@ -81,7 +80,7 @@ class Token implements TokenInterface, Stringable
         return $this->displayName;
     }
 
-    public function getType(): string
+    public function getType(): ?string
     {
         return $this->type;
     }

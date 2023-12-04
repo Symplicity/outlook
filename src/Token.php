@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook;
 
+use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GenericProvider;
 use Microsoft\Graph\Core\GraphConstants;
+use Microsoft\Kiota\Authentication\Cache\AccessTokenCache;
 use Microsoft\Kiota\Authentication\Cache\InMemoryAccessTokenCache;
 use Microsoft\Kiota\Authentication\Oauth\ProviderFactory;
 use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
@@ -41,14 +43,16 @@ class Token implements TokenInterface
     /**
      * @throws \Exception
      */
-    public function request(string $code, string $redirectUrl): TokenEntityInterface
+    public function request(string $code, string $redirectUrl, ?AccessTokenCache $tokenCache = null, ?AbstractProvider $provider = null): TokenEntityInterface
     {
         $tokenRequestContext = $this->getAuthorizationCodeContext($code, $redirectUrl);
-        $tokenCache = new InMemoryAccessTokenCache();
+        $tokenCache ??= new InMemoryAccessTokenCache();
+        $provider ??= ProviderFactory::create($tokenRequestContext);
 
         $tokenProvider = new PhpLeagueAccessTokenProvider(
             tokenRequestContext: $tokenRequestContext,
             scopes: $this->scopes,
+            oauthProvider: $provider,
             accessTokenCache: $tokenCache
         );
 
@@ -70,12 +74,12 @@ class Token implements TokenInterface
     /**
      * @throws IdentityProviderException
      */
-    public function refresh(string $refreshToken, string $redirectUrl): TokenEntityInterface
+    public function refresh(string $refreshToken, string $redirectUrl, ?AbstractProvider $oauthProvider = null): TokenEntityInterface
     {
         $tokenRequestContext = $this->getClientCredentialContext();
         $params = $tokenRequestContext->getRefreshTokenParams($refreshToken);
 
-        $oauthProvider = ProviderFactory::create($tokenRequestContext);
+        $oauthProvider ??= ProviderFactory::create($tokenRequestContext);
         $response = $oauthProvider->getAccessToken('refresh_token', $params);
         $this->getCacheKey($response->getToken());
 
