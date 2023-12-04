@@ -8,6 +8,8 @@ use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 
 class DateEntity implements DateEntityInterface
 {
+    public const DEFAULT_DATETIME_FORMAT = 'Y-m-d\TH:i:s.u';
+
     protected ?string $start;
     protected ?string $end;
     protected ?string $timezone;

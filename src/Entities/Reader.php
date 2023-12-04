@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
-use DateTimeInterface;
 use Microsoft\Graph\Generated\Models\Event;
 use Microsoft\Graph\Generated\Models\EventType;
 use Microsoft\Graph\Generated\Models\Extension as Extension;
@@ -77,7 +76,7 @@ class Reader implements ReaderEntityInterface
             'start' => $event->getStart()?->getDateTime(),
             'end' => $event->getEnd()?->getDateTime(),
             'timezone' => $event->getStart()?->getTimeZone(),
-            'modified' => $event->getLastModifiedDateTime()
+            'modified' => $event->getLastModifiedDateTime()?->format(DateEntity::DEFAULT_DATETIME_FORMAT)
         ]);
 
         return $this;

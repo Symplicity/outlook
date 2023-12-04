@@ -21,6 +21,7 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQ
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestInformation;
+use OpenTelemetry\SDK\Trace\Tracer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
@@ -48,6 +49,7 @@ abstract class Calendar implements CalendarInterface
 
     protected LoggerInterface | null $logger;
 
+    // If you want to use kiota/ms-graph telemetry, extend this class to declare a tracer
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
         $this->logger = $args['logger'] ?? null;
@@ -78,6 +80,11 @@ abstract class Calendar implements CalendarInterface
     public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null): void
     {
         try {
+            $this->logger?->info('Pulling events...', [
+                'params' => http_build_query($params),
+                'deltaToken' => $deltaLinkStore
+            ]);
+
             $graphServiceClient = new GraphServiceCalendarView(
                 $this->clientId,
                 $this->clientSecret,
@@ -100,6 +107,10 @@ abstract class Calendar implements CalendarInterface
                 $requestConfiguration,
                 $deltaLinkStore
             );
+
+            $this->logger?->info('All events received...', [
+                'params' => http_build_query($params)
+            ]);
         } catch (\Exception $e) {
             $this->convertToReadableError($e);
         }
@@ -112,6 +123,10 @@ abstract class Calendar implements CalendarInterface
     public function getEventBy(string $id, EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
     {
         try {
+            $this->logger?->info('Getting event by id ...', [
+                'params' => http_build_query($params)
+            ]);
+
             $requestConfiguration = $this->getEventViewRequestConfiguration($params);
 
             $event = $this->graphService
@@ -124,8 +139,17 @@ abstract class Calendar implements CalendarInterface
 
             $entity = $this->getEntity($event);
             $beforeReturn?->call($this, $entity, $event);
+            $this->logger?->info('Getting event by id complete ...', [
+                'params' => http_build_query($params)
+            ]);
             return $entity;
         } catch (\Exception $e) {
+            $this->logger?->info('Getting event by id failed ...', [
+                'params' => http_build_query($params),
+                'message' => $e->getMessage(),
+                'code' => $e->getCode()
+            ]);
+
             throw new ReadError($e->getMessage(), $e->getCode());
         }
     }
@@ -136,6 +160,10 @@ abstract class Calendar implements CalendarInterface
     public function getEventInstances(string $id, InstancesRequestBuilderGetQueryParameters $params): void
     {
         try {
+            $this->logger?->info('Getting instances of recurring event ...', [
+                'params' => http_build_query($params)
+            ]);
+
             $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
 
             $events = $this->graphService
@@ -148,9 +176,20 @@ abstract class Calendar implements CalendarInterface
                 ->wait();
 
             foreach ($events->getValue() ?? [] as $event) {
+                $this->logger?->info('Receiving event instance ...', [
+                    'event_id' => $event->getId(),
+                    'event_name' => $event->getSubject(),
+                    'cal_id' => $event->getICalUId(),
+                    'type' => $event->getType()?->value()
+                ]);
+
                 $entity = $this->getEntity($event);
                 $this->saveEventLocal($entity);
             }
+
+            $this->logger?->info('Getting event instances complete ...', [
+                'params' => http_build_query($params)
+            ]);
         } catch (\Exception $e) {
             $this->convertToReadableError($e);
         }
@@ -164,6 +203,10 @@ abstract class Calendar implements CalendarInterface
      */
     public function push(array $params = []): void
     {
+        $this->logger?->info('Pushing batch events to outlook ...', [
+            'params' => http_build_query($params)
+        ]);
+
         $postRequestConfiguration = $this->getEventPostRequestConfiguration();
         $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
         $deleteRequestConfiguration = $this->getEventDeleteRequestConfiguration();
@@ -178,6 +221,12 @@ abstract class Calendar implements CalendarInterface
             /** @var Event $event */
             foreach ($chunk as $event) {
                 if ($event instanceof Event) {
+                    $this->logger?->info('Preparing events for dispatch ...', [
+                        'event_id' => $event->getId(),
+                        'event_name' => $event->getSubject(),
+                        'cal_id' => $event->getICalUId(),
+                    ]);
+
                     $batch[] = $this->prepareBatchUpsert(
                         $event,
                         $postRequestConfiguration,
@@ -305,6 +354,13 @@ abstract class Calendar implements CalendarInterface
                 return true;
             }
 
+            $this->logger?->info('Received event...', [
+                'event_id' => $event->getId(),
+                'event_name' => $event->getSubject(),
+                'cal_id' => $event->getICalUId(),
+                'additional_data' => $event->getAdditionalData()
+            ]);
+
             $additionalData = $event->getAdditionalData();
             if (isset($additionalData['@removed']['reason'])
                 && $additionalData['@removed']['reason'] === 'deleted') {
@@ -313,6 +369,11 @@ abstract class Calendar implements CalendarInterface
             }
 
             $this->saveEventLocal($this->getEntity($event));
+
+            $this->logger?->info('Completed event processing', [
+                'event_id' => $event->getId(),
+                'event_name' => $event->getSubject()
+            ]);
             return true;
         });
 
@@ -345,6 +406,12 @@ abstract class Calendar implements CalendarInterface
             $code = $e->getCode();
             $localizedDescription = $e->getMessage();
         }
+
+        $this->logger?->info('Received error...', [
+            'code' => $code,
+            'localizedDescription' => $localizedDescription,
+            'message' => $message
+        ]);
 
         $error = new ReadError($localizedDescription, $code);
         $error->setOdataErrorMessage($message);
