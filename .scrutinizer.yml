@@ -56,10 +56,6 @@ build:
                     format: php-clover
 
     nodes:
-        php74-unit-tests:
-            environment:
-                php: 7.4
-
         php81-unit-tests:
             image: default-bionic
             environment:
