@@ -34,7 +34,7 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @dataProvider getStream
+     * @dataProvider getTokenPayload
      * @param array $jwt
      * @param \Exception|null $exception
      * @throws \Exception
@@ -65,7 +65,7 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @dataProvider getStream
+     * @dataProvider getTokenPayload
      * @param array $jwt
      * @param \Exception|null $exception
      * @throws IdentityProviderException
@@ -116,7 +116,7 @@ class TokenTest extends TestCase
         );
     }
 
-    public static function getStream(): array
+    public static function getTokenPayload(): array
     {
         $payload = [
             'sub' => '123',
