@@ -8,10 +8,10 @@ use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 
 class DateEntity implements DateEntityInterface
 {
-    protected $start;
-    protected $end;
-    protected $timezone;
-    protected $modified;
+    protected ?string $start;
+    protected ?string $end;
+    protected ?string $timezone;
+    protected ?string $modified;
 
     public function __construct(array $data)
     {
@@ -21,22 +21,22 @@ class DateEntity implements DateEntityInterface
         $this->modified = $data['modified'] ?? null;
     }
 
-    public function getStartDate() : string
+    public function getStartDate(): ?string
     {
         return $this->start;
     }
 
-    public function getEndDate() : string
+    public function getEndDate(): ?string
     {
         return $this->end;
     }
 
-    public function getModifiedDate() : ?string
+    public function getModifiedDate(): ?string
     {
         return $this->modified;
     }
 
-    public function getTimezone() : ?string
+    public function getTimezone(): ?string
     {
         return $this->timezone;
     }
