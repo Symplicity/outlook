@@ -120,11 +120,11 @@ abstract class Calendar implements CalendarInterface
      * Get Event by event id (extract extension as well)
      * @throws ReadError
      */
-    public function getEventBy(string $id, EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
+    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
     {
         try {
             $this->logger?->info('Getting event by id ...', [
-                'params' => http_build_query($params)
+                'id' => $id
             ]);
 
             $requestConfiguration = $this->getEventViewRequestConfiguration($params);
@@ -140,12 +140,13 @@ abstract class Calendar implements CalendarInterface
             $entity = $this->getEntity($event);
             $beforeReturn?->call($this, $entity, $event);
             $this->logger?->info('Getting event by id complete ...', [
-                'params' => http_build_query($params)
+                'id' => $id
             ]);
+
             return $entity;
         } catch (\Exception $e) {
             $this->logger?->info('Getting event by id failed ...', [
-                'params' => http_build_query($params),
+                'id' => $id,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode()
             ]);
@@ -157,11 +158,11 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws ReadError
      */
-    public function getEventInstances(string $id, InstancesRequestBuilderGetQueryParameters $params): void
+    public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null): void
     {
         try {
             $this->logger?->info('Getting instances of recurring event ...', [
-                'params' => http_build_query($params)
+                'id' => $id
             ]);
 
             $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
@@ -177,6 +178,7 @@ abstract class Calendar implements CalendarInterface
 
             foreach ($events->getValue() ?? [] as $event) {
                 $this->logger?->info('Receiving event instance ...', [
+                    'id' => $id,
                     'event_id' => $event->getId(),
                     'event_name' => $event->getSubject(),
                     'cal_id' => $event->getICalUId(),
@@ -188,7 +190,7 @@ abstract class Calendar implements CalendarInterface
             }
 
             $this->logger?->info('Getting event instances complete ...', [
-                'params' => http_build_query($params)
+                'id' => $id
             ]);
         } catch (\Exception $e) {
             $this->convertToReadableError($e);
