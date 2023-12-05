@@ -17,8 +17,9 @@ class DateEntity implements DateEntityInterface
 
     public function __construct(array $data)
     {
-        $this->start = $data['start'];
-        $this->end = $data['end'];
+        // instance of start/end implements Stringable
+        $this->start = (string) $data['start'];
+        $this->end = (string) $data['end'];
         $this->timezone = $data['timezone'] ?? null;
         $this->modified = $data['modified'] ?? null;
     }

@@ -238,7 +238,7 @@ class Reader implements ReaderEntityInterface
     protected function setRecurrence(Event $event): void
     {
         if ($event->getRecurrence() !== null
-            && $event->getType() === EventType::SERIES_MASTER) {
+            && $event->getType()->value() === EventType::SERIES_MASTER) {
             $this->recurrence = new Recurrence($event->getRecurrence());
         }
     }

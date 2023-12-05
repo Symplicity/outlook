@@ -2,75 +2,115 @@
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use Microsoft\Graph\Generated\Models\DayOfWeek;
+use Microsoft\Graph\Generated\Models\Event;
+use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Models\FreeBusyStatus;
+use Microsoft\Graph\Generated\Models\ItemBody;
+use Microsoft\Graph\Generated\Models\Location;
+use Microsoft\Graph\Generated\Models\Recipient;
+use Microsoft\Graph\Generated\Models\RecurrencePatternType;
+use Microsoft\Graph\Generated\Models\RecurrenceRangeType;
+use Microsoft\Graph\Generated\Models\WeekIndex;
+use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use PHPUnit\Framework\TestCase;
-use Symplicity\Outlook\Entities\Organizer;
 use Symplicity\Outlook\Entities\Reader;
-use Symplicity\Outlook\Entities\ResponseBody;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\LocationInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
-use Symplicity\Outlook\Utilities\DayOfTheWeek;
-use Symplicity\Outlook\Utilities\EventTypes;
-use Symplicity\Outlook\Utilities\FreeBusy;
-use Symplicity\Outlook\Utilities\PatternType;
-use Symplicity\Outlook\Utilities\RangeType;
-use Symplicity\Outlook\Utilities\RecurrenceIndex;
 
 class ReaderTest extends TestCase
 {
-    public function testHydrate()
+    public function testHydrateSingleInstance()
     {
-        $jsonData = $this->getJsonData();
-        $reader = (new Reader())->hydrate(\GuzzleHttp\json_decode($jsonData, true));
+        try {
+            $event = $this->getSingleInstanceJsonData();
+            $reader = new Reader();
+            $reader->hydrate($event);
+        } catch (\Exception $e) {
+            $this->fail($e->getMessage());
+        }
+
         $this->assertInstanceOf(ReaderEntityInterface::class, $reader);
-        $this->assertInstanceOf(LocationInterface::class, $reader->getLocation());
+        $this->assertInstanceOf(Location::class, $reader->getLocation());
         $this->assertInstanceOf(DateEntityInterface::class, $reader->getDate());
-        $this->assertInstanceOf(ResponseBody::class, $reader->getBody());
-        $this->assertInstanceOf(RecurrenceEntityInterface::class, $reader->getRecurrence());
-        $this->assertInstanceOf(Organizer::class, $reader->getOrganizer());
-        $this->assertEquals(EventTypes::Master, $reader->getEventType());
-        $this->assertEquals('W/"ghc/foo//pA=="', $reader->getETag());
+        $this->assertInstanceOf(ItemBody::class, $reader->getBody());
+        $this->assertEquals(EventType::SINGLE_INSTANCE, $reader->getEventType()->value());
+        $this->assertEquals('W/"7DBtS36oekqlFVL/lW3rKQAACGSF4A=="', $reader->getETag());
         $this->assertNotEmpty($reader->getId());
         $this->assertNotEmpty($reader->getWebLink());
         $this->assertNotEmpty($reader->getTitle());
         $this->assertNotEmpty($reader->getDescription());
         $this->assertNotEmpty($reader->getBody());
         $this->assertNotEmpty($reader->getLocation());
-        $this->assertNotEmpty($reader->isAllDay());
+        $this->assertFalse($reader->isAllDay());
         $this->assertNotEmpty($reader->getSensitivityStatus());
         $this->assertNotEmpty($reader->getVisibility());
-        $this->assertNotEmpty($reader->getRecurrence());
-        $this->assertNotEmpty($reader->getOrganizer());
+        $this->assertEmpty($reader->getRecurrence());
+        $this->assertInstanceOf(Recipient::class, $reader->getOrganizer());
         $this->assertNotEmpty($reader->getDate()->getStartDate());
         $this->assertNotEmpty($reader->getDate()->getEndDate());
         $this->assertNotEmpty($reader->getDate()->getModifiedDate());
         $this->assertNotEmpty($reader->getDate()->getTimezone());
-        $this->assertSame(FreeBusy::Free, $reader->getFreeBusyStatus());
-        $this->assertTrue($reader->getBody()->isHTML());
-        $this->assertFalse($reader->getBody()->isText());
-        $this->assertEquals('foo@bar.com', $reader->getOrganizer()->getEmail());
-        $this->assertEquals('Outlook Test', $reader->getOrganizer()->getName());
-        $this->assertEquals(PatternType::Daily, $reader->getRecurrence()->getType());
-        $this->assertEquals(1, $reader->getRecurrence()->getInterval());
-        $this->assertEquals(RecurrenceIndex::first, $reader->getRecurrence()->getIndex());
-        $this->assertEquals(RangeType::EndDate, $reader->getRecurrence()->getRangeType());
-        $this->assertEquals(RangeType::EndDate, $reader->getRecurrence()->getRangeType());
-        $this->assertEquals(0, $reader->getRecurrence()->getNumberOfOccurrences());
-        $this->assertEquals(0, $reader->getRecurrence()->getMonth());
-        $this->assertEquals(DayOfTheWeek::Sunday, $reader->getRecurrence()->getFirstDayOfWeek()->getValue());
-        $this->assertEquals([], $reader->getRecurrence()->getDaysOfWeek());
-        $this->assertEquals(0, $reader->getRecurrence()->getDayOfMonth());
-        $this->assertInstanceOf(DateEntityInterface::class, $reader->getRecurrence()->getRangeDates());
-        $this->assertEquals('2019-02-25', $reader->getRecurrence()->getRangeDates()->getStartDate());
-        $this->assertEquals('2019-02-28', $reader->getRecurrence()->getRangeDates()->getEndDate());
-        $this->assertEquals('Eastern Standard Time', $reader->getRecurrence()->getRangeDates()->getTimezone());
-        $this->assertEquals(null, $reader->getRecurrence()->getRangeDates()->getModifiedDate());
+        $this->assertSame(FreeBusyStatus::BUSY, $reader->getFreeBusyStatus()->value());
+        $this->assertMatchesRegularExpression('/Testing Reader Interface/', $reader->getBody()?->getContent());
+        $this->assertEquals('foo@bar.com', $reader->getOrganizer()?->getEmailAddress()?->getAddress());
+        $this->assertEquals('Outlook Test', $reader->getOrganizer()?->getEmailAddress()?->getName());
         $this->assertTrue(is_array($reader->toArray()));
     }
 
-    public function getJsonData()
+    public function testHydrateRecurringInstance()
     {
-        return '{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'foo\')\/Events(\'x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=\')","@odata.etag":"W\/\"ghc\/foo\/\/pA==\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","CreatedDateTime":"2019-02-01T18:05:03.7354577-05:00","LastModifiedDateTime":"2019-02-04T23:58:49.478552-05:00","ChangeKey":"foo\/\/pA==","Categories":[],"OriginalStartTimeZone":"Eastern Standard Time","OriginalEndTimeZone":"Eastern Standard Time","iCalUId":"foo","ReminderMinutesBeforeStart":15,"IsReminderOn":true,"HasAttachments":false,"Subject":"FooBar","BodyPreview":"CCCCCCC","Importance":"Normal","Sensitivity":"Normal","IsAllDay":true,"IsCancelled":false,"IsOrganizer":false,"ResponseRequested":true,"SeriesMasterId":null,"ShowAs":"Free","Type":"SeriesMaster","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=foo%3D&exvsurl=1&path=\/calendar\/item","OnlineMeetingUrl":null,"ResponseStatus":{"Response":"Accepted","Time":"2019-02-01T18:05:25.680242-05:00"},"Body":{"ContentType":"HTML","Content":"test"},"Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"India","PostalCode":""},"Coordinates":{"Latitude":27.6031,"Longitude":88.6468}},"Locations":[{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"US","PostalCode":""},"Coordinates":{"Latitude":32.6031,"Longitude":999.6468}}],"Recurrence":{"Pattern":{"Type":"Daily","Interval":1,"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First"},"Range":{"Type":"EndDate","StartDate":"2019-02-25","EndDate":"2019-02-28","RecurrenceTimeZone":"Eastern Standard Time","NumberOfOccurrences":0}},"Attendees":[{"Type":"Required","Status":{"Response":"None","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}},{"Type":"Required","Status":{"Response":"Accepted","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Insight Test","Address":"test"}}],"Organizer":{"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}}}';
+        try {
+            $event = $this->getRecurringEventData();
+            $reader = new Reader();
+            $reader->hydrate($event);
+        } catch (\Exception $e) {
+            $this->fail($e->getMessage());
+        }
+
+        $this->assertInstanceOf(ReaderEntityInterface::class, $reader);
+        $this->assertInstanceOf(Location::class, $reader->getLocation());
+        $this->assertInstanceOf(DateEntityInterface::class, $reader->getDate());
+        $this->assertNull($reader->getBody());
+        $this->assertEquals(EventType::SERIES_MASTER, $reader->getEventType()->value());
+        $this->assertSame(FreeBusyStatus::BUSY, $reader->getFreeBusyStatus()->value());
+        $this->assertEquals('foo@bar.com', $reader->getOrganizer()?->getEmailAddress()?->getAddress());
+        $this->assertEquals('Outlook Test', $reader->getOrganizer()?->getEmailAddress()?->getName());
+        $this->assertEquals(RecurrencePatternType::DAILY, $reader->getRecurrence()?->getType()?->value());
+        $this->assertEquals(1, $reader->getRecurrence()->getInterval());
+        $this->assertEquals(WeekIndex::FIRST, $reader->getRecurrence()?->getIndex()?->value());
+        $this->assertEquals(RecurrenceRangeType::END_DATE, $reader->getRecurrence()?->getRangeType()?->value());
+        $this->assertEquals(0, $reader->getRecurrence()->getNumberOfOccurrences());
+        $this->assertEquals(0, $reader->getRecurrence()->getMonth());
+        $this->assertEquals(DayOfWeek::SUNDAY, $reader->getRecurrence()?->getFirstDayOfWeek()?->value());
+        $this->assertEquals([], $reader->getRecurrence()->getDaysOfWeek());
+        $this->assertEquals(0, $reader->getRecurrence()->getDayOfMonth());
+        $this->assertInstanceOf(DateEntityInterface::class, $reader->getRecurrence()->getRangeDates());
+        $this->assertEquals('2023-12-05', $reader->getRecurrence()->getRangeDates()->getStartDate());
+        $this->assertEquals('2023-12-07', $reader->getRecurrence()->getRangeDates()->getEndDate());
+        $this->assertEquals('Eastern Standard Time', $reader->getRecurrence()->getRangeDates()->getTimezone());
+        $this->assertEquals(null, $reader->getRecurrence()->getRangeDates()->getModifiedDate());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function getSingleInstanceJsonData(): Event
+    {
+        $data = '{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"7DBtS36oekqlFVL\/lW3rKQAACGSF4A==\"","id":"AAA==","createdDateTime":"2023-11-30T14:36:55.5257905Z","lastModifiedDateTime":"2023-11-30T14:36:56.9024398Z","changeKey":"FVL\/lW3rKQAACGSF4A==","transactionId":null,"originalStartTimeZone":"Eastern Standard Time","originalEndTimeZone":"Eastern Standard Time","iCalUId":"foo_uid","reminderMinutesBeforeStart":15,"isReminderOn":true,"hasAttachments":false,"subject":"Foo test","bodyPreview":"Testing Reader Interface","importance":"normal","sensitivity":"normal","isAllDay":false,"isCancelled":false,"isOrganizer":true,"responseRequested":true,"seriesMasterId":null,"showAs":"busy","type":"singleInstance","webLink":"https:\/\/outlook.office365.com\/owa\/?itemid=AAA===1&path=\/calendar\/item","onlineMeetingUrl":null,"isOnlineMeeting":false,"onlineMeetingProvider":"unknown","allowNewTimeProposals":true,"occurrenceId":null,"isDraft":false,"hideAttendees":false,"body":{"contentType":"html","content":"<html><head><meta http-equiv=\"Content-Type\" content=\"text\/html; charset=utf-8\">\n<meta name=\"Generator\" content=\"Microsoft Exchange Server\">\n<!-- converted from text -->\n<style><!-- .EmailQuote { margin-left: 1pt; padding-left: 4pt; border-left: #800000 2px solid; } --><\/style><\/head>\n<body>\n<font size=\"2\"><span style=\"font-size:11pt;\"><div class=\"PlainText\">Testing Reader Interface<\/div><\/span><\/font>\n<\/body>\n<\/html>\n"},"start":{"dateTime":"2023-12-05T18:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T19:00:00.0000000","timeZone":"UTC"},"location":{"displayName":"Sikkim","locationType":"default","uniqueIdType":"unknown"},"recurrence":null,"organizer":{"emailAddress":{"name":"Outlook Test","address":"foo@bar.com"}}}';
+
+        $json = new JsonParseNode(json_decode($data, true));
+        return $json->getObjectValue([Event::class, 'createFromDiscriminatorValue']);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function getRecurringEventData(): Event
+    {
+        $data = '{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==\"","id":"TPY=","createdDateTime":"2023-12-05T06:17:55.551725Z","lastModifiedDateTime":"2023-12-05T06:17:56.9028469Z","changeKey":"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==","transactionId":"eea2822c-5583-8a5a-a074-2f3f0d75f042","originalStartTimeZone":"Eastern Standard Time","originalEndTimeZone":"Eastern Standard Time","iCalUId":"0100000000000000001000000098F5720C81F7EF4EA03A9B578D28E7DF","reminderMinutesBeforeStart":15,"isReminderOn":true,"hasAttachments":false,"subject":"R - 1","bodyPreview":"test","importance":"normal","sensitivity":"normal","isAllDay":false,"isCancelled":false,"isOrganizer":true,"responseRequested":true,"seriesMasterId":null,"showAs":"busy","type":"seriesMaster","webLink":"https:\/\/outlook.office365.com\/owa\/?itemid=TPY==1&path=\/calendar\/item","onlineMeetingUrl":null,"isOnlineMeeting":false,"onlineMeetingProvider":"unknown","allowNewTimeProposals":true,"occurrenceId":null,"isDraft":false,"hideAttendees":false,"responseStatus":{"response":"organizer","time":"0001-01-01T00:00:00Z"},"start":{"dateTime":"2023-12-05T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T07:30:00.0000000","timeZone":"UTC"},"location":{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"},"locations":[{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"}],"recurrence":{"pattern":{"type":"daily","interval":1,"month":0,"dayOfMonth":0,"firstDayOfWeek":"sunday","index":"first"},"range":{"type":"endDate","startDate":"2023-12-05","endDate":"2023-12-07","recurrenceTimeZone":"Eastern Standard Time","numberOfOccurrences":0}},"organizer":{"emailAddress":{"name":"Outlook Test","address":"foo@bar.com"}}}';
+
+        $json = new JsonParseNode(json_decode($data, true));
+        return $json->getObjectValue([Event::class, 'createFromDiscriminatorValue']);
     }
 }
