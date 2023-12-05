@@ -120,7 +120,7 @@ abstract class Calendar implements CalendarInterface
      * Get Event by event id (extract extension as well)
      * @throws ReadError
      */
-    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null): ?ReaderEntityInterface
+    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null, ?array $args = []): ?ReaderEntityInterface
     {
         try {
             $this->logger?->info('Getting event by id ...', [
@@ -130,7 +130,7 @@ abstract class Calendar implements CalendarInterface
             $requestConfiguration = $this->getEventViewRequestConfiguration($params);
 
             $event = $this->graphService
-                ->client($params)
+                ->client($args)
                 ->me()
                 ->events()
                 ->byEventId($id)

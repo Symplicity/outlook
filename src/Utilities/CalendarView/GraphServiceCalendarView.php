@@ -18,6 +18,12 @@ class GraphServiceCalendarView
 {
     use AuthorizationContextTrait;
 
+    public const DEFAULT_CONNECT_TIMEOUT = 3;
+    public const DEFAULT_TIMEOUT = 4;
+    public const BASE_URI = NationalCloud::GLOBAL;
+    public const ENABLE_HTTP_ERROR = false;
+    public const HTTP_VERIFY = false;
+
     protected ?RequestAdapter $requestAdapter;
 
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token)
@@ -57,13 +63,14 @@ class GraphServiceCalendarView
     protected static function getDefaultConfig(): array
     {
         $config = [
-            GuzzleHttpOptions::CONNECT_TIMEOUT => 3,
-            GuzzleHttpOptions::TIMEOUT => 4,
+            GuzzleHttpOptions::CONNECT_TIMEOUT => static::DEFAULT_CONNECT_TIMEOUT,
+            GuzzleHttpOptions::TIMEOUT => static::DEFAULT_TIMEOUT,
             GuzzleHttpOptions::HEADERS => [
                 'Content-Type' => 'application/json',
             ],
-            GuzzleHttpOptions::HTTP_ERRORS => false,
-            'base_uri' => NationalCloud::GLOBAL,
+            GuzzleHttpOptions::HTTP_ERRORS => static::ENABLE_HTTP_ERROR,
+            'base_uri' => static::BASE_URI,
+            GuzzleHttpOptions::VERIFY => static::HTTP_VERIFY
         ];
 
         if (extension_loaded('curl') && defined('CURL_VERSION_HTTP2')) {
