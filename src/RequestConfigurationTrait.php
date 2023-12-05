@@ -34,7 +34,7 @@ trait RequestConfigurationTrait
         return $requestConfiguration;
     }
 
-    protected function getInstancesViewRequestConfiguration(InstancesRequestBuilderGetQueryParameters $params, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration
+    protected function getInstancesViewRequestConfiguration(?InstancesRequestBuilderGetQueryParameters $params = null, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration
     {
         $requestConfiguration = new InstancesRequestBuilderGetRequestConfiguration(queryParameters: $params);
         return $this->generateRequestConfiguration(

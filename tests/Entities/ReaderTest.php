@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
+use Symplicity\Outlook\Tests\resources\OutlookTestHandler;
 
 class ReaderTest extends TestCase
 {
@@ -97,8 +98,7 @@ class ReaderTest extends TestCase
      */
     public function getSingleInstanceJsonData(): Event
     {
-        $data = '{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"7DBtS36oekqlFVL\/lW3rKQAACGSF4A==\"","id":"AAA==","createdDateTime":"2023-11-30T14:36:55.5257905Z","lastModifiedDateTime":"2023-11-30T14:36:56.9024398Z","changeKey":"FVL\/lW3rKQAACGSF4A==","transactionId":null,"originalStartTimeZone":"Eastern Standard Time","originalEndTimeZone":"Eastern Standard Time","iCalUId":"foo_uid","reminderMinutesBeforeStart":15,"isReminderOn":true,"hasAttachments":false,"subject":"Foo test","bodyPreview":"Testing Reader Interface","importance":"normal","sensitivity":"normal","isAllDay":false,"isCancelled":false,"isOrganizer":true,"responseRequested":true,"seriesMasterId":null,"showAs":"busy","type":"singleInstance","webLink":"https:\/\/outlook.office365.com\/owa\/?itemid=AAA===1&path=\/calendar\/item","onlineMeetingUrl":null,"isOnlineMeeting":false,"onlineMeetingProvider":"unknown","allowNewTimeProposals":true,"occurrenceId":null,"isDraft":false,"hideAttendees":false,"body":{"contentType":"html","content":"<html><head><meta http-equiv=\"Content-Type\" content=\"text\/html; charset=utf-8\">\n<meta name=\"Generator\" content=\"Microsoft Exchange Server\">\n<!-- converted from text -->\n<style><!-- .EmailQuote { margin-left: 1pt; padding-left: 4pt; border-left: #800000 2px solid; } --><\/style><\/head>\n<body>\n<font size=\"2\"><span style=\"font-size:11pt;\"><div class=\"PlainText\">Testing Reader Interface<\/div><\/span><\/font>\n<\/body>\n<\/html>\n"},"start":{"dateTime":"2023-12-05T18:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T19:00:00.0000000","timeZone":"UTC"},"location":{"displayName":"Sikkim","locationType":"default","uniqueIdType":"unknown"},"recurrence":null,"organizer":{"emailAddress":{"name":"Outlook Test","address":"foo@bar.com"}}}';
-
+        $data = OutlookTestHandler::getSingleInstanceInJsonFormat();
         $json = new JsonParseNode(json_decode($data, true));
         return $json->getObjectValue([Event::class, 'createFromDiscriminatorValue']);
     }
@@ -108,8 +108,7 @@ class ReaderTest extends TestCase
      */
     public function getRecurringEventData(): Event
     {
-        $data = '{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==\"","id":"TPY=","createdDateTime":"2023-12-05T06:17:55.551725Z","lastModifiedDateTime":"2023-12-05T06:17:56.9028469Z","changeKey":"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==","transactionId":"eea2822c-5583-8a5a-a074-2f3f0d75f042","originalStartTimeZone":"Eastern Standard Time","originalEndTimeZone":"Eastern Standard Time","iCalUId":"0100000000000000001000000098F5720C81F7EF4EA03A9B578D28E7DF","reminderMinutesBeforeStart":15,"isReminderOn":true,"hasAttachments":false,"subject":"R - 1","bodyPreview":"test","importance":"normal","sensitivity":"normal","isAllDay":false,"isCancelled":false,"isOrganizer":true,"responseRequested":true,"seriesMasterId":null,"showAs":"busy","type":"seriesMaster","webLink":"https:\/\/outlook.office365.com\/owa\/?itemid=TPY==1&path=\/calendar\/item","onlineMeetingUrl":null,"isOnlineMeeting":false,"onlineMeetingProvider":"unknown","allowNewTimeProposals":true,"occurrenceId":null,"isDraft":false,"hideAttendees":false,"responseStatus":{"response":"organizer","time":"0001-01-01T00:00:00Z"},"start":{"dateTime":"2023-12-05T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T07:30:00.0000000","timeZone":"UTC"},"location":{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"},"locations":[{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"}],"recurrence":{"pattern":{"type":"daily","interval":1,"month":0,"dayOfMonth":0,"firstDayOfWeek":"sunday","index":"first"},"range":{"type":"endDate","startDate":"2023-12-05","endDate":"2023-12-07","recurrenceTimeZone":"Eastern Standard Time","numberOfOccurrences":0}},"organizer":{"emailAddress":{"name":"Outlook Test","address":"foo@bar.com"}}}';
-
+        $data = OutlookTestHandler::getSeriesMasterInstanceInJsonFormat();
         $json = new JsonParseNode(json_decode($data, true));
         return $json->getObjectValue([Event::class, 'createFromDiscriminatorValue']);
     }

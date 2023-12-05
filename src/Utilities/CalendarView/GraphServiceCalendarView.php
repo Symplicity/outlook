@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Utilities\CalendarView;
 
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\RequestOptions as GuzzleHttpOptions;
 use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAuthenticationProvider;
 use Microsoft\Graph\Core\GraphClientFactory;
@@ -25,6 +26,7 @@ class GraphServiceCalendarView
     public const HTTP_VERIFY = false;
 
     protected ?RequestAdapter $requestAdapter;
+    protected ?ClientInterface $httpClient = null;
 
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token)
     {
@@ -34,15 +36,19 @@ class GraphServiceCalendarView
     {
         $tokenRequestContext = $this->getClientCredentialContext();
 
-        $handlerStack = GraphClientFactory::getDefaultHandlerStack();
-        $handlerStack->push(CalendarViewDeltaTokenQueryParamMiddleware::init([
-            'deltaToken' => $params->getDeltaToken()
-        ]));
+        $client = $this->httpClient;
 
-        $client = GraphClientFactory::createWithConfig(array_merge(
-            static::getDefaultConfig(),
-            ['handler' => $handlerStack]
-        ));
+        if (empty($client)) {
+            $handlerStack = GraphClientFactory::getDefaultHandlerStack();
+            $handlerStack->push(CalendarViewDeltaTokenQueryParamMiddleware::init([
+                'deltaToken' => $params->getDeltaToken()
+            ]));
+
+            $client = GraphClientFactory::createWithConfig(array_merge(
+                static::getDefaultConfig(),
+                ['handler' => $handlerStack]
+            ));
+        }
 
         $this->requestAdapter = new GraphRequestAdapter(
             new GraphPhpLeagueAuthenticationProvider($tokenRequestContext),
@@ -58,6 +64,12 @@ class GraphServiceCalendarView
     public function getRequestAdapter(): RequestAdapter
     {
         return $this->requestAdapter;
+    }
+
+    public function setHttpClient(?ClientInterface $client): GraphServiceCalendarView
+    {
+        $this->httpClient = $client;
+        return $this;
     }
 
     protected static function getDefaultConfig(): array

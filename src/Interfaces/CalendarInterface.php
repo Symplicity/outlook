@@ -41,12 +41,6 @@ interface CalendarInterface
     public function handleBatchResponse(?BatchResponseContent $responses): void;
 
     /**
-     * Passed by Guzzle single async requestor
-     * @param $failedToWrite
-     */
-    public function handleResponse(array $failedToWrite = []): void;
-
-    /**
      * Method to get & process a single event
      * @param string $id
      * @param ?EventItemRequestBuilderGetQueryParameters $params

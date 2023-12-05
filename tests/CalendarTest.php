@@ -8,315 +8,252 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Response;
-use Psr\Http\Message\ResponseInterface;
-use Symplicity\Outlook\Exception\ConnectionException;
-use Symplicity\Outlook\Exception\ReadError;
-use Symplicity\Outlook\Http\Batch;
 use GuzzleHttp\Psr7\Utils;
+use Microsoft\Graph\Generated\Models\DateTimeTimeZone;
+use Microsoft\Graph\Generated\Models\Event as MsEvent;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
-use Symplicity\Outlook\Calendar;
-use Symplicity\Outlook\Entities\Delete;
-use Symplicity\Outlook\Entities\ODateTime;
-use Symplicity\Outlook\Entities\ResponseBody;
-use Symplicity\Outlook\Entities\Writer;
-use Symplicity\Outlook\Http\Connection;
-use Symplicity\Outlook\Http\Request;
-use Symplicity\Outlook\Http\RequestOptions;
-use Symplicity\Outlook\Utilities\RequestType;
+use Psr\Log\LoggerInterface;
+use Symplicity\Outlook\Entities\Reader;
+use Symplicity\Outlook\Exception\ReadError;
+use Symplicity\Outlook\Models\Event as Event;
+use Symplicity\Outlook\Tests\resources\OutlookTestHandler;
+use Symplicity\Outlook\Utilities\CalendarView\CalendarViewParams;
 
 class CalendarTest extends TestCase
 {
-    protected $stub;
-    protected $connection;
-    protected $batchConnection;
-    protected $request;
-    protected $logger;
+    protected OutlookTestHandler $stub;
+    protected LoggerInterface $logger;
 
-    public function setUp() : void
+    public function setUp(): void
     {
         $logger = new Logger('outlook_calendar');
         $logger->pushHandler(new NullHandler());
-        $this->connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([$logger])
-            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
-            ->getMock();
 
-        $batchConnection = $this->batchConnection = $this->getMockBuilder(Batch::class)
-            ->setConstructorArgs([$logger])
-            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
-            ->getMock();
+        $this->stub = new OutlookTestHandler(
+            clientId: 'foo',
+            clientSecret: 'bar',
+            token: 'fooToken',
+            args: ['logger' => $logger]
+        );
 
-        $this->request = new Request('fooTest', [
-            'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
-                return new RequestOptions($url, $methodType, $args);
-            },
-            'connection' => $this->connection,
-            'batchConnectionHandler' => function() use ($batchConnection) {
-                return $batchConnection;
-            }
-        ]);
-
-        $this->stub = $this->getMockForAbstractClass(Calendar::class, [
-            'fooToken', [
-                'logger' => $logger,
-                'request' => $this->request
-            ]
-        ], '', true, true, true, ['handleBatchResponse', 'saveEventLocal']);
-
+        $this->stub->setTestCase($this);
         $this->logger = $logger;
     }
 
     public function testGetEvent()
     {
-        $responses = json_decode($this->getStream(), true);
-        $singleEventStream = json_encode($responses['value'][0]);
-        $occurrenceStream = json_encode($responses['value'][1]);
-        $deleteStream = json_encode($responses['value'][4]);
+        $singleEventStream = OutlookTestHandler::getSingleInstanceInJsonFormat();
 
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor($singleEventStream)),
-            new Response(200, [], Utils::streamFor($occurrenceStream)),
-            new Response(200, [], Utils::streamFor($deleteStream)),
-            new Response(200, [], Utils::streamFor('{}'))
+            new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor($singleEventStream))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(4))->method('createClientWithRetryHandler')->willReturn($client);
+        $filters = "Id eq 'com.symplicity.test'";
+        $extensions = 'Extensions($filter=' . $filters . ')';
 
-        $this->stub->expects($this->once())->method('saveEventLocal');
-        $this->stub->expects($this->once())->method('deleteEventLocal');
+        $that = $this;
+        $params = new EventItemRequestBuilderGetQueryParameters();
+        $params->expand = [$extensions];
+        $entity = $this->stub->getEventBy(
+            'AAA==',
+            params: $params,
+            beforeReturn: fn (Reader $entity, MsEvent $event) => $that->assertSame('AAA==', $event->getId()),
+            args: ['client' => $client]
+        );
 
-        $this->stub->getEvent('/events/ABC==', ['skipParams' => true, 'skipOccurrences' => true]);
-        $this->stub->getEvent('/events/ABC==', ['skipParams' => true, 'skipOccurrences' => true]);
-        $this->stub->getEvent('/events/ABC==', ['skipParams' => true, 'skipOccurrences' => true]);
+        $this->assertInstanceOf(Reader::class, $entity);
+        $this->assertSame('AAA==', $entity->getId());
 
-        $this->expectException(ReadError::class);
-        $this->stub->getEvent('/events/ABC==', ['skipParams' => true, 'skipOccurrences' => true]);
+        $this->expectExceptionCode(0);
+        $this->stub->getEventBy(
+            'ACC==',
+            params: $params,
+            args: ['client' => $client]
+        );
     }
 
     public function testGetEventInstances()
     {
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor($this->getEventInstancesStream())),
+            new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor(OutlookTestHandler::getEventInstancesInJsonFormat())),
             new Response(200, [], Utils::streamFor('{}'))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
+        $this->stub->setIsInstancesCall()
+            ->setSeriesMasterId('foo==')
+            ->getEventInstances('foo==', args: ['client' => $client]);
 
-        $this->stub->expects($this->exactly(4))->method('saveEventLocal');
-        $this->stub->expects($this->exactly(1))->method('deleteEventLocal');
-
-        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true]);
-
-        $this->expectException(ReadError::class);
-        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true]);
+        $this->stub->reset();
     }
 
     public function testExceptionOnEventInstances()
     {
+        $errorMsg = 'Error Communicating with Server';
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor($this->getEventInstancesStream())),
-            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+            new RequestException($errorMsg, new GuzzleRequest('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
-
-        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
-
-        $this->stub->expects($this->once())->method('saveEventLocal');
-        $this->stub->expects($this->once())->method('deleteEventLocal');
-
-        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true, 'skipOccurrences' => true]);
-
-        $this->expectException(ReadError::class);
-        $this->stub->getEventInstances('/events/123/instances', ['skipParams' => true]);
+        $this->expectExceptionObject(new ReadError($errorMsg, 500));
+        $this->stub->getEventInstances('foo==', args: ['client' => $client]);
     }
 
     public function testUpsertEvent()
     {
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor($this->getStream())),
-            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+            new Response(201, ['Content-Type' => 'application/json'], '{}'),
+            new RequestException('Error Communicating with Server', new GuzzleRequest('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
-        $handler = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handler]);
+        $container = [];
+        $client = self::getClientWithTransactionHandler($container, $mock);
 
-        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
+        $start = new DateTimeTimeZone();
+        $start->setTimeZone('Eastern Standard Time');
+        $start->setDateTime('2023-12-05 13:00:00');
 
-        $writer = (new Writer())
-            ->setGuid('ABC')
-            ->setId('foo')
-            ->method(new RequestType(RequestType::Patch))
-            ->setSubject('test')
-            ->setInternalEventType('1')
-            ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
-            ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
-            ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time'))
-            ->setIsAllDay(true);
+        $end = new DateTimeTimeZone();
+        $end->setTimeZone('Eastern Standard Time');
+        $end->setDateTime('2023-12-05 14:00:00');
 
+        $event = new Event();
+        $event->setSubject('test');
+        $event->setStart($start);
+        $event->setEnd($end);
 
-        $response = $this->stub->upsert($writer, ['skipOccurrences' => true]);
-        $this->assertInstanceOf(ResponseInterface::class, $response);
+        $this->stub->upsert($event, ['client' => $client]);
 
-        $this->expectException(ConnectionException::class);
-        $this->stub->upsert($writer, ['skipOccurrences' => true]);
+        /** @var GuzzleRequest  $request */
+        $request = $container[0]['request'] ?? null;
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertNotEmpty($request->getHeader('authorization'));
+
+        $contents = $request->getBody()->getContents();
+        $this->assertJsonStringEqualsJsonString('{"@odata.type":"#microsoft.graph.event","end":{"dateTime":"2023-12-05 14:00:00","timeZone":"Eastern Standard Time"},"start":{"dateTime":"2023-12-05 13:00:00","timeZone":"Eastern Standard Time"},"subject":"test"}', $contents);
+
+        $this->expectException(RequestException::class);
+        $this->stub->upsert($event, ['client' => $client]);
     }
 
     public function testDeleteEvent()
     {
         $mock = new MockHandler([
-            new Response(204, [], ''),
+            new Response(204, ['Content-Type' => 'application/json'], '{}'),
+            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+        ]);
+
+        $container = [];
+        $client = self::getClientWithTransactionHandler($container, $mock);
+
+        $this->stub->delete('ABC==', ['client' => $client]);
+
+        /** @var GuzzleRequest  $request */
+        $request = $container[0]['request'] ?? null;
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertNotEmpty($request->getHeader('authorization'));
+
+        $uri = $request->getUri()->getPath();
+        $this->assertSame('/v1.0/users/me-token-to-replace/events/ABC%3D%3D', $uri);
+    }
+
+    public function testPullEvents()
+    {
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor($this->getEvents()[0])),
+            new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor($this->getEvents()[1])),
+        ]);
+
+        $container = [];
+        $client = self::getClientWithTransactionHandler($container, $mock);
+
+        $params = new CalendarViewParams();
+        $params->setStartDateTime('2023-11-30T00:00:00-05:00')
+            ->setPreferHeaders('odata.maxpagesize=1')
+            ->setEndDateTime('2023-12-06T23:59:59-05:00');
+
+        $that = $this;
+        $this->stub->pull(
+            $params,
+            fn (string $link) => $that->assertMatchesRegularExpression('/deltatoken/', $link),
+            args: ['client' => $client]
+        );
+
+        /** @var GuzzleRequest  $request */
+        $request = $container[0]['request'] ?? null;
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertNotEmpty($request->getHeader('authorization'));
+
+        $query = $request->getUri()->getQuery();
+        $this->assertSame('startDateTime=2023-11-30T00%3A00%3A00-05%3A00&endDateTime=2023-12-06T23%3A59%3A59-05%3A00', $query);
+
+        /** @var GuzzleRequest  $request */
+        $request = $container[1]['request'] ?? null;
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertNotEmpty($request->getHeader('authorization'));
+
+        $query = $request->getUri()->getQuery();
+        $this->assertSame('$skiptoken=foo_skipToken', $query);
+    }
+
+    public function testPullEventsError()
+    {
+        $mock = new MockHandler([
             new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
+        $params = new CalendarViewParams();
+        $params->setStartDateTime('2023-11-30T00:00:00-05:00')
+            ->setPreferHeaders('odata.maxpagesize=1')
+            ->setEndDateTime('2023-12-06T23:59:59-05:00');
 
-        $writer = new Delete('ABC==', 'intId123');
-        $response = $this->stub->delete($writer);
-        $this->assertInstanceOf(ResponseInterface::class, $response);
-
-        $this->expectException(ConnectionException::class);
-        $this->stub->delete($writer);
+        $this->expectExceptionMessage('Error Communicating with Server');
+        $this->stub->pull(
+            $params,
+            args: ['client' => $client]
+        );
     }
 
-    public function testSync()
+    public function testPushEvents()
     {
         $mock = new MockHandler([
-            new Response(200),
-            new Response(200, [], Utils::streamFor($this->getStream())),
-            new Response(200, [], Utils::streamFor($this->getStream())),
+            new Response(201, ['Content-Type' => 'application/json'], '{}'),
         ]);
 
+        $container = [];
+        $client = self::getClientWithTransactionHandler($container, $mock);
+
+        $this->stub->push(args: ['client' => $client]);
+    }
+
+    protected function getEvents(): array
+    {
+        return [
+            '{"@odata.context":"https:\/\/graph.microsoft.com\/v1.0\/$metadata#Collection(event)","value":[{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==\"","id":"1==","createdDateTime":"2023-12-05T06:17:55.551725Z","lastModifiedDateTime":"2023-12-05T06:17:56.9028469Z","changeKey":"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==","categories":[],"transactionId":"eea2822c-5583-8a5a-a074-2f3f0d75f042","originalStartTimeZone":"Eastern Standard Time","originalEndTimeZone":"Eastern Standard Time","iCalUId":"040000008200E00074C5B7101A82E00800000000695B10C94227DA0100000000000000001000000098F5720C81F7EF4EA03A9B578D28E7DF","reminderMinutesBeforeStart":15,"isReminderOn":true,"hasAttachments":false,"subject":"R - 1","bodyPreview":"test","importance":"normal","sensitivity":"normal","isAllDay":false,"isCancelled":false,"isOrganizer":true,"responseRequested":true,"seriesMasterId":null,"showAs":"busy","type":"seriesMaster","webLink":"https:\/\/outlook.office365.com\/owa\/?itemid=1==&exvsurl=1&path=\/calendar\/item","onlineMeetingUrl":null,"isOnlineMeeting":false,"onlineMeetingProvider":"unknown","allowNewTimeProposals":true,"occurrenceId":null,"isDraft":false,"hideAttendees":false,"responseStatus":{"response":"organizer","time":"0001-01-01T00:00:00Z"},"start":{"dateTime":"2023-12-05T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T07:30:00.0000000","timeZone":"UTC"},"location":{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"},"locations":[{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"}],"recurrence":{"pattern":{"type":"daily","interval":1,"month":0,"dayOfMonth":0,"firstDayOfWeek":"sunday","index":"first"},"range":{"type":"endDate","startDate":"2023-12-05","endDate":"2023-12-07","recurrenceTimeZone":"Eastern Standard Time","numberOfOccurrences":0}},"attendees":[],"organizer":{"emailAddress":{"name":"Foo Test","address":"foo@symplicity.com"}},"onlineMeeting":null},{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"DwAAABYAAADsMG1Lfqh6SqUVUv+VbespAAALd6vn\"","id":"2==","seriesMasterId":"1==","type":"occurrence","start":{"dateTime":"2023-12-05T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T07:30:00.0000000","timeZone":"UTC"}},{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"DwAAABYAAADsMG1Lfqh6SqUVUv+VbespAAALd6vn\"","id":"3==","seriesMasterId":"1==","type":"occurrence","start":{"dateTime":"2023-12-06T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-06T07:30:00.0000000","timeZone":"UTC"}}],"@odata.nextLink":"https:\/\/graph.microsoft.com\/v1.0\/me\/calendarView\/delta?$skiptoken=foo_skipToken"}',
+            '{"@odata.context":"https:\/\/graph.microsoft.com\/v1.0\/$metadata#Collection(event)","value":[],"@odata.deltaLink":"https:\/\/graph.microsoft.com\/v1.0\/me\/calendarView\/delta?$deltatoken=foo_deltaToken"}'
+        ];
+    }
+
+    public static function getClientWithTransactionHandler(array &$container, MockHandler $mock): Client
+    {
+        $history = Middleware::history($container);
         $handler = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handler]);
-
-        $this->batchConnection->expects($this->exactly(1))->method('createClientWithRetryHandler')->willReturn($client);
-        $this->batchConnection->expects($this->never())->method('createClient');
-        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
-        $this->connection->expects($this->never())->method('createClient');
-
-        $this->stub->isBatchRequest();
-        $this->stub->expects($this->once())->method('getLocalEvents')->willReturn([
-            (new Writer())
-                ->setId('bar')
-                ->setSubject('test')
-                ->method(new RequestType(RequestType::Get))
-                ->setInternalEventType('1')
-                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
-                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
-                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time')),
-            (new Delete('x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=', 'fooBar')),
-            (new Writer())
-                ->setId('foo')
-                ->setSubject('test')
-                ->method(new RequestType(RequestType::Get))
-                ->setInternalEventType('1')
-                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
-                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
-                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time')),
-            (new \stdClass())
-        ]);
-
-        $this->stub->expects($this->exactly(1))->method('handleBatchResponse');
-        $this->stub->expects($this->exactly(8))->method('saveEventLocal');
-        $this->stub->expects($this->exactly(2))->method('deleteEventLocal');
-
-        $this->stub->sync([
-            'endPoint' => 'me/calendarview',
-            'queryParams' => [
-                'startDateTime' => date("Y-m-d\TH:i:s", strtotime('2019-02-24')),
-                'endDateTime' => date("Y-m-d\TH:i:s", strtotime('2019-02-24'))
-            ]
-        ]);
-
-        $deltaTokenLink = $this->request->getResponseIterator()->getDeltaLink();
-        $parsedUrl = parse_url($deltaTokenLink, PHP_URL_QUERY);
-        parse_str($parsedUrl, $queryComponents);
-        $token = $queryComponents['$deltatoken'] ?? $queryComponents['$deltaToken'] ?? null;
-        $this->assertEquals('phpunit123==', $token);
-    }
-
-    public function testSyncError()
-    {
-        $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor($this->getStream())),
-            new RequestException('Error Communicating with Server', new \GuzzleHttp\Psr7\Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
-        ]);
-
-        $handler = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handler]);
-
-        $this->connection->expects($this->exactly(2))->method('createClientWithRetryHandler')->willReturn($client);
-        $this->stub->expects($this->never())->method('handleBatchResponse');
-        $this->stub->expects($this->once())->method('getLocalEvents')->willReturn([]);
-        $this->stub->expects($this->exactly(1))->method('saveEventLocal');
-        $this->stub->expects($this->exactly(1))->method('deleteEventLocal');
-
-        $this->expectException(ReadError::class);
-        $this->stub->sync([
-            'endPoint' => 'me/calendarview',
-            'skipOccurrences' => true,
-            'queryParams' => [
-                'startDateTime' => date("Y-m-d\TH:i:s", strtotime('2019-02-24')),
-                'endDateTime' => date("Y-m-d\TH:i:s", strtotime('2019-02-24'))
-            ]
-        ]);
-    }
-
-    public function testBatchExceptionHandler()
-    {
-        $request = new Request('fooTest', [
-            'requestOptions' => function (string $url, RequestType $methodType, array $args = []) {
-                return new RequestOptions($url, $methodType, $args);
-            },
-            'connection' => $this->connection,
-            'batchConnectionHandler' => function() {
-                return new \stdClass();
-            }
-        ]);
-
-        $this->stub = $this->getMockForAbstractClass(Calendar::class, [
-            'fooToken', [
-                'logger' => $this->logger,
-                'request' => $request
-            ]
-        ], '', true, true, true, ['handleBatchResponse', 'saveEventLocal']);
-
-        $this->stub->expects($this->once())->method('getLocalEvents')->willReturn([
-            (new Writer())
-                ->setId('bar')
-                ->setSubject('test')
-                ->method(new RequestType(RequestType::Get))
-                ->setInternalEventType('1')
-                ->setBody(new ResponseBody(['ContentType' => 'HTML', 'Content' => 'foo']))
-                ->setStartDate(new ODateTime(new \DateTime('2019-02-04 16:40:36'), 'Eastern Standard Time'))
-                ->setEndDate(new ODateTime(new \DateTime('2019-02-04 16:50:36'), 'Eastern Standard Time'))
-        ]);
-
-        $this->expectExceptionObject(new \InvalidArgumentException('Batch requested but handler is not set'));
-        $this->stub->push();
-    }
-
-    public function getStream() : string
-    {
-        return '{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/CalendarView","value":[{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'foo\')\/Events(\'x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=\')","@odata.etag":"W\/\"ghc\/foo\/\/pA==\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","CreatedDateTime":"2019-02-01T18:05:03.7354577-05:00","LastModifiedDateTime":"2019-02-04T23:58:49.478552-05:00","ChangeKey":"foo\/\/pA==","Categories":[],"OriginalStartTimeZone":"Eastern Standard Time","OriginalEndTimeZone":"Eastern Standard Time","iCalUId":"foo","ReminderMinutesBeforeStart":15,"IsReminderOn":true,"HasAttachments":false,"Subject":"FooBar","BodyPreview":"CCCCCCC","Importance":"Normal","Sensitivity":"Normal","IsAllDay":true,"IsCancelled":false,"IsOrganizer":false,"ResponseRequested":true,"SeriesMasterId":null,"ShowAs":"Free","Type":"SeriesMaster","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=foo%3D&exvsurl=1&path=\/calendar\/item","OnlineMeetingUrl":null,"ResponseStatus":{"Response":"Accepted","Time":"2019-02-01T18:05:25.680242-05:00"},"Body":{"ContentType":"HTML","Content":"test"},"Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"India","PostalCode":""},"Coordinates":{"Latitude":27.6031,"Longitude":88.6468}},"Locations":[{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"US","PostalCode":""},"Coordinates":{"Latitude":32.6031,"Longitude":999.6468}}],"Recurrence":{"Pattern":{"Type":"Daily","Interval":1,"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First"},"Range":{"Type":"EndDate","StartDate":"2019-02-25","EndDate":"2019-02-28","RecurrenceTimeZone":"Eastern Standard Time","NumberOfOccurrences":0}},"Attendees":[{"Type":"Required","Status":{"Response":"None","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}},{"Type":"Required","Status":{"Response":"Accepted","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Insight Test","Address":"test"}}],"Organizer":{"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}}},{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9f\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1==\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ=","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"}},{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9f-\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1pxGhEEAAEYAAAAAQT-FGzVQ0E2D76JKXt4TogcAghc-oDgwvEWAzon06Zf8fQAAAAABDQAAghc-\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLT=","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-27T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-28T00:00:00.0000000","TimeZone":"Eastern Standard Time"}},{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE==\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1p0PrqrAEA==","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-28T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-03-01T00:00:00.0000000","TimeZone":"Eastern Standard Time"}}, {"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/CalendarView\/$deletedEntity","id":"CalendarView(\'bcccdef=\')","reason":"deleted"}],"@odata.deltaLink":"https:\/\/outlook.office.com\/api\/v2.0\/me\/calendarview?startDateTime=2019-02-24T00%3a00%3a00&endDateTime=2019-03-10T00%3a00%3a00&%24deltatoken=phpunit123=="}';
-    }
-
-    public function getEventInstancesStream() : string
-    {
-        return '{"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/CalendarView","value":[{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'foo\')\/Events(\'x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=\')","@odata.etag":"W\/\"ghc\/foo\/\/pA==\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","CreatedDateTime":"2019-02-01T18:05:03.7354577-05:00","LastModifiedDateTime":"2019-02-04T23:58:49.478552-05:00","ChangeKey":"foo\/\/pA==","Categories":[],"OriginalStartTimeZone":"Eastern Standard Time","OriginalEndTimeZone":"Eastern Standard Time","iCalUId":"foo","ReminderMinutesBeforeStart":15,"IsReminderOn":true,"HasAttachments":false,"Subject":"FooBar","BodyPreview":"CCCCCCC","Importance":"Normal","Sensitivity":"Normal","IsAllDay":true,"IsCancelled":false,"IsOrganizer":false,"ResponseRequested":true,"SeriesMasterId":null,"ShowAs":"Free","Type":"SeriesMaster","WebLink":"https:\/\/outlook.office365.com\/owa\/?itemid=foo%3D&exvsurl=1&path=\/calendar\/item","OnlineMeetingUrl":null,"ResponseStatus":{"Response":"Accepted","Time":"2019-02-01T18:05:25.680242-05:00"},"Body":{"ContentType":"HTML","Content":"test"},"Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"Location":{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"India","PostalCode":""},"Coordinates":{"Latitude":27.6031,"Longitude":88.6468}},"Locations":[{"DisplayName":"Bar","LocationUri":"","LocationType":"Default","UniqueId":"3f105ea4-0f49-494d-8d8a-a25a5618eb06","UniqueIdType":"LocationStore","Address":{"Type":"Unknown","Street":"","City":"Bar","State":"fooRegion","CountryOrRegion":"US","PostalCode":""},"Coordinates":{"Latitude":32.6031,"Longitude":999.6468}}],"Recurrence":{"Pattern":{"Type":"Daily","Interval":1,"Month":0,"DayOfMonth":0,"FirstDayOfWeek":"Sunday","Index":"First"},"Range":{"Type":"EndDate","StartDate":"2019-02-25","EndDate":"2019-02-28","RecurrenceTimeZone":"Eastern Standard Time","NumberOfOccurrences":0}},"Attendees":[{"Type":"Required","Status":{"Response":"None","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}},{"Type":"Required","Status":{"Response":"Accepted","Time":"0001-01-01T00:00:00Z"},"EmailAddress":{"Name":"Insight Test","Address":"test"}}],"Organizer":{"EmailAddress":{"Name":"Outlook Test","Address":"foo@bar.com"}}},{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9f\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1==\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ=","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAAABBP8UbNVDQTYPvokpe3hOiBwCCFz_gODC8RYDOifTpl-x9AAAAAAENAACCFz_gODC8RYDOifTpl-x9AAAGNCqaAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-25T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-26T00:00:00.0000000","TimeZone":"Eastern Standard Time"}},{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9f-\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1pxGhEEAAEYAAAAAQT-FGzVQ0E2D76JKXt4TogcAghc-oDgwvEWAzon06Zf8fQAAAAABDQAAghc-\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLT=","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MABGAAAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-27T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-02-28T00:00:00.0000000","TimeZone":"Eastern Standard Time"}},{"@odata.id":"https:\/\/outlook.office.com\/api\/v2.0\/Users(\'129f7fa4-61ce-4b9\')\/Events(\'AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE==\')","@odata.etag":"W\/\"DwAAABYAAACCFz+gODC8RYDOifTpl\/x9AAAHn\/+k\"","Id":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIyLTViMDUwZTdkYjE1MAFRAAgI1p0PrqrAEA==","SeriesMasterId":"AAMkAGM3YjRjZThiLWE4NjQtNDQ5Yi04ZWIAAA=","Type":"Occurrence","Start":{"DateTime":"2019-02-28T00:00:00.0000000","TimeZone":"Eastern Standard Time"},"End":{"DateTime":"2019-03-01T00:00:00.0000000","TimeZone":"Eastern Standard Time"}}, {"@odata.context":"https:\/\/outlook.office.com\/api\/v2.0\/$metadata#Me\/CalendarView\/$deletedEntity","id":"CalendarView(\'bcccdef=\')","reason":"deleted"}]}';
+        $handler->push($history);
+        return new Client(['handler' => $handler]);
     }
 }

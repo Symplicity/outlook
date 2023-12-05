@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook;
 
 use Closure;
+use GuzzleHttp\ClientInterface;
 use Http\Promise\Promise;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\BatchRequestBuilder;
@@ -77,7 +78,7 @@ abstract class Calendar implements CalendarInterface
      *  Calls saveEventLocal/deleteEventLocal methods
      * @throws ReadError
      */
-    public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null): void
+    public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null, array $args = []): void
     {
         try {
             $this->logger?->info('Pulling events...', [
@@ -90,6 +91,10 @@ abstract class Calendar implements CalendarInterface
                 $this->clientSecret,
                 $this->token
             );
+
+            if (isset($args['client']) && $args['client'] instanceof ClientInterface) {
+                $graphServiceClient->setHttpClient($args['client']);
+            }
 
             $requestConfiguration = $this->getCalendarViewRequestConfiguration($params);
 
@@ -158,7 +163,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws ReadError
      */
-    public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null): void
+    public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void
     {
         try {
             $this->logger?->info('Getting instances of recurring event ...', [
@@ -168,7 +173,7 @@ abstract class Calendar implements CalendarInterface
             $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
 
             $events = $this->graphService
-                ->client()
+                ->client($args)
                 ->me()
                 ->events()
                 ->byEventId($id)
@@ -176,7 +181,7 @@ abstract class Calendar implements CalendarInterface
                 ->get($requestConfiguration)
                 ->wait();
 
-            foreach ($events->getValue() ?? [] as $event) {
+            foreach ($events?->getValue() ?? [] as $event) {
                 $this->logger?->info('Receiving event instance ...', [
                     'id' => $id,
                     'event_id' => $event->getId(),
@@ -203,7 +208,7 @@ abstract class Calendar implements CalendarInterface
      * @throws \JsonException
      * @throws \Exception
      */
-    public function push(array $params = []): void
+    public function push(array $params = [], array $args = []): void
     {
         $this->logger?->info('Pushing batch events to outlook ...', [
             'params' => http_build_query($params)
@@ -233,7 +238,8 @@ abstract class Calendar implements CalendarInterface
                         $event,
                         $postRequestConfiguration,
                         $patchRequestConfiguration,
-                        $deleteRequestConfiguration
+                        $deleteRequestConfiguration,
+                        $args
                     );
                 }
             }
@@ -254,7 +260,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws \Exception
      */
-    public function upsert(Event $event): ?GraphEvent
+    public function upsert(Event $event, array $args = []): ?GraphEvent
     {
         $postRequestConfiguration = $this->getEventPostRequestConfiguration();
         $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
@@ -262,7 +268,8 @@ abstract class Calendar implements CalendarInterface
         $eventUpsertRequest = $this->prepareUpsertAsync(
             $event,
             $postRequestConfiguration,
-            $patchRequestConfiguration
+            $patchRequestConfiguration,
+            $args
         );
 
         return $eventUpsertRequest->wait();
@@ -271,13 +278,13 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws \Exception
      */
-    public function delete(string $id): ResponseInterface
+    public function delete(string $id, array $args = []): ?ResponseInterface
     {
         $requestConfiguration = new EventItemRequestBuilderDeleteRequestConfiguration();
         $requestConfiguration->headers = $this->getAuthorizationHeaders($this->token);
 
         return $this->graphService
-            ->client()
+            ->client($args)
             ->me()
             ->events()
             ->byEventId($id)
@@ -287,17 +294,17 @@ abstract class Calendar implements CalendarInterface
 
     protected function getEntity(GraphEvent $event): ReaderEntityInterface
     {
-        if ($event->getType()->value() === EventType::OCCURRENCE) {
+        if ($event->getType()?->value() === EventType::OCCURRENCE) {
             return $this->getOccurrenceReader()->hydrate($event);
         }
 
         return  $this->getReader()->hydrate($event);
     }
 
-    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration): RequestInformation
+    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array $args = []): RequestInformation
     {
         $me = $this->graphService
-            ->client()
+            ->client($args)
             ->me();
 
         if (!empty($eventId = $event->getId())) {
@@ -321,10 +328,10 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws \Exception
      */
-    protected function prepareUpsertAsync(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration): Promise
+    protected function prepareUpsertAsync(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, array $args = []): Promise
     {
         $me = $this->graphService
-            ->client()
+            ->client($args)
             ->me();
 
         if (!empty($eventId = $event->getId())) {
