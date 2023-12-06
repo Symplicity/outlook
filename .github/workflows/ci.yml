@@ -38,6 +38,9 @@ jobs:
           coverage: xdebug
           tools: composer:v2
 
+      - name: Composer Install
+        run: composer install
+
       - name: Tests
         run: vendor/bin/phpunit --coverage-clover clover.xml
 
