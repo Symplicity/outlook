@@ -23,26 +23,20 @@ interface ReceiverInterface
      * @param CalendarInterface $calendar
      * @param LoggerInterface $logger
      * @param array $params
-     * @return mixed
+     * @param array $args
+     * @return void
      */
-    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = []);
+    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = [], array $args = []): void;
 
     /**
      * Set entities received from notifications
      * @param array $entities
-     * @return $this
      */
-    public function setEntities(array $entities): self;
+    public function setEntities(array $entities): void;
 
     /**
      * Get entities
      * @return array
      */
     public function getEntities(): array;
-
-    /**
-     * Get client State
-     * @return string
-     */
-    public function getState(): ?string;
 }

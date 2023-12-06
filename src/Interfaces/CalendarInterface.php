@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Interfaces;
 
+use Closure;
 use Microsoft\Graph\Core\Requests\BatchResponseContent;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
@@ -44,17 +45,19 @@ interface CalendarInterface
      * Method to get & process a single event
      * @param string $id
      * @param ?EventItemRequestBuilderGetQueryParameters $params
+     * @param ?Closure $beforeReturn
+     * @param array $args
      * @return ReaderEntityInterface | null
      * @throws ReadError
      */
-    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null): ?ReaderEntityInterface;
+    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null, array $args = []): ?ReaderEntityInterface;
 
     /**
      * Method to get all instances of a series master
      * @param string $id
      * @param InstancesRequestBuilderGetQueryParameters $params
      */
-    public function getEventInstances(string $id, InstancesRequestBuilderGetQueryParameters $params): void;
+    public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void;
 
     /**
      * Individual push event handler method, use this if you dont want to use sync

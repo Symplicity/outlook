@@ -125,7 +125,7 @@ abstract class Calendar implements CalendarInterface
      * Get Event by event id (extract extension as well)
      * @throws ReadError
      */
-    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null, ?array $args = []): ?ReaderEntityInterface
+    public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null, array $args = []): ?ReaderEntityInterface
     {
         try {
             $this->logger?->info('Getting event by id ...', [
