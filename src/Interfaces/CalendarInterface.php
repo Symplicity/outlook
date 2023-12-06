@@ -55,7 +55,8 @@ interface CalendarInterface
     /**
      * Method to get all instances of a series master
      * @param string $id
-     * @param InstancesRequestBuilderGetQueryParameters $params
+     * @param InstancesRequestBuilderGetQueryParameters|null $params
+     * @param array $args
      */
     public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void;
 
