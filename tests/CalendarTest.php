@@ -8,7 +8,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
@@ -27,6 +26,8 @@ use Symplicity\Outlook\Utilities\CalendarView\CalendarViewParams;
 
 class CalendarTest extends TestCase
 {
+    use GuzzleHttpTransactionTestTrait;
+
     protected OutlookTestHandler $stub;
     protected LoggerInterface $logger;
 
@@ -247,13 +248,5 @@ class CalendarTest extends TestCase
             '{"@odata.context":"https:\/\/graph.microsoft.com\/v1.0\/$metadata#Collection(event)","value":[{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==\"","id":"1==","createdDateTime":"2023-12-05T06:17:55.551725Z","lastModifiedDateTime":"2023-12-05T06:17:56.9028469Z","changeKey":"7DBtS36oekqlFVL\/lW3rKQAAC3er5w==","categories":[],"transactionId":"eea2822c-5583-8a5a-a074-2f3f0d75f042","originalStartTimeZone":"Eastern Standard Time","originalEndTimeZone":"Eastern Standard Time","iCalUId":"040000008200E00074C5B7101A82E00800000000695B10C94227DA0100000000000000001000000098F5720C81F7EF4EA03A9B578D28E7DF","reminderMinutesBeforeStart":15,"isReminderOn":true,"hasAttachments":false,"subject":"R - 1","bodyPreview":"test","importance":"normal","sensitivity":"normal","isAllDay":false,"isCancelled":false,"isOrganizer":true,"responseRequested":true,"seriesMasterId":null,"showAs":"busy","type":"seriesMaster","webLink":"https:\/\/outlook.office365.com\/owa\/?itemid=1==&exvsurl=1&path=\/calendar\/item","onlineMeetingUrl":null,"isOnlineMeeting":false,"onlineMeetingProvider":"unknown","allowNewTimeProposals":true,"occurrenceId":null,"isDraft":false,"hideAttendees":false,"responseStatus":{"response":"organizer","time":"0001-01-01T00:00:00Z"},"start":{"dateTime":"2023-12-05T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T07:30:00.0000000","timeZone":"UTC"},"location":{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"},"locations":[{"displayName":"Sikkim","locationType":"default","uniqueId":"Sikkim","uniqueIdType":"private"}],"recurrence":{"pattern":{"type":"daily","interval":1,"month":0,"dayOfMonth":0,"firstDayOfWeek":"sunday","index":"first"},"range":{"type":"endDate","startDate":"2023-12-05","endDate":"2023-12-07","recurrenceTimeZone":"Eastern Standard Time","numberOfOccurrences":0}},"attendees":[],"organizer":{"emailAddress":{"name":"Foo Test","address":"foo@symplicity.com"}},"onlineMeeting":null},{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"DwAAABYAAADsMG1Lfqh6SqUVUv+VbespAAALd6vn\"","id":"2==","seriesMasterId":"1==","type":"occurrence","start":{"dateTime":"2023-12-05T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-05T07:30:00.0000000","timeZone":"UTC"}},{"@odata.type":"#microsoft.graph.event","@odata.etag":"W\/\"DwAAABYAAADsMG1Lfqh6SqUVUv+VbespAAALd6vn\"","id":"3==","seriesMasterId":"1==","type":"occurrence","start":{"dateTime":"2023-12-06T07:00:00.0000000","timeZone":"UTC"},"end":{"dateTime":"2023-12-06T07:30:00.0000000","timeZone":"UTC"}}],"@odata.nextLink":"https:\/\/graph.microsoft.com\/v1.0\/me\/calendarView\/delta?$skiptoken=foo_skipToken"}',
             '{"@odata.context":"https:\/\/graph.microsoft.com\/v1.0\/$metadata#Collection(event)","value":[],"@odata.deltaLink":"https:\/\/graph.microsoft.com\/v1.0\/me\/calendarView\/delta?$deltatoken=foo_deltaToken"}'
         ];
-    }
-
-    public static function getClientWithTransactionHandler(array &$container, MockHandler $mock): Client
-    {
-        $history = Middleware::history($container);
-        $handler = HandlerStack::create($mock);
-        $handler->push($history);
-        return new Client(['handler' => $handler]);
     }
 }

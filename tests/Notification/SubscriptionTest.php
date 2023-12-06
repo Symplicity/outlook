@@ -1,180 +1,154 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\Notification;
 
-use DateTimeImmutable;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use GuzzleHttp\Psr7\Utils;
+use Microsoft\Graph\Generated\Models\Subscription as MsSubscription;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
-use Symplicity\Outlook\Entities\Subscription as SubscriptionEntity;
+use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Exception\SubscribeFailedException;
-use Symplicity\Outlook\Http\Connection;
-use Symplicity\Outlook\Interfaces\Entity\SubscriptionResponseEntityInterface;
 use Symplicity\Outlook\Notification\Subscription;
+use Symplicity\Outlook\Tests\GuzzleHttpTransactionTestTrait;
 use Symplicity\Outlook\Utilities\ChangeType;
 
 class SubscriptionTest extends TestCase
 {
-    private $connection;
-    private $logger;
+    use GuzzleHttpTransactionTestTrait;
+
+    private array $container;
+    private LoggerInterface $logger;
 
     public function setUp(): void
     {
+        $this->container = [];
         $this->logger = new Logger('outlook_calendar');
         $this->logger->pushHandler(new NullHandler());
-        $this->connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([$this->logger])
-            ->onlyMethods(['createClient', 'createClientWithRetryHandler'])
-            ->getMock();
     }
 
     public function testSubscribe()
     {
-        $subscriptionResponse = $this->getSubscriptionResponse();
-        $uncheckedSubscriptionDate = array_merge($subscriptionResponse, ['SubscriptionExpirationDateTime' => '']);
-        $wrongDateResponse = array_merge($subscriptionResponse, ['SubscriptionExpirationDateTime' => 'wrongdate']);
-
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
-            new Response(200, [], Utils::streamFor(json_encode($uncheckedSubscriptionDate))),
-            new Response(200, [], Utils::streamFor(json_encode($wrongDateResponse))),
-            new Response(200, [], ''),
+            new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
+            new Response(200, ['Content-Type' => 'application/json'], ''),
             new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
-        $handler = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handler]);
-        $this->connection->expects($this->exactly(4))->method('createClient')->willReturn($client);
-        $subscriber = new Subscription($this->logger);
-        $subscriber->setConnection($this->connection);
+        $client = $this->getClientWithTransactionHandler($this->container, $mock);
 
-        $subscriptionEntity = (new SubscriptionEntity())
-            ->setDataType('#Microsoft.OutlookServices.DeleteNotification')
-            ->setClientState('123-333')
-            ->setNotificationUrl('https://test12.symplicity.com/api/v1/outlook')
-            ->setResource('https://outlook.office.com/api/v2.0/me/events')
-            ->setChangeType([ChangeType::deleted, ChangeType::updated, ChangeType::missed]);
+        $subscriptionEntity = new MsSubscription();
+        $subscriptionEntity->setClientState('123-333');
+        $subscriptionEntity->setNotificationUrl('https://test12.symplicity.com/api/v1/outlook');
+        $subscriptionEntity->setResource('/me/events');
+        $subscriptionEntity->setChangeType(sprintf('%s,%s,%s', ChangeType::CREATED->value, ChangeType::UPDATED->value, ChangeType::DELETED->value));
 
-        $subscriptionResponse = $subscriber->subscribe($subscriptionEntity, 'abc');
-        $this->assertInstanceOf(SubscriptionResponseEntityInterface::class, $subscriptionResponse);
-        $this->assertEquals('ABC==', $subscriptionResponse->id);
-        $this->assertNotEmpty($subscriptionResponse->clientState);
-        $this->assertInstanceOf(DateTimeImmutable::class, $subscriptionResponse->getSubscriptionExpirationDate());
+        $subscriber = new Subscription('foo', 'bar', 'token_foo', ['logger' => $this->logger]);
+        $subscriptionResponse = $subscriber->subscribe($subscriptionEntity, ['client' => $client]);
 
-        $subscriptionResponse = $subscriber->subscribe($subscriptionEntity, 'abc');
-        $this->assertNull($subscriptionResponse->getSubscriptionExpirationDate());
+        $this->assertInstanceOf(MsSubscription::class, $subscriptionResponse);
+        $this->assertEquals('ABC==', $subscriptionResponse->getId());
+        $this->assertNotEmpty($subscriptionResponse->getClientState());
+        $this->assertInstanceOf(\DateTime::class, $subscriptionResponse->getExpirationDateTime());
 
-        $subscriptionResponse = $subscriber->subscribe($subscriptionEntity, 'abc');
-        $this->assertNull($subscriptionResponse->getSubscriptionExpirationDate());
+        $this->assertCount(1, $this->container);
+
+        /** @var Request $request */
+        $request = $this->container[0]['request'];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertSame('/v1.0/subscriptions', $request->getUri()->getPath());
+        $this->assertJsonStringEqualsJsonString('{"changeType":"created,updated,deleted","clientState":"123-333","notificationUrl":"https://test12.symplicity.com/api/v1/outlook","resource":"/me/events"}', $request->getBody()->getContents());
+
+        $this->container = [];
 
         $this->expectException(SubscribeFailedException::class);
-        $subscriber->subscribe($subscriptionEntity, 'abc');
+        $subscriber->subscribe($subscriptionEntity, ['client' => $client]);
 
         $this->expectException(RequestException::class);
-        $subscriber->subscribe($subscriptionEntity, 'abc');
-    }
-
-    public function testSubscriptionError()
-    {
-        $subscriptionEntity = (new SubscriptionEntity())
-            ->setResource('https://outlook.office.com/api/v2.0/me/events')
-            ->setChangeType([ChangeType::deleted, ChangeType::updated, ChangeType::missed]);
-
-        $this->connection->expects($this->never())->method('createClient');
-
-        $subscriber = new Subscription($this->logger);
-        $subscriber->setConnection($this->connection);
-
-        $this->expectException(\RuntimeException::class);
-        $subscriber->subscribe($subscriptionEntity, 'abc');
+        $subscriber->subscribe($subscriptionEntity, ['client' => $client]);
     }
 
     public function testRenewSubscription()
     {
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
-            new Response(200, [], ''),
+            new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
+            new Response(200, ['Content-Type' => 'application/json'], ''),
             new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
-        $handler = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handler]);
-        $this->connection->expects($this->exactly(2))->method('createClient')->willReturn($client);
+        $client = $this->getClientWithTransactionHandler($this->container, $mock);
 
-        $subscriber = new Subscription($this->logger);
-        $subscriber->setConnection($this->connection);
+        $expiration = new \DateTime('2025-04-10');
+        $subscriber = new Subscription('foo', 'bar', 'token_foo', ['logger' => $this->logger]);
+        $subscriptionResponse = $subscriber->renew('ABC==', $expiration, ['client' => $client]);
+        $this->assertInstanceOf(MsSubscription::class, $subscriptionResponse);
+        $this->assertEquals('ABC==', $subscriptionResponse->getId());
+        $this->assertNotEmpty($subscriptionResponse->getClientState());
 
-        $subscriptionResponse = $subscriber->renew('ABC==', 'abc');
-        $this->assertInstanceOf(SubscriptionResponseEntityInterface::class, $subscriptionResponse);
-        $this->assertEquals('ABC==', $subscriptionResponse->id);
-        $this->assertNotEmpty($subscriptionResponse->clientState);
-        $this->assertInstanceOf(DateTimeImmutable::class, $subscriptionResponse->getSubscriptionExpirationDate());
+        $this->assertCount(1, $this->container);
+
+        /** @var Request $request */
+        $request = $this->container[0]['request'];
+        $this->assertSame('PATCH', $request->getMethod());
+        $this->assertSame('/v1.0/subscriptions/ABC%3D%3D', $request->getUri()->getPath());
+        $this->assertJsonStringEqualsJsonString('{"expirationDateTime": "2025-04-10T00:00:00-04:00"}', $request->getBody()->getContents());
+
+        $this->container = [];
 
         $this->expectException(SubscribeFailedException::class);
-        $subscriber->renew('ABC==', 'abc');
+        $subscriber->renew('ABC==', $expiration, ['client' => $client]);
 
         $this->expectException(RequestException::class);
-        $subscriber->renew('ABC==', 'abc');
+        $subscriber->renew('ABC==', $expiration, ['client' => $client]);
     }
 
     public function testDeleteSubscription()
     {
         $mock = new MockHandler([
-            new Response(204, [], Utils::streamFor(json_encode($this->getSubscriptionResponse()))),
-            new Response(202, [], ''),
+            new Response(204, ['Content-Type' => 'application/json'], '{}'),
             new Response(404, [], ''),
         ]);
 
-        $handler = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handler]);
-        $this->connection->expects($this->exactly(3))->method('createClient')->willReturn($client);
+        $client = $this->getClientWithTransactionHandler($this->container, $mock);
+        $subscriber = new Subscription('foo', 'bar', 'token_foo', ['logger' => $this->logger]);
+        $subscriber->delete('ABC==', ['client' => $client]);
 
-        $subscriber = new Subscription($this->logger);
-        $subscriber->setConnection($this->connection);
+        /** @var Request $request */
+        $request = $this->container[0]['request'];
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertSame('/v1.0/subscriptions/ABC%3D%3D', $request->getUri()->getPath());
 
-        $response = $subscriber->delete('ABC==', 'abc');
-        $this->assertTrue($response);
+        $this->container = [];
 
-        $response = $subscriber->delete('ABC==', 'abc');
-        $this->assertFalse($response);
-
-        $this->expectException(ClientException::class);
-        $subscriber->delete('ABC==', 'abc');
+        $this->expectException(SubscribeFailedException::class);
+        $subscriber->delete('ABC==', ['client' => $client]);
     }
 
-    public function testConnectionHandler()
+    public function getSubscriptionResponse(): array
     {
-        $subscriber = new Subscription($this->logger);
-        $connection = $subscriber->getConnection();
-        $this->assertInstanceOf(ConnectionInterface::class, $connection);
-        $this->assertInstanceOf(Connection::class, $connection);
-
-        $subscriber->setConnection($this->connection);
-        $this->assertInstanceOf(ConnectionInterface::class, $connection);
-    }
-
-    public function getSubscriptionResponse()
-    {
-        return [
-            '@odata.context' => 'https://outlook.office.com/api/v2.0/$metadata#Me/Subscriptions/$entity',
-            '@odata.type' => '#Microsoft.OutlookServices.PushSubscription',
-            '@odata.id' => 'https://outlook.office.com/api/v2.0/Users(\'123-45\')/Subscriptions(\'ABC==\')',
-            'Id' => 'ABC==',
-            'Resource' => 'https://outlook.office.com/api/v2.0/me/events',
-            'ChangeType' => 'Updated, Deleted, Missed',
-            'NotificationURL' => 'https://test12.symplicity.com/api/v1/outlook',
-            'SubscriptionExpirationDateTime' => '2020-09-23T13:58:53.708556Z',
-            'ClientState' => '5544434-6e6f-47e1-a611-6b3299ea6a85'
+        return  [
+            '@odata.context' => 'https://graph.microsoft.com/v1.0/$metadata#subscriptions/$entity',
+            'id' => 'ABC==',
+            'resource' => 'me/events',
+            'applicationId' => 'Foo==',
+            'changeType' => 'created,updated,deleted',
+            'clientState' => '123-333',
+            'notificationUrl' => 'https://test12.symplicity.com/api/v1/outlook',
+            'notificationQueryOptions' => null,
+            'lifecycleNotificationUrl' => 'https://test12.symplicity.com/api/v1/outlook-cycle',
+            'expirationDateTime' => '2023-12-10T18:23:45Z',
+            'creatorId' => 'creator==',
+            'includeResourceData' => null,
+            'latestSupportedTlsVersion' => 'v1_2',
+            'encryptionCertificate' => null,
+            'encryptionCertificateId' => null,
+            'notificationUrlAppId' => null,
         ];
     }
 }
