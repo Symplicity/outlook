@@ -49,12 +49,11 @@ checks:
 
 build:
     environment:
-      image: default-bionic
-      environment:
-        php:
-          version: 8.1.26
-          ini:
-            "xdebug.mode": coverage
+      timezone: UTC
+      php:
+        version: 8.1.26
+        ini:
+          "xdebug.mode": coverage
     nodes:
       tests:
         tests:
