@@ -29,7 +29,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        run: echo "${{ github.repository }} repository has been cloned."
 
       - name: PHP
         uses: shivammathur/setup-php@v2
