@@ -48,18 +48,18 @@ checks:
     encourage_single_quotes: true
 
 build:
-    tests:
-        override:
-            -   command: ./vendor/bin/phpunit --coverage-clover=clover.xml
-                coverage:
-                    file: clover.xml
-                    format: php-clover
-
+    environment:
+      image: default-bionic
+      environment:
+        php:
+          version: 8.1.26
+          ini:
+            "xdebug.mode": coverage
     nodes:
-        php81-unit-tests:
-            image: default-bionic
-            environment:
-                php:
-                    version: 8.1.26
-                    ini:
-                        "xdebug.mode": coverage
+      tests:
+        tests:
+          override:
+            - command: ./vendor/bin/phpunit --coverage-clover=clover.xml
+              coverage:
+                file: clover.xml
+                format: php-clover
