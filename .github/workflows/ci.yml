@@ -36,9 +36,7 @@ jobs:
           php-version: '8.1'
           extensions: none, curl
           coverage: xdebug
-
-      - name: Composer
-        uses: ramsey/composer-install@v2
+          tools: composer:v2
 
       - name: Tests
         run: vendor/bin/phpunit --coverage-clover clover.xml

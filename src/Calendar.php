@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Symplicity\Outlook;
@@ -22,7 +21,6 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQ
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestInformation;
-use OpenTelemetry\SDK\Trace\Tracer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
