@@ -9,10 +9,9 @@ declare(strict_types=1);
 namespace YourPackage;
 
 use Symplicity\Outlook\Calendar;
-use Symplicity\Outlook\Entities\Writer;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
-use Symplicity\Outlook\Entities\ResponseBody;
 use Symplicity\Outlook\Interfaces\Utils\BatchResponseInterface;
+use Microsoft\Graph\Core\Requests\BatchResponseContent;
 
 class OutlookCalendar extends Calendar 
 {    
