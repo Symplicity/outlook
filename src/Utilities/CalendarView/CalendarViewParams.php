@@ -66,7 +66,7 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
 
     public function getPreferHeaders(): ?string
     {
-        return $this->preferHeaders ?? 'odata.maxpagesize=1,odata.track-changes,outlook.timezone="' . $this->timezone . '"';
+        return $this->preferHeaders ?? 'odata.maxpagesize=50,odata.track-changes,outlook.timezone="' . $this->timezone . '"';
     }
 
     public function setStartDateTime(string $startDateTime): CalendarViewParams

@@ -3,6 +3,7 @@
 - [AuthorizationURL](#authorization)
 - [Request](#request)
 - [Refresh](#refresh)
+- [Example](../example/token/getToken.php)
 
 ## Authorization
 ```php
