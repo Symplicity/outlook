@@ -39,7 +39,7 @@ use Symplicity\Outlook\Utilities\CalendarView\PageIterator;
 use Symplicity\Outlook\Utilities\EventView\GraphServiceEvent;
 
 /**
- * @property-read GraphServiceEvent $graphService
+ * @property GraphServiceEvent $graphService
  */
 abstract class Calendar implements CalendarInterface
 {
@@ -50,15 +50,18 @@ abstract class Calendar implements CalendarInterface
     // Maximum events allowed for graph batch api
     public const BATCH_BY = 20;
 
-    protected LoggerInterface | null $logger;
+    protected ?LoggerInterface $logger = null;
 
-    // If you want to use kiota/ms-graph telemetry, extend this class to declare a tracer
+    /**
+     * If you want to use kiota/ms-graph telemetry, extend this class to declare a tracer
+     * @param array<string, mixed> $args
+     */
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
         $this->logger = $args['logger'] ?? null;
     }
 
-    public function __get(string $property)
+    public function __get(string $property): ?GraphServiceEvent
     {
         if ($property === 'graphService') {
             $this->graphService = new GraphServiceEvent(
@@ -78,6 +81,7 @@ abstract class Calendar implements CalendarInterface
     /** Pull all events from outlook in an iterative manner
      *  Set prefer headers like odata.maxpagesize and timezone to control the data received
      *  Calls saveEventLocal/deleteEventLocal methods
+     * @param array<string, mixed> $args
      * @throws ReadError
      */
     public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null, array $args = []): void
@@ -108,6 +112,10 @@ abstract class Calendar implements CalendarInterface
                 ->get($requestConfiguration)
                 ->wait();
 
+            if (empty($events)) {
+                return;
+            }
+
             $this->iterateThrough(
                 $events,
                 $graphServiceClient,
@@ -125,6 +133,7 @@ abstract class Calendar implements CalendarInterface
 
     /**
      * Get Event by event id (extract extension as well)
+     * @param array<string, mixed> $args
      * @throws ReadError
      */
     public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null, array $args = []): ?ReaderEntityInterface
@@ -143,6 +152,10 @@ abstract class Calendar implements CalendarInterface
                 ->byEventId($id)
                 ->get($requestConfiguration)
                 ->wait();
+
+            if (empty($event)) {
+                return null;
+            }
 
             $entity = $this->getEntity($event);
             $beforeReturn?->call($this, $entity, $event);
@@ -163,6 +176,7 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
+     * @param array<string, mixed> $args
      * @throws ReadError
      */
     public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void
@@ -184,6 +198,10 @@ abstract class Calendar implements CalendarInterface
                 ->wait();
 
             foreach ($events?->getValue() ?? [] as $event) {
+                if (null === $event) {
+                    continue;
+                }
+
                 $this->logger?->info('Receiving event instance ...', [
                     'id' => $id,
                     'event_id' => $event->getId(),
@@ -207,6 +225,8 @@ abstract class Calendar implements CalendarInterface
     // MARK: Event writes
 
     /**
+     * @param array<string, string> $params
+     * @param array<string, mixed> $args
      * @throws \JsonException
      * @throws \Exception
      */
@@ -261,6 +281,7 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
+     * @param array<string, mixed> $args
      * @throws \Exception
      */
     public function upsert(Event $event, array $args = []): ?GraphEvent
@@ -279,14 +300,15 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
+     * @param array<string, mixed> $args
      * @throws \Exception
      */
-    public function delete(string $id, array $args = []): ?ResponseInterface
+    public function delete(string $id, array $args = []): void
     {
         $requestConfiguration = new EventItemRequestBuilderDeleteRequestConfiguration();
         $requestConfiguration->headers = $this->getAuthorizationHeaders($this->token);
 
-        return $this->graphService
+        $this->graphService
             ->client($args)
             ->me()
             ->events()
@@ -315,33 +337,38 @@ abstract class Calendar implements CalendarInterface
         }
     }
 
+    /**
+     * @return array<string, mixed> $args
+     */
     protected function createFromDiscriminatorValue(BatchResponseItem $response): array
     {
         $item = [];
-        $data = \json_decode($response->getBody()->getContents(), true);
-        if (JSON_ERROR_NONE === json_last_error()) {
-            try {
-                $parser = new JsonParseNode($data);
-                /** @var Event $eventObject */
-                $item = [
-                    'event' => $parser->getObjectValue([Event::class, 'createFromDiscriminatorValue']),
-                    'info' => [
-                        'status' => $response->getStatusCode(),
-                        'location' => $response->getHeaders()['Location'] ?? null,
-                        'id' => $response->getId()
-                    ]
-                ];
+        $body = $response->getBody()?->getContents();
+        if (!empty($body)) {
+            $data = \json_decode($body, true);
+            if (JSON_ERROR_NONE === json_last_error()) {
+                try {
+                    $parser = new JsonParseNode($data);
+                    $item = [
+                        'event' => $parser->getObjectValue([Event::class, 'createFromDiscriminatorValue']),
+                        'info' => [
+                            'status' => $response->getStatusCode(),
+                            'location' => $response->getHeaders()['Location'] ?? null,
+                            'id' => $response->getId()
+                        ]
+                    ];
 
-            } catch (\Exception $error) {
-                $item = [
-                    'event' => null,
-                    'info' => [
-                        'status' => $response->getStatusCode(),
-                        'location' => $response->getHeaders()['Location'] ?? null,
-                        'id' => $response->getId(),
-                        'error' => $error->getMessage()
-                    ]
-                ];
+                } catch (\Exception $error) {
+                    $item = [
+                        'event' => null,
+                        'info' => [
+                            'status' => $response->getStatusCode(),
+                            'location' => $response->getHeaders()['Location'] ?? null,
+                            'id' => $response->getId(),
+                            'error' => $error->getMessage()
+                        ]
+                    ];
+                }
             }
         }
 
@@ -354,9 +381,12 @@ abstract class Calendar implements CalendarInterface
             return $this->getOccurrenceReader()->hydrate($event);
         }
 
-        return  $this->getReader()->hydrate($event);
+        return $this->getReader()->hydrate($event);
     }
 
+    /**
+     * @param array<string, mixed> $args
+     */
     protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array $args = []): RequestInformation
     {
         $me = $this->graphService
@@ -382,6 +412,7 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
+     * @param array<string, mixed> $args
      * @throws \Exception
      */
     protected function prepareUpsertAsync(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, array $args = []): Promise
@@ -458,14 +489,14 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws ReadError
      */
-    private function convertToReadableError(\Exception $e)
+    private function convertToReadableError(\Exception $e): void
     {
         $message = null;
         if ($e instanceof ODataError) {
             /** @var MainError $errorInfo */
             $errorInfo = $e->getBackingStore()->get('error');
             $code = 0;
-            $localizedDescription = $errorInfo->getMessage();
+            $localizedDescription = $errorInfo->getMessage() ?? '';
             $message = $errorInfo->getCode();
         } else {
             $code = $e->getCode();

@@ -6,7 +6,6 @@ namespace Symplicity\Outlook\Interfaces;
 
 use Closure;
 use Generator;
-use Microsoft\Graph\Core\Requests\BatchResponseContent;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Symplicity\Outlook\Exception\ReadError;
@@ -25,10 +24,10 @@ interface CalendarInterface
 
     /**
      * When event is deleted, this method will be called.
-     * @param string $eventId
+     * @param ?string $eventId
      * @return void
      */
-    public function deleteEventLocal(string $eventId): void;
+    public function deleteEventLocal(?string $eventId): void;
 
     /**
      * Gets all the events that needs to go to Outlook
@@ -47,7 +46,7 @@ interface CalendarInterface
      * @param string $id
      * @param ?EventItemRequestBuilderGetQueryParameters $params
      * @param ?Closure $beforeReturn
-     * @param array $args
+     * @param array<string, mixed> $args
      * @return ReaderEntityInterface | null
      * @throws ReadError
      */
@@ -57,13 +56,13 @@ interface CalendarInterface
      * Method to get all instances of a series master
      * @param string $id
      * @param InstancesRequestBuilderGetQueryParameters|null $params
-     * @param array $args
+     * @param array<string, mixed> $args
      */
     public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void;
 
     /**
      * Individual push event handler method, use this if you dont want to use sync
-     * @param array $params
+     * @param array<string, string> $params
      */
     public function push(array $params = []): void;
 
