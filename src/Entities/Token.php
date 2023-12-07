@@ -12,9 +12,9 @@ use Symplicity\Outlook\Interfaces\Entity\TokenInterface;
 class Token implements TokenInterface, Stringable
 {
     protected string $accessToken;
-    protected string $refreshToken;
-    protected int $expiresIn;
-    protected string $idToken;
+    protected ?string $refreshToken = null;
+    protected ?int $expiresIn = null;
+    protected ?string $idToken = null;
     protected DateTimeImmutable $tokenReceivedOn;
     protected ?string $type = null;
     protected ?string $emailAddress = null;
@@ -45,19 +45,19 @@ class Token implements TokenInterface, Stringable
         return $this;
     }
 
-    public function setRefreshToken(string $refreshToken): Token
+    public function setRefreshToken(?string $refreshToken): Token
     {
         $this->refreshToken = $refreshToken;
         return $this;
     }
 
-    public function setExpiresIn(int $expiresIn): Token
+    public function setExpiresIn(?int $expiresIn): Token
     {
         $this->expiresIn = $expiresIn;
         return $this;
     }
 
-    public function setIdToken(string $idToken): Token
+    public function setIdToken(?string $idToken): Token
     {
         $this->idToken = $idToken;
         return $this;
@@ -90,17 +90,17 @@ class Token implements TokenInterface, Stringable
         return $this->accessToken;
     }
 
-    public function getRefreshToken(): string
+    public function getRefreshToken(): ?string
     {
         return $this->refreshToken;
     }
 
-    public function getExpiresIn(): int
+    public function getExpiresIn(): ?int
     {
         return $this->expiresIn;
     }
 
-    public function getIdToken(): string
+    public function getIdToken(): ?string
     {
         return $this->idToken;
     }

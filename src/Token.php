@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Symplicity\Outlook;
@@ -12,6 +13,8 @@ use Microsoft\Kiota\Authentication\Cache\InMemoryAccessTokenCache;
 use Microsoft\Kiota\Authentication\Oauth\ProviderFactory;
 use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
 use Symplicity\Outlook\Entities\Token as TokenEntity;
+use Symplicity\Outlook\Exception\AccessTokenMissingException;
+use Symplicity\Outlook\Exception\IllegalAccessTokenException;
 use Symplicity\Outlook\Interfaces\Entity\TokenInterface as TokenEntityInterface;
 use Symplicity\Outlook\Interfaces\TokenInterface;
 
@@ -26,6 +29,7 @@ class Token implements TokenInterface
     protected const OAUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
     protected const OAUTH_USER_INFO_URL = 'https://graph.microsoft.com/oidc/userinfo';
 
+    /** @var String[] $scopes */
     protected array $scopes = [
         'openid',
         'offline_access',
@@ -35,6 +39,9 @@ class Token implements TokenInterface
     protected ?string $email = null;
     protected ?string $displayName = null;
 
+    /**
+     * @param array<string, mixed> $args
+     */
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, protected array $args = [])
     {
     }
@@ -55,8 +62,11 @@ class Token implements TokenInterface
             accessTokenCache: $tokenCache
         );
 
-        // TODO: May be have requestAsync ??
         $token = $tokenProvider->getAuthorizationTokenAsync(GraphConstants::REST_ENDPOINT)->wait();
+        if (empty($token)) {
+            throw new AccessTokenMissingException();
+        }
+
         $key = $this->getCacheKey($token);
         $identifiers = $tokenCache->getAccessToken($key);
 
@@ -92,6 +102,7 @@ class Token implements TokenInterface
             ->setTokenReceivedOn();
     }
 
+    /** @param array<string, string> $state */
     public function getAuthorizationUrl(array $state, string $redirectUrl): string
     {
         $tokenAuthorizationProvider = new GenericProvider([
@@ -112,7 +123,7 @@ class Token implements TokenInterface
         ]);
     }
 
-    private function getCacheKey(string $accessToken): ?string
+    private function getCacheKey(string $accessToken): string
     {
         $tokenParts = explode('.', $accessToken);
         if (count($tokenParts) === 3) {
@@ -126,6 +137,6 @@ class Token implements TokenInterface
             }
         }
 
-        return null;
+        throw new IllegalAccessTokenException();
     }
 }

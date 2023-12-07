@@ -10,7 +10,10 @@ use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInter
 class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters implements CalendarViewParamsInterface
 {
     private ?string $deltaToken = null;
+
+    /** @var array<string, string>|null  */
     private ?array $headers = [];
+
     private ?string $preferHeaders = null;
     private ?string $timezone = 'Eastern Standard Time';
 
@@ -29,6 +32,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this->filter;
     }
 
+    /**
+     * @return string[]|null
+     */
     public function getOrderBy(): ?array
     {
         return $this->orderby;
@@ -49,6 +55,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this->count;
     }
 
+    /**
+     * @return string[]|null
+     */
     public function getSelect(): ?array
     {
         return $this->select;
@@ -59,6 +68,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this->deltaToken;
     }
 
+    /**
+     * @return array<string, string>|null
+     */
     public function getHeaders(): ?array
     {
         return $this->headers;
@@ -87,6 +99,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this;
     }
 
+    /**
+     * @param string[]|null $orderBy
+     */
     public function setOrderBy(?array $orderBy): CalendarViewParams
     {
         $this->orderby = $orderBy;
@@ -111,6 +126,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this;
     }
 
+    /**
+     * @param string[]|null $select
+     */
     public function setSelect(?array $select): CalendarViewParams
     {
         $this->select = $select;
@@ -123,6 +141,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this;
     }
 
+    /**
+     * @param array<string, string>|null $headers
+     */
     public function setHeaders(?array $headers): CalendarViewParams
     {
         $this->headers = $headers;

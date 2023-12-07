@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Utilities\EventView;
 
-use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Client;
 use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAuthenticationProvider;
 use Microsoft\Graph\Core\GraphClientFactory;
 use Microsoft\Graph\GraphRequestAdapter;
@@ -17,7 +17,7 @@ class GraphServiceEvent extends GraphServiceCalendarView
     {
         $tokenRequestContext = $this->getClientCredentialContext();
 
-        if (isset($params['client']) && $params['client'] instanceof ClientInterface) {
+        if (isset($params['client']) && $params['client'] instanceof Client) {
             $client = $params['client'];
         } else {
             $handlerStack = GraphClientFactory::getDefaultHandlerStack();

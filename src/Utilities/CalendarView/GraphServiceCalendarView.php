@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Utilities\CalendarView;
 
-use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions as GuzzleHttpOptions;
 use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAuthenticationProvider;
 use Microsoft\Graph\Core\GraphClientFactory;
@@ -13,6 +13,7 @@ use Microsoft\Graph\GraphRequestAdapter;
 use Microsoft\Graph\GraphServiceClient as MSGraphServiceClient;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Symplicity\Outlook\AuthorizationContextTrait;
+use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
 use Symplicity\Outlook\Middleware\CalendarViewDeltaTokenQueryParamMiddleware;
 
 class GraphServiceCalendarView
@@ -26,13 +27,13 @@ class GraphServiceCalendarView
     public const HTTP_VERIFY = false;
 
     protected ?RequestAdapter $requestAdapter;
-    protected ?ClientInterface $httpClient = null;
+    protected ?Client $httpClient = null;
 
-    public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token)
+    public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token) // @phpstan-ignore-line
     {
     }
 
-    public function client(CalendarViewParams $params): MSGraphServiceClient
+    public function client(CalendarViewParamsInterface $params): MSGraphServiceClient
     {
         $tokenRequestContext = $this->getClientCredentialContext();
 
@@ -61,17 +62,20 @@ class GraphServiceCalendarView
         );
     }
 
-    public function getRequestAdapter(): RequestAdapter
+    public function getRequestAdapter(): ?RequestAdapter
     {
         return $this->requestAdapter;
     }
 
-    public function setHttpClient(?ClientInterface $client): GraphServiceCalendarView
+    public function setHttpClient(?Client $client): GraphServiceCalendarView
     {
         $this->httpClient = $client;
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected static function getDefaultConfig(): array
     {
         $config = [
