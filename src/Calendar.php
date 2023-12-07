@@ -299,7 +299,6 @@ abstract class Calendar implements CalendarInterface
     {
         foreach ($response?->getResponses() ?? [] as $response) {
             if ($response instanceof BatchResponseItem) {
-                $error = null;
                 if (in_array($response->getStatusCode(), [200, 201])) {
                     yield $this->createFromDiscriminatorValue($response);
                 } else {
@@ -308,8 +307,7 @@ abstract class Calendar implements CalendarInterface
                         'info' => [
                             'status' => $response->getStatusCode(),
                             'location' => $response->getHeaders()['Location'] ?? null,
-                            'id' => $response->getId(),
-                            'error' => $error instanceof \Exception ? $error->getMessage() : null
+                            'id' => $response->getId()
                         ]
                     ];
                 }
