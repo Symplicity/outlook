@@ -67,7 +67,7 @@ class LocalCalendarSyncHandler extends Calendar
         ]);
     }
 
-    public function deleteEventLocal(string $eventId): void
+    public function deleteEventLocal(?string $eventId): void
     {
         if ($this->database?->get($eventId)) {
             $this->database?->delete($eventId);
