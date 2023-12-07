@@ -6,11 +6,14 @@ on:
   push:
     paths-ignore:
       - '*.md'
+      - '.github/**'
+      - 'example/**'
 
   pull_request:
     paths-ignore:
       - '*.md'
       - '.github/**'
+      - 'example/**'
 
 jobs:
   tests:
