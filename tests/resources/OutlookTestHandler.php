@@ -62,7 +62,7 @@ class OutlookTestHandler extends Calendar
         $this->testCase?->assertEquals('Foo Test', $reader->getOrganizer()?->getEmailAddress()?->getName());
     }
 
-    public function deleteEventLocal(string $eventId): void
+    public function deleteEventLocal(?string $eventId): void
     {
     }
 
