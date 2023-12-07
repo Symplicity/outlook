@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Symplicity\Outlook;
@@ -9,6 +10,8 @@ use Http\Promise\Promise;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\BatchRequestBuilder;
 use Microsoft\Graph\Core\Requests\BatchRequestContent;
+use Microsoft\Graph\Core\Requests\BatchResponseContent;
+use Microsoft\Graph\Core\Requests\BatchResponseItem;
 use Microsoft\Graph\Generated\Models\Event as GraphEvent;
 use Microsoft\Graph\Generated\Models\EventType;
 use Microsoft\Graph\Generated\Models\ODataErrors\MainError;
@@ -21,6 +24,7 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQ
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestInformation;
+use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
@@ -251,7 +255,8 @@ abstract class Calendar implements CalendarInterface
                     ->wait();
             }
 
-            $this->handleBatchResponse($responses);
+            $newResponses = $this->prepareBatchResponse($responses);
+            $this->handleBatchResponse($newResponses);
         }
     }
 
@@ -288,6 +293,61 @@ abstract class Calendar implements CalendarInterface
             ->byEventId($id)
             ->delete($requestConfiguration)
             ->wait();
+    }
+
+    protected function prepareBatchResponse(?BatchResponseContent $response = null): \Generator
+    {
+        foreach ($response?->getResponses() ?? [] as $response) {
+            if ($response instanceof BatchResponseItem) {
+                $error = null;
+                if (in_array($response->getStatusCode(), [200, 201])) {
+                    yield $this->createFromDiscriminatorValue($response);
+                } else {
+                    yield [
+                        'event' => null,
+                        'info' => [
+                            'status' => $response->getStatusCode(),
+                            'location' => $response->getHeaders()['Location'] ?? null,
+                            'id' => $response->getId(),
+                            'error' => $error instanceof \Exception ? $error->getMessage() : null
+                        ]
+                    ];
+                }
+            }
+        }
+    }
+
+    protected function createFromDiscriminatorValue(BatchResponseItem $response): array
+    {
+        $item = [];
+        $data = \json_decode($response->getBody()->getContents(), true);
+        if (JSON_ERROR_NONE === json_last_error()) {
+            try {
+                $parser = new JsonParseNode($data);
+                /** @var Event $eventObject */
+                $item = [
+                    'event' => $parser->getObjectValue([Event::class, 'createFromDiscriminatorValue']),
+                    'info' => [
+                        'status' => $response->getStatusCode(),
+                        'location' => $response->getHeaders()['Location'] ?? null,
+                        'id' => $response->getId()
+                    ]
+                ];
+
+            } catch (\Exception $error) {
+                $item = [
+                    'event' => null,
+                    'info' => [
+                        'status' => $response->getStatusCode(),
+                        'location' => $response->getHeaders()['Location'] ?? null,
+                        'id' => $response->getId(),
+                        'error' => $error->getMessage()
+                    ]
+                ];
+            }
+        }
+
+        return $item;
     }
 
     protected function getEntity(GraphEvent $event): ReaderEntityInterface

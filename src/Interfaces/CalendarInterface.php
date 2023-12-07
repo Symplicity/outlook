@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces;
 
 use Closure;
+use Generator;
 use Microsoft\Graph\Core\Requests\BatchResponseContent;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
@@ -37,9 +38,9 @@ interface CalendarInterface
 
     /**
      * Passed by handler fulfillment on batch response
-     * @param BatchResponseContent|null $responses
+     * @param Generator|null $responses
      */
-    public function handleBatchResponse(?BatchResponseContent $responses): void;
+    public function handleBatchResponse(?Generator $responses = null): void;
 
     /**
      * Method to get & process a single event

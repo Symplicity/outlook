@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\resources;
 
-use Microsoft\Graph\Core\Requests\BatchResponseContent;
+use Generator;
 use Microsoft\Graph\Generated\Models\DateTimeTimeZone;
+use Microsoft\Graph\Generated\Models\Event as MsEvent;
 use Microsoft\Graph\Generated\Models\EventType;
 use Microsoft\Graph\Generated\Models\FreeBusyStatus;
 use Microsoft\Graph\Generated\Models\Location;
@@ -91,9 +92,15 @@ class OutlookTestHandler extends Calendar
         ];
     }
 
-    public function handleBatchResponse(?BatchResponseContent $responses): void
+    public function handleBatchResponse(?Generator $responses = null): void
     {
-        $this->testCase?->assertInstanceOf(BatchResponseContent::class, $responses);
+        foreach ($responses as $resp) {
+            $this->testCase->assertArrayHasKey('event', $resp);
+            $this->testCase->assertArrayHasKey('info', $resp);
+            $this->testCase->assertInstanceOf(MsEvent::class, $resp['event']);
+            $this->testCase->assertSame(201, $resp['info']['status']);
+            $this->testCase->assertSame('123', $resp['info']['id']);
+        }
     }
 
     public function setTestCase(CalendarTest $testCase): OutlookTestHandler
