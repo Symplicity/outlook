@@ -1,0 +1,12 @@
+parameters:
+    level: 8
+    checkGenericClassInNonGenericObjectType: false
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - src
+    fileExtensions:
+        - php
+    excludePaths:
+        analyse:
+            - src/Utilities/CalendarView/PageIterator.php
+            - src/RequestConfigurationTrait.php
