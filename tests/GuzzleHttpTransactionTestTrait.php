@@ -11,11 +11,15 @@ use GuzzleHttp\Middleware;
 
 trait GuzzleHttpTransactionTestTrait
 {
-    public static function getClientWithTransactionHandler(array &$container, MockHandler $mock): Client
+    public static function getClientWithTransactionHandler(array &$container, MockHandler $mock, callable ...$middlewares): Client
     {
         $history = Middleware::history($container);
         $handler = HandlerStack::create($mock);
-        $handler->push($history);
+        foreach ($middlewares as $middleware) {
+            $handler->push($middleware);
+        }
+
+        $handler->push($history, 'history');
         return new Client(['handler' => $handler]);
     }
 }

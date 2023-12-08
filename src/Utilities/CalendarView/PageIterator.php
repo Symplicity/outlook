@@ -49,12 +49,6 @@ class PageIterator
         $this->pauseIndex = $pauseIndex;
     }
 
-    public function setOnComplete(?\Closure $onComplete): PageIterator
-    {
-        $this->onComplete = $onComplete;
-        return $this;
-    }
-
     /**
      * @throws \JsonException
      * @throws \Exception

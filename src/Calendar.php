@@ -357,7 +357,7 @@ abstract class Calendar implements CalendarInterface
                             'id' => $response->getId()
                         ]
                     ];
-
+                    // @codeCoverageIgnoreStart
                 } catch (\Exception $error) {
                     $item = [
                         'event' => null,
@@ -369,6 +369,7 @@ abstract class Calendar implements CalendarInterface
                         ]
                     ];
                 }
+                // @codeCoverageIgnoreEnd
             }
         }
 

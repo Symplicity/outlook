@@ -57,7 +57,7 @@ class ReceiverTest extends TestCase
                 "resourceData" => [
                     "@odata.type" => "#Microsoft.Graph.Event",
                     "@odata.id" => "Users/foo_1/Events/event_1==",
-                    "@odata.etag" => "W/\"event_1_etag\"",
+                    "@odata.etag" => "W/event_1_etag",
                     "id" => "event_1=="
                 ],
                 "clientState" => $clientState,
@@ -66,6 +66,12 @@ class ReceiverTest extends TestCase
         ];
 
         $entity = new NotificationReaderEntity($data['value']);
+
+        $this->assertSame('W/event_1_etag', $entity->getEtag());
+        $this->assertSame('Users/foo_1/Events/event_1==', $entity->getODataId());
+        $this->assertSame('#Microsoft.Graph.Event', $entity->getODataType());
+        $this->assertSame('2023-12-10T18:23:45+00:00', $entity->getSubscriptionExpirationDateTime());
+        $this->assertSame('tenant_id_1', $entity->getTenantId());
 
         $this->receiverStub->hydrate([$entity]);
         $this->receiverStub->exec(

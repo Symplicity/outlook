@@ -262,7 +262,16 @@ class CalendarTest extends TestCase
                         'Content-Type' => 'application/json; charset=utf-8',
                     ],
                     'body' => \json_decode(OutlookTestHandler::getSingleInstanceInJsonFormat(), true)
-               ]
+               ],
+                '123-del' => [
+                    'id' => '123-del',
+                    'status' => 204,
+                    'headers' => [
+                        'Cache-Control' => 'private',
+                        'Content-Type' => 'application/json; charset=utf-8',
+                    ],
+                    'body' => []
+                ]
             ]
         ];
     }

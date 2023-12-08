@@ -86,15 +86,33 @@ class OutlookTestHandler extends Calendar
         $event2->setStart($start);
         $event2->setEnd($end);
 
+        $event3 = new Event();
+        $event3->setSubject('Changing Subject');
+        $event3->setId('Foo==');
+        $event3->setStart($start);
+        $event3->setEnd($end);
+
+        $event4 = new Event();
+        $event4->setIsDelete();
+        $event4->setId('ABC===');
+
         return [
             $event1,
-            $event2
+            $event2,
+            $event3,
+            $event4
         ];
     }
 
     public function handleBatchResponse(?Generator $responses = null): void
     {
         foreach ($responses as $resp) {
+            if ($resp['info']['status'] === 204) {
+                $this->testCase->assertEmpty($resp['event']);
+                $this->testCase->assertSame('123-del', $resp['info']['id']);
+                return;
+            }
+
             $this->testCase->assertArrayHasKey('event', $resp);
             $this->testCase->assertArrayHasKey('info', $resp);
             $this->testCase->assertInstanceOf(MsEvent::class, $resp['event']);

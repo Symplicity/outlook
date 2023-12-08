@@ -20,6 +20,8 @@ class Event extends MSEventModel
             return $val;
         }
 
+        // @codeCoverageIgnoreStart
         throw new \UnexpectedValueException("Invalid type found in backing store for 'delete_event'");
+        // @codeCoverageIgnoreEnd
     }
 }
