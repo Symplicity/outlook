@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Symplicity\Outlook;
 
 use Closure;
-use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Client;
 use Http\Promise\Promise;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\BatchRequestBuilder;
@@ -23,9 +23,9 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDele
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
+use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Microsoft\Kiota\Abstractions\RequestInformation;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
@@ -98,7 +98,7 @@ abstract class Calendar implements CalendarInterface
                 $this->token
             );
 
-            if (isset($args['client']) && $args['client'] instanceof ClientInterface) {
+            if (isset($args['client']) && $args['client'] instanceof Client) {
                 $graphServiceClient->setHttpClient($args['client']);
             }
 
@@ -112,13 +112,13 @@ abstract class Calendar implements CalendarInterface
                 ->get($requestConfiguration)
                 ->wait();
 
-            if (empty($events)) {
+            if (empty($events) || empty($requestAdapter = $graphServiceClient->getRequestAdapter())) {
                 return;
             }
 
             $this->iterateThrough(
                 $events,
-                $graphServiceClient,
+                $requestAdapter,
                 $requestConfiguration,
                 $deltaLinkStore
             );
@@ -267,9 +267,9 @@ abstract class Calendar implements CalendarInterface
             }
 
             $responses = null;
-            if (\count($batch)) {
+            if (\count($batch) && ($requestAdapter = $this->graphService->getRequestAdapter())) {
                 $batchRequestContent = new BatchRequestContent($batch);
-                $batchRequestBuilder = new BatchRequestBuilder($this->graphService->getRequestAdapter());
+                $batchRequestBuilder = new BatchRequestBuilder($requestAdapter);
                 $responses = $batchRequestBuilder
                     ->postAsync($batchRequestContent, $batchRequestConfiguration)
                     ->wait();
@@ -436,11 +436,11 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws \Exception
      */
-    protected function iterateThrough(DeltaGetResponse $events, GraphServiceCalendarView $graphServiceClient, DeltaRequestBuilderGetRequestConfiguration $requestConfiguration, ?Closure $deltaLinkStore = null): void
+    protected function iterateThrough(DeltaGetResponse $events, RequestAdapter $requestAdapter, DeltaRequestBuilderGetRequestConfiguration $requestConfiguration, ?Closure $deltaLinkStore = null): void
     {
         $iterator = new PageIterator(
             $events,
-            $graphServiceClient->getRequestAdapter()
+            $requestAdapter
         );
 
         $iterator->setHeaders($requestConfiguration->headers);
@@ -489,7 +489,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws ReadError
      */
-    private function convertToReadableError(\Exception $e): void
+    private function convertToReadableError(\Exception $e): never
     {
         $message = null;
         if ($e instanceof ODataError) {

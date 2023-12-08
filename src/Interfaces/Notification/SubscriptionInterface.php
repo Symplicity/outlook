@@ -12,26 +12,26 @@ interface SubscriptionInterface
     /**
      * Subscribe to items
      * @param MsSubscription $subscriptionEntity
-     * @param array $args
-     * @return MsSubscription
+     * @param array<string, mixed> $args
+     * @return MsSubscription|null
      * @throws SubscribeFailedException
      */
-    public function subscribe(MsSubscription $subscriptionEntity, array $args = []): MsSubscription;
+    public function subscribe(MsSubscription $subscriptionEntity, array $args = []): ?MsSubscription;
 
     /**
      * Renew subscription
      * @param string $subscriptionId
      * @param \DateTime $expiration
-     * @param array $args
-     * @return MsSubscription
+     * @param array<string, mixed> $args
+     * @return MsSubscription|null
      * @throws SubscribeFailedException
      */
-    public function renew(string $subscriptionId, \DateTime $expiration, array $args = []): MsSubscription;
+    public function renew(string $subscriptionId, \DateTime $expiration, array $args = []): ?MsSubscription;
 
     /**
      * Delete any subscription
      * @param string $subscriptionId
-     * @param array $args
+     * @param array<string, mixed> $args
      * @throws SubscribeFailedException
      */
     public function delete(string $subscriptionId, array $args = []): void;

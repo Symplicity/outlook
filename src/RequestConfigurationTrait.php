@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook;
 
+use GuzzleHttp\RequestOptions;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\Core\Requests\BatchRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaRequestBuilderGetRequestConfiguration;
@@ -34,6 +35,10 @@ trait RequestConfigurationTrait
         return $requestConfiguration;
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @param RequestOptions[] | null $options
+     */
     protected function getInstancesViewRequestConfiguration(?InstancesRequestBuilderGetQueryParameters $params = null, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration
     {
         $requestConfiguration = new InstancesRequestBuilderGetRequestConfiguration(queryParameters: $params);
@@ -44,6 +49,10 @@ trait RequestConfigurationTrait
         );
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @param RequestOptions[] | null $options
+     */
     protected function getEventPostRequestConfiguration(array $headers = [], array $options = []): EventsRequestBuilderPostRequestConfiguration
     {
         $requestConfiguration = new EventsRequestBuilderPostRequestConfiguration();
@@ -54,6 +63,10 @@ trait RequestConfigurationTrait
         );
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @param RequestOptions[] | null $options
+     */
     protected function getEventPatchRequestConfiguration(array $headers = [], array $options = []): EventItemRequestBuilderPatchRequestConfiguration
     {
         $requestConfiguration = new EventItemRequestBuilderPatchRequestConfiguration();
@@ -64,6 +77,10 @@ trait RequestConfigurationTrait
         );
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @param RequestOptions[] | null $options
+     */
     protected function getEventDeleteRequestConfiguration(array $headers = [], array $options = []): EventItemRequestBuilderDeleteRequestConfiguration
     {
         $requestConfiguration = new EventItemRequestBuilderDeleteRequestConfiguration();
@@ -74,6 +91,10 @@ trait RequestConfigurationTrait
         );
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @param RequestOptions[] | null $options
+     */
     protected function getEventPostBatchRequestConfiguration(array $headers = [], array $options = []): BatchRequestBuilderPostRequestConfiguration
     {
         $requestConfiguration = new BatchRequestBuilderPostRequestConfiguration();
@@ -104,6 +125,10 @@ trait RequestConfigurationTrait
         return $requestConfiguration;
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @param RequestOptions[] | null $options
+     */
     private function generateRequestConfiguration(InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration $configuration, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration
     {
         $configuration->headers = array_merge(

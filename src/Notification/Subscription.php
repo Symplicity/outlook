@@ -18,7 +18,7 @@ use Symplicity\Outlook\Interfaces\Notification\SubscriptionInterface;
 use Symplicity\Outlook\Utilities\EventView\GraphServiceEvent;
 
 /**
- * @property-read GraphServiceEvent $graphService
+ * @property GraphServiceEvent $graphService
  */
 class Subscription implements SubscriptionInterface
 {
@@ -27,12 +27,13 @@ class Subscription implements SubscriptionInterface
 
     private ?LoggerInterface $logger;
 
+    /** @param array<string, mixed> $args */
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
         $this->logger = $args['logger'] ?? null;
     }
 
-    public function __get(string $property)
+    public function __get(string $property): ?GraphServiceEvent
     {
         if ($property === 'graphService') {
             $this->graphService = new GraphServiceEvent(
@@ -47,7 +48,7 @@ class Subscription implements SubscriptionInterface
         return null;
     }
 
-    public function subscribe(MsSubscription $subscriptionEntity, array $args = []): MsSubscription
+    public function subscribe(MsSubscription $subscriptionEntity, array $args = []): ?MsSubscription
     {
         try {
             $subscriptionRequestConfig = new SubscriptionsRequestBuilderPostRequestConfiguration();
@@ -68,7 +69,7 @@ class Subscription implements SubscriptionInterface
         }
     }
 
-    public function renew(string $subscriptionId, \DateTime $expiration, array $args = []): MsSubscription
+    public function renew(string $subscriptionId, \DateTime $expiration, array $args = []): ?MsSubscription
     {
         try {
             $subscriptionRequestConfig = new SubscriptionItemRequestBuilderPatchRequestConfiguration();
@@ -116,14 +117,14 @@ class Subscription implements SubscriptionInterface
     /**
      * @throws SubscribeFailedException
      */
-    private function convertToReadableError(\Exception $e)
+    private function convertToReadableError(\Exception $e): never
     {
         $message = null;
         if ($e instanceof ODataError) {
             /** @var MainError $errorInfo */
             $errorInfo = $e->getBackingStore()->get('error');
             $code = 0;
-            $localizedDescription = $errorInfo->getMessage();
+            $localizedDescription = $errorInfo->getMessage() ?? '';
             $message = $errorInfo->getCode();
         } else {
             $code = $e->getCode();

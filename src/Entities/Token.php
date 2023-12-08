@@ -112,6 +112,6 @@ class Token implements TokenInterface, Stringable
 
     public function __toString(): string
     {
-        return $this->getDisplayName();
+        return $this->getDisplayName() ?? '';
     }
 }

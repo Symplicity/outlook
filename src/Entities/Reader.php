@@ -56,27 +56,27 @@ class Reader implements ReaderEntityInterface
 
     public function hydrate(?Event $event = null): ReaderEntityInterface
     {
-        $this->setId($event->getId());
-        $this->setEventType($event->getType());
-        $this->setWebLink($event->getWebLink());
-        $this->setETag($event->getAdditionalData()['@odata.etag'] ?? null);
-        $this->setTitle($event->getSubject());
-        $this->setDescription($event->getBodyPreview());
-        $this->setBody($event->getBody());
-        $this->setAllDay($event->getIsAllDay() ?? false);
-        $this->setLocation($event->getLocation());
-        $this->setVisibility($event->getImportance());
-        $this->setPrivate($event->getSensitivity());
-        $this->setOrganizer($event->getOrganizer());
-        $this->setSeriesMasterId($event->getSeriesMasterId());
-        $this->setFreeBusy($event->getShowAs());
-        $this->setExtensions($event->getExtensions());
+        $this->setId($event?->getId());
+        $this->setEventType($event?->getType());
+        $this->setWebLink($event?->getWebLink());
+        $this->setETag($event?->getAdditionalData()['@odata.etag'] ?? null);
+        $this->setTitle($event?->getSubject());
+        $this->setDescription($event?->getBodyPreview());
+        $this->setBody($event?->getBody());
+        $this->setAllDay($event?->getIsAllDay() ?? false);
+        $this->setLocation($event?->getLocation());
+        $this->setVisibility($event?->getImportance());
+        $this->setPrivate($event?->getSensitivity());
+        $this->setOrganizer($event?->getOrganizer());
+        $this->setSeriesMasterId($event?->getSeriesMasterId());
+        $this->setFreeBusy($event?->getShowAs());
+        $this->setExtensions($event?->getExtensions());
         $this->setRecurrence($event);
         $this->setDate([
-            'start' => $event->getStart()?->getDateTime(),
-            'end' => $event->getEnd()?->getDateTime(),
-            'timezone' => $event->getStart()?->getTimeZone(),
-            'modified' => $event->getLastModifiedDateTime()?->format(DateEntity::DEFAULT_DATETIME_FORMAT)
+            'start' => $event?->getStart()?->getDateTime(),
+            'end' => $event?->getEnd()?->getDateTime(),
+            'timezone' => $event?->getStart()?->getTimeZone(),
+            'modified' => $event?->getLastModifiedDateTime()?->format(DateEntity::DEFAULT_DATETIME_FORMAT)
         ]);
 
         return $this;
@@ -84,10 +84,11 @@ class Reader implements ReaderEntityInterface
 
     public function deleted(?Event $data = null): self
     {
-        $this->setId($data->getId());
+        $this->setId($data?->getId());
         return $this;
     }
 
+    /** @return string[] */
     public function toArray(): array
     {
         return get_object_vars($this);
@@ -134,7 +135,7 @@ class Reader implements ReaderEntityInterface
         return $this->location;
     }
 
-    public function getETag(): string
+    public function getETag(): ?string
     {
         return $this->eTag;
     }
@@ -185,7 +186,7 @@ class Reader implements ReaderEntityInterface
         $this->seriesMasterId = $seriesMasterId;
     }
 
-    protected function setId(string $id): void
+    protected function setId(?string $id): void
     {
         $this->id = $id;
     }
@@ -210,6 +211,7 @@ class Reader implements ReaderEntityInterface
         $this->description = $description;
     }
 
+    /** @param array<string, string | null> $date */
     protected function setDate(array $date): void
     {
         $this->date = new DateEntity($date);
@@ -235,10 +237,10 @@ class Reader implements ReaderEntityInterface
         $this->visibility = $visibility;
     }
 
-    protected function setRecurrence(Event $event): void
+    protected function setRecurrence(?Event $event): void
     {
-        if ($event->getRecurrence() !== null
-            && $event->getType()->value() === EventType::SERIES_MASTER) {
+        if ($event?->getRecurrence() !== null
+            && $event->getType()?->value() === EventType::SERIES_MASTER) {
             $this->recurrence = new Recurrence($event->getRecurrence());
         }
     }
@@ -263,6 +265,7 @@ class Reader implements ReaderEntityInterface
         $this->freeBusy = $freeBusy;
     }
 
+    /** @param Extension[] $extensions */
     protected function setExtensions(?array $extensions = []): ReaderEntityInterface
     {
         $this->extensions = $extensions;

@@ -19,6 +19,7 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
     protected ?string $id = null;
     protected ?string $tenantId = null;
 
+    /** @param array<string, mixed> $data */
     public function __construct(array $data = [])
     {
         $this->subscriptionId = $data['subscriptionId'] ?? null;
@@ -32,6 +33,7 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
         $this->setChangeType($data['changeType'] ?? null);
     }
 
+    /** @return array<string, string | ChangeType | null> */
     public function jsonSerialize(): array
     {
         return [

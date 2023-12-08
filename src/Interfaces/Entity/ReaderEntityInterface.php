@@ -6,6 +6,7 @@ namespace Symplicity\Outlook\Interfaces\Entity;
 
 use Microsoft\Graph\Generated\Models\Event;
 use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Models\Extension;
 use Microsoft\Graph\Generated\Models\FreeBusyStatus;
 use Microsoft\Graph\Generated\Models\Importance;
 use Microsoft\Graph\Generated\Models\ItemBody;
@@ -31,7 +32,7 @@ interface ReaderEntityInterface
 
     public function getLocation(): ?Location;
 
-    public function getETag(): string;
+    public function getETag(): ?string;
 
     public function isAllDay(): bool;
 
@@ -49,5 +50,6 @@ interface ReaderEntityInterface
 
     public function getFreeBusyStatus(): ?FreeBusyStatus;
 
+    /** @return array<Extension> | null */
     public function getExtensions(): ?array;
 }

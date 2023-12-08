@@ -41,19 +41,19 @@ class Recurrence implements RecurrenceEntityInterface
 
     public function __construct(?PatternedRecurrence $recurrence)
     {
-        $pattern = $recurrence->getPattern();
-        $range = $recurrence->getRange();
+        $pattern = $recurrence?->getPattern();
+        $range = $recurrence?->getRange();
 
-        $this->setType($pattern->getType());
-        $this->setInterval($pattern->getInterval());
-        $this->setMonth($pattern->getMonth());
-        $this->setIndex($pattern->getIndex());
-        $this->setFirstDayOfWeek($pattern->getFirstDayOfWeek());
-        $this->setDayOfMonth($pattern->getDayOfMonth());
-        $this->setDaysOfWeek($pattern->getDaysOfWeek());
-        $this->setRangeType($range->getType());
+        $this->setType($pattern?->getType());
+        $this->setInterval($pattern?->getInterval());
+        $this->setMonth($pattern?->getMonth());
+        $this->setIndex($pattern?->getIndex());
+        $this->setFirstDayOfWeek($pattern?->getFirstDayOfWeek());
+        $this->setDayOfMonth($pattern?->getDayOfMonth());
+        $this->setDaysOfWeek($pattern?->getDaysOfWeek());
+        $this->setRangeType($range?->getType());
         $this->setRangeDates($range);
-        $this->setNumberOfOccurrences($range->getNumberOfOccurrences());
+        $this->setNumberOfOccurrences($range?->getNumberOfOccurrences());
     }
 
     public function getType(): ?RecurrencePatternType
@@ -91,22 +91,22 @@ class Recurrence implements RecurrenceEntityInterface
         return $this->daysOfWeek;
     }
 
-    public function getRangeType(): RecurrenceRangeType
+    public function getRangeType(): ?RecurrenceRangeType
     {
         return $this->rangeType;
     }
 
-    public function getRangeDates(): DateEntityInterface
+    public function getRangeDates(): ?DateEntityInterface
     {
         return $this->rangeDates;
     }
 
-    public function getNumberOfOccurrences(): int
+    public function getNumberOfOccurrences(): ?int
     {
         return $this->numberOfOccurrences;
     }
 
-    public function getOccurrence(): Closure
+    public function getOccurrence(): ?Closure
     {
         return $this->occurrence;
     }
@@ -142,6 +142,9 @@ class Recurrence implements RecurrenceEntityInterface
         $this->dayOfMonth = $dayOfMonth;
     }
 
+    /**
+     * @param DayOfWeek[] $daysOfWeek
+     */
     public function setDaysOfWeek(?array $daysOfWeek): void
     {
         $this->daysOfWeek = $daysOfWeek ?? [];
@@ -155,9 +158,9 @@ class Recurrence implements RecurrenceEntityInterface
     public function setRangeDates(?RecurrenceRange $range): void
     {
         $this->rangeDates = new DateEntity([
-            'start' => $range->getStartDate(),
-            'end' => $range->getEndDate(),
-            'timezone' => $range->getRecurrenceTimeZone()
+            'start' => $range?->getStartDate(),
+            'end' => $range?->getEndDate(),
+            'timezone' => $range?->getRecurrenceTimeZone()
         ]);
     }
 

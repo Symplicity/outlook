@@ -40,22 +40,22 @@ class Occurrence implements ReaderEntityInterface
 
     public function hydrate(?Event $event = null): ReaderEntityInterface
     {
-        $this->setEventType($event->getType());
-        $this->setTitle($event->getSubject());
-        $this->setDescription($event->getBodyPreview());
-        $this->setBody($event->getBody());
-        $this->setId($event->getId());
-        $this->setETag($event->getAdditionalData()['@odata.etag'] ?? null);
-        $this->setSeriesMasterId($event->getSeriesMasterId());
-        $this->setAllDay($event->getIsAllDay() ?? false);
+        $this->setEventType($event?->getType());
+        $this->setTitle($event?->getSubject());
+        $this->setDescription($event?->getBodyPreview());
+        $this->setBody($event?->getBody());
+        $this->setId($event?->getId());
+        $this->setETag($event?->getAdditionalData()['@odata.etag'] ?? null);
+        $this->setSeriesMasterId($event?->getSeriesMasterId());
+        $this->setAllDay($event?->getIsAllDay() ?? false);
 
         $this->setDate([
-            'start' => $event->getStart()?->getDateTime(),
-            'end' => $event->getEnd()?->getDateTime(),
-            'timezone' => $event->getOriginalStartTimeZone(),
+            'start' => $event?->getStart()?->getDateTime(),
+            'end' => $event?->getEnd()?->getDateTime(),
+            'timezone' => $event?->getOriginalStartTimeZone(),
         ]);
 
-        $this->setExtensions($event->getExtensions() ?? []);
+        $this->setExtensions($event?->getExtensions() ?? []);
         return $this;
     }
 
@@ -69,7 +69,7 @@ class Occurrence implements ReaderEntityInterface
         return $this->date;
     }
 
-    public function getETag(): string
+    public function getETag(): ?string
     {
         return $this->eTag;
     }
@@ -124,7 +124,7 @@ class Occurrence implements ReaderEntityInterface
         return null;
     }
 
-    public function getEventType(): EventType
+    public function getEventType(): ?EventType
     {
         return $this->eventType;
     }
@@ -139,12 +139,13 @@ class Occurrence implements ReaderEntityInterface
         return null;
     }
 
+    /** @return Extension[] */
     public function getExtensions(): array
     {
         return $this->extensions;
     }
 
-    public function setSeriesMasterId(string $seriesMasterId): void
+    public function setSeriesMasterId(?string $seriesMasterId): void
     {
         $this->seriesMasterId = $seriesMasterId;
     }
@@ -159,6 +160,7 @@ class Occurrence implements ReaderEntityInterface
         $this->id = $id;
     }
 
+    /** @param array<string, string | null> $date */
     private function setDate(array $date): void
     {
         $this->date = new DateEntity($date);
@@ -184,10 +186,10 @@ class Occurrence implements ReaderEntityInterface
         $this->description = $description;
     }
 
-    private function setExtensions(array $extensions = []): ReaderEntityInterface
+    /** @param Extension[] $extensions */
+    private function setExtensions(array $extensions = []): void
     {
         $this->extensions = $extensions;
-        return $this;
     }
 
     private function setAllDay(bool $allDay): void

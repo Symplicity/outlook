@@ -12,6 +12,9 @@ interface CalendarViewParamsInterface
 
     public function getFilter(): ?string;
 
+    /**
+     * @return string[]|null
+     */
     public function getOrderBy(): ?array;
 
     public function getTop(): ?int;
@@ -20,10 +23,16 @@ interface CalendarViewParamsInterface
 
     public function getCount(): ?bool;
 
+    /**
+     * @return string[]|null
+     */
     public function getSelect(): ?array;
 
     public function getDeltaToken(): ?string;
 
+    /**
+     * @return array<string, string>|null
+     */
     public function getHeaders(): ?array;
 
     public function getPreferHeaders(): ?string;

@@ -22,6 +22,9 @@ interface RecurrenceEntityInterface
 
     public function getFirstDayOfWeek(): ?DayOfWeek;
 
+    /**
+     * @return DayOfWeek[]
+     */
     public function getDaysOfWeek(): array;
 
     public function getDayOfMonth(): ?int;
@@ -30,7 +33,7 @@ interface RecurrenceEntityInterface
 
     public function getNumberOfOccurrences(): ?int;
 
-    public function getOccurrence(): Closure;
+    public function getOccurrence(): ?Closure;
 
-    public function getRangeType(): RecurrenceRangeType;
+    public function getRangeType(): ?RecurrenceRangeType;
 }

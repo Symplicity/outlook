@@ -6,7 +6,7 @@ namespace Symplicity\Outlook\Exception;
 
 class IllegalAccessTokenException extends \RuntimeException
 {
-    public function __construct($message = '', $code = 0, \Throwable $previous = null)
+    public function __construct(\Throwable $previous = null)
     {
         parent::__construct('Access token received is not valid', 422, $previous);
     }
