@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Interfaces\Notification;
 
 use Psr\Log\LoggerInterface;
+use Symplicity\Outlook\Entities\NotificationReaderEntity;
 use Symplicity\Outlook\Interfaces\CalendarInterface;
 
 interface ReceiverInterface
 {
     /**
      * Hydrate items once notification is received
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return $this
      */
     public function hydrate(array $data = []): self;
@@ -22,27 +23,21 @@ interface ReceiverInterface
      * after getEvents is executed, didCreate method will be called.
      * @param CalendarInterface $calendar
      * @param LoggerInterface $logger
-     * @param array $params
-     * @return mixed
+     * @param array<string, string> $params
+     * @param array<string, mixed> $args
+     * @return void
      */
-    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = []);
+    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = [], array $args = []): void;
 
     /**
      * Set entities received from notifications
-     * @param array $entities
-     * @return $this
+     * @param NotificationReaderEntity[] $entities
      */
-    public function setEntities(array $entities): self;
+    public function setEntities(array $entities): void;
 
     /**
      * Get entities
-     * @return array
+     * @return NotificationReaderEntity[]
      */
     public function getEntities(): array;
-
-    /**
-     * Get client State
-     * @return string
-     */
-    public function getState(): ?string;
 }

@@ -4,130 +4,141 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Notification;
 
-use \Symplicity\Outlook\Entities\Subscription as SubscriptionEntity;
+use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
+use Microsoft\Graph\Generated\Models\ODataErrors\MainError;
+use Microsoft\Graph\Generated\Models\ODataErrors\ODataError;
+use Microsoft\Graph\Generated\Models\Subscription as MsSubscription;
+use Microsoft\Graph\Generated\Subscriptions\Item\SubscriptionItemRequestBuilderDeleteRequestConfiguration;
+use Microsoft\Graph\Generated\Subscriptions\Item\SubscriptionItemRequestBuilderPatchRequestConfiguration;
+use Microsoft\Graph\Generated\Subscriptions\SubscriptionsRequestBuilderPostRequestConfiguration;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
-use Symplicity\Outlook\Entities\SubscriptionResponse;
+use Symplicity\Outlook\AuthorizationContextTrait;
 use Symplicity\Outlook\Exception\SubscribeFailedException;
-use Symplicity\Outlook\Http\Connection;
-use Symplicity\Outlook\Http\RequestOptions;
-use Symplicity\Outlook\Interfaces\Entity\SubscriptionEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\SubscriptionResponseEntityInterface;
-use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
-use Symplicity\Outlook\Interfaces\Http\RequestOptionsInterface;
 use Symplicity\Outlook\Interfaces\Notification\SubscriptionInterface;
-use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Utilities\ResponseHandler;
+use Symplicity\Outlook\Utilities\EventView\GraphServiceEvent;
 
+/**
+ * @property GraphServiceEvent $graphService
+ */
 class Subscription implements SubscriptionInterface
 {
-    protected const VERSION = 'v2.0';
-    protected const AUTHORITY = 'https://outlook.office.com';
-    protected const COMMON = 'api';
-    protected const SUBSCRIPTION_URL = 'me/subscriptions';
+    use AuthorizationContextTrait;
+    use BearerAuthorizationTrait;
 
-    /** @var LoggerInterface $loggerInterface */
-    private $logger;
+    private ?LoggerInterface $logger;
 
-    /** @var ConnectionInterface|null $connection */
-    private $connection;
-
-    public function __construct(LoggerInterface $logger)
+    /** @param array<string, mixed> $args */
+    public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
-        $this->logger = $logger;
+        $this->logger = $args['logger'] ?? null;
     }
 
-    public function subscribe(SubscriptionEntityInterface $subscriptionEntity, string $accessToken): SubscriptionResponseEntityInterface
+    public function __get(string $property): ?GraphServiceEvent
     {
-        $url = static::getUri();
-        $requestOptions = new RequestOptions($url, RequestType::Post(), ['token' => $accessToken]);
-        $this->addDefaultHeaders($requestOptions);
+        if ($property === 'graphService') {
+            $this->graphService = new GraphServiceEvent(
+                $this->clientId,
+                $this->clientSecret,
+                $this->token
+            );
 
-        $subscriptionEntityJson = $subscriptionEntity->jsonSerialize();
-
-        $response = $this->getConnection()
-            ->createClient()
-            ->request($requestOptions->getMethod(), $url, [
-                'headers' => $requestOptions->getHeaders(),
-                'json' => $subscriptionEntityJson
-            ]);
-
-        $responseArray = ResponseHandler::toArray($response);
-        if (count($responseArray)) {
-            return new SubscriptionResponse($responseArray);
+            return $this->graphService;
         }
 
-        throw new SubscribeFailedException('Unable to subscribe to push notification at this time.');
+        return null;
     }
 
-    public function renew(string $subscriptionId, string $accessToken, array $args = []): SubscriptionResponseEntityInterface
+    public function subscribe(MsSubscription $subscriptionEntity, array $args = []): ?MsSubscription
     {
-        $url = static::getUri() . DIRECTORY_SEPARATOR . $subscriptionId;
-        $requestOptions = new RequestOptions($url, RequestType::Patch(), ['token' => $accessToken]);
-        $this->addDefaultHeaders($requestOptions);
+        try {
+            $subscriptionRequestConfig = new SubscriptionsRequestBuilderPostRequestConfiguration();
+            $subscriptionRequestConfig->headers = array_merge(
+                $args['headers'] ?? [],
+                $this->getAuthorizationHeaders($this->token)
+            );
 
-        $response = $this->getConnection()
-            ->createClient()
-            ->request($requestOptions->getMethod(), $url, [
-                'headers' => $requestOptions->getHeaders(),
-                'json' => [
-                    '@odata.type' => $args['type'] ?? SubscriptionEntity::DEFAULT_DATA_TYPE
-                ]
-            ]);
+            $subscriptionRequestConfig->options = $args['options'] ?? [];
 
-        $responseArray = ResponseHandler::toArray($response);
-        if (count($responseArray)) {
-            return new SubscriptionResponse($responseArray);
+            return $this->graphService
+                ->client($args)
+                ->subscriptions()
+                ->post($subscriptionEntity, $subscriptionRequestConfig)
+                ->wait();
+        } catch (\Exception $e) {
+            $this->convertToReadableError($e);
+        }
+    }
+
+    public function renew(string $subscriptionId, \DateTime $expiration, array $args = []): ?MsSubscription
+    {
+        try {
+            $subscriptionRequestConfig = new SubscriptionItemRequestBuilderPatchRequestConfiguration();
+            $subscriptionRequestConfig->headers = array_merge(
+                $args['headers'] ?? [],
+                $this->getAuthorizationHeaders($this->token)
+            );
+
+            $subscriptionRequestConfig->options = $args['options'] ?? [];
+
+            $request = new MsSubscription();
+            $request->setExpirationDateTime($expiration);
+            return $this->graphService
+                ->client($args)
+                ->subscriptions()
+                ->bySubscriptionId($subscriptionId)
+                ->patch($request, $subscriptionRequestConfig)
+                ->wait();
+        } catch (\Exception $e) {
+            $this->convertToReadableError($e);
+        }
+    }
+
+    public function delete(string $subscriptionId, array $args = []): void
+    {
+        try {
+            $subscriptionRequestConfig = new SubscriptionItemRequestBuilderDeleteRequestConfiguration();
+            $subscriptionRequestConfig->headers = array_merge(
+                $args['headers'] ?? [],
+                $this->getAuthorizationHeaders($this->token)
+            );
+
+            $subscriptionRequestConfig->options = $args['options'] ?? [];
+            $this->graphService
+                ->client($args)
+                ->subscriptions()
+                ->bySubscriptionId($subscriptionId)
+                ->delete($subscriptionRequestConfig)
+                ->wait();
+        } catch (\Exception $e) {
+            $this->convertToReadableError($e);
+        }
+    }
+
+    /**
+     * @throws SubscribeFailedException
+     */
+    private function convertToReadableError(\Exception $e): never
+    {
+        $message = null;
+        if ($e instanceof ODataError) {
+            /** @var MainError $errorInfo */
+            $errorInfo = $e->getBackingStore()->get('error');
+            $code = 0;
+            $localizedDescription = $errorInfo->getMessage() ?? '';
+            $message = $errorInfo->getCode();
+        } else {
+            $code = $e->getCode();
+            $localizedDescription = $e->getMessage();
         }
 
-        throw new SubscribeFailedException('Unable to renew subscription to push notification at this time.');
-    }
+        $this->logger?->info('Subscription error...', [
+            'code' => $code,
+            'localizedDescription' => $localizedDescription,
+            'message' => $message
+        ]);
 
-    public function delete(string $subscriptionId, string $accessToken): bool
-    {
-        $url = static::getUri() . DIRECTORY_SEPARATOR . $subscriptionId;
-        $requestOptions = new RequestOptions($url, RequestType::Delete(), ['token' => $accessToken]);
-        $this->addDefaultHeaders($requestOptions);
-
-        $response = $this->getConnection()
-            ->createClient()
-            ->request($requestOptions->getMethod(), $url, [
-                'headers' => $requestOptions->getHeaders()
-            ]);
-
-        if ($response->getStatusCode() === 204) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function getConnection(): ConnectionInterface
-    {
-        if (!$this->connection instanceof ConnectionInterface) {
-            $this->connection = new Connection($this->logger);
-        }
-
-        return $this->connection;
-    }
-
-    public function setConnection(ConnectionInterface $connection): SubscriptionInterface
-    {
-        $this->connection = $connection;
-        return $this;
-    }
-
-    // Mark Protected
-    protected function addDefaultHeaders(RequestOptionsInterface $requestOptions)
-    {
-        $requestOptions->addHeader('Content-Type', 'application/json');
-        $requestOptions->addHeader('client-request-id', (Uuid::uuid4())->toString());
-        $requestOptions->addHeader('Authorization', $requestOptions->getAccessToken());
-    }
-
-    // Mark Static
-    protected static function getUri()
-    {
-        return static::AUTHORITY . DIRECTORY_SEPARATOR . static::COMMON . DIRECTORY_SEPARATOR . static::VERSION . DIRECTORY_SEPARATOR . static::SUBSCRIPTION_URL;
+        $error = new SubscribeFailedException($localizedDescription, $code);
+        $error->setOdataErrorMessage($message);
+        throw $error;
     }
 }

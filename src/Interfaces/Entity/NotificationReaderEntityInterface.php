@@ -2,6 +2,8 @@
 
 namespace Symplicity\Outlook\Interfaces\Entity;
 
+use Symplicity\Outlook\Utilities\ChangeType;
+
 interface NotificationReaderEntityInterface
 {
     /**
@@ -15,18 +17,15 @@ interface NotificationReaderEntityInterface
     public function setChangeType(?string $changeType): self;
     public function setResource(?string $resource): self;
     public function setId(?string $id): self;
-    public function setSequenceNumber(?int $sequenceNumber): self;
 
     // Mark Getters
-    public function getType(): ?string;
-    public function getOutlookId(): ?string;
     public function getSubscriptionId(): ?string;
     public function getSubscriptionExpirationDateTime(): ?string;
-    public function getSequenceNumber(): ?int;
-    public function getChangeType(): ?string;
+    public function getChangeType(): ?ChangeType;
     public function getResource(): ?string;
     public function getODataType(): ?string;
     public function getODataId(): ?string;
     public function getEtag(): ?string;
     public function getId(): ?string;
+    public function getTenantId(): ?string;
 }

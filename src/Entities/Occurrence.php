@@ -2,57 +2,74 @@
 
 namespace Symplicity\Outlook\Entities;
 
+use Microsoft\Graph\Generated\Models\Event;
+use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Models\Extension as Extension;
+use Microsoft\Graph\Generated\Models\FreeBusyStatus;
+use Microsoft\Graph\Generated\Models\Importance;
+use Microsoft\Graph\Generated\Models\ItemBody;
+use Microsoft\Graph\Generated\Models\Location;
+use Microsoft\Graph\Generated\Models\Recipient;
+use Microsoft\Graph\Generated\Models\Sensitivity;
 use Symplicity\Outlook\Interfaces\Entity\DateEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 use Symplicity\Outlook\Interfaces\Entity\RecurrenceEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\ResponseBodyInterface;
-use Symplicity\Outlook\Utilities\EventTypes;
-use Symplicity\Outlook\Utilities\FreeBusy;
-use Symplicity\Outlook\Utilities\SensitivityType;
 
 class Occurrence implements ReaderEntityInterface
 {
-    protected $eventType;
-    protected $id;
-    protected $date;
-    protected $eTag;
-    protected $seriesMasterId;
-    protected $visibility;
-    protected $freeBusy;
-    protected $allDay;
-    protected $extensions = [];
+    protected ?EventType $eventType = null;
 
-    public function hydrate(array $data) : ReaderEntityInterface
+    protected ?string $id = null;
+
+    protected ?string $title = null;
+
+    protected ?string $description = null;
+
+    protected ?ItemBody $body = null;
+
+    protected DateEntityInterface $date;
+
+    protected string $eTag;
+
+    protected ?string $seriesMasterId = null;
+
+    protected bool $allDay = false;
+
+    /** @var array<Extension> */
+    protected array $extensions = [];
+
+    public function hydrate(?Event $event = null): ReaderEntityInterface
     {
-        $this->setEventType($data['Type']);
-        $this->setId($data['Id']);
-        $this->setETag($data['@odata.etag']);
-        $this->setSeriesMasterId($data['SeriesMasterId']);
-        $this->setAllDay($data['IsAllDay'] ?? false);
-        $this->setFreeBusy($data['ShowAs'] ?? FreeBusy::Busy);
-        $this->setVisibility($data['Importance'] ?? '');
+        $this->setEventType($event?->getType());
+        $this->setTitle($event?->getSubject());
+        $this->setDescription($event?->getBodyPreview());
+        $this->setBody($event?->getBody());
+        $this->setId($event?->getId());
+        $this->setETag($event?->getAdditionalData()['@odata.etag'] ?? null);
+        $this->setSeriesMasterId($event?->getSeriesMasterId());
+        $this->setAllDay($event?->getIsAllDay() ?? false);
 
         $this->setDate([
-            'start' => $data['Start']['DateTime'],
-            'end' => $data['End']['DateTime'],
-            'timezone' => $data['Start']['TimeZone'],
+            'start' => $event?->getStart()?->getDateTime(),
+            'end' => $event?->getEnd()?->getDateTime(),
+            'timezone' => $event?->getOriginalStartTimeZone(),
         ]);
 
-        $this->setExtensions($data['Extensions'] ?? []);
+        $this->setExtensions($event?->getExtensions() ?? []);
         return $this;
     }
 
-    public function getId() : string
+    public function getId(): ?string
     {
         return $this->id;
     }
 
-    public function getDate() : DateEntityInterface
+    public function getDate(): DateEntityInterface
     {
         return $this->date;
     }
 
-    public function getETag() : string
+    public function getETag(): ?string
     {
         return $this->eTag;
     }
@@ -64,17 +81,17 @@ class Occurrence implements ReaderEntityInterface
 
     public function getTitle(): ?string
     {
-        return null;
+        return $this->title;
     }
 
     public function getDescription(): ?string
     {
-        return null;
+        return $this->description;
     }
 
-    public function getBody(): ?ResponseBodyInterface
+    public function getBody(): ?ItemBody
     {
-        return null;
+        return $this->body;
     }
 
     public function getLocation(): ?Location
@@ -87,14 +104,14 @@ class Occurrence implements ReaderEntityInterface
         return $this->allDay;
     }
 
-    public function getSensitivityStatus(): string
+    public function getSensitivityStatus(): ?Sensitivity
     {
-        return '';
+        return null;
     }
 
-    public function getVisibility(): string
+    public function getVisibility(): ?Importance
     {
-        return $this->visibility;
+        return null;
     }
 
     public function getRecurrence(): ?RecurrenceEntityInterface
@@ -102,12 +119,12 @@ class Occurrence implements ReaderEntityInterface
         return null;
     }
 
-    public function getOrganizer(): ?Organizer
+    public function getOrganizer(): ?Recipient
     {
         return null;
     }
 
-    public function getEventType(): EventTypes
+    public function getEventType(): ?EventType
     {
         return $this->eventType;
     }
@@ -117,68 +134,66 @@ class Occurrence implements ReaderEntityInterface
         return $this->seriesMasterId;
     }
 
-    public function getFreeBusyStatus(): ?string
+    public function getFreeBusyStatus(): ?FreeBusyStatus
     {
-        return $this->freeBusy;
+        return null;
     }
 
+    /** @return Extension[] */
     public function getExtensions(): array
     {
         return $this->extensions;
     }
 
-    public function setSeriesMasterId(string $seriesMasterId): void
+    public function setSeriesMasterId(?string $seriesMasterId): void
     {
         $this->seriesMasterId = $seriesMasterId;
     }
 
-    private function setEventType(string $eventType) : void
+    private function setEventType(?EventType $type): void
     {
-        $this->eventType = EventTypes::Occurrence;
-        if ($value = EventTypes::search($eventType)) {
-            $this->eventType = EventTypes::$value();
-        }
+        $this->eventType = $type;
     }
 
-    private function setId($id): void
+    private function setId(?string $id): void
     {
         $this->id = $id;
     }
 
-    private function setDate($date): void
+    /** @param array<string, string | null> $date */
+    private function setDate(array $date): void
     {
         $this->date = new DateEntity($date);
     }
 
-    private function setETag($eTag): void
+    private function setETag(?string $eTag): void
     {
-        $this->eTag = $eTag;
+        $this->eTag = $eTag ?? '';
     }
 
-    private function setExtensions(array $extensions = []): ReaderEntityInterface
+    protected function setTitle(?string $title): void
     {
-        foreach ($extensions as $extension) {
-            $this->extensions[] = new Extension($extension);
-        }
+        $this->title = $title;
+    }
 
-        return $this;
+    protected function setBody(?ItemBody $body): void
+    {
+        $this->body = $body;
+    }
+
+    protected function setDescription(?string $description): void
+    {
+        $this->description = $description;
+    }
+
+    /** @param Extension[] $extensions */
+    private function setExtensions(array $extensions = []): void
+    {
+        $this->extensions = $extensions;
     }
 
     private function setAllDay(bool $allDay): void
     {
         $this->allDay = $allDay;
-    }
-
-    private function setFreeBusy(string $freeBusy): void
-    {
-        $this->freeBusy = FreeBusy::Busy;
-        if ($value = FreeBusy::search($freeBusy)) {
-            $this->freeBusy = $value;
-        }
-    }
-
-    private function setVisibility(string $visibility): void
-    {
-        $this->visibility = $visibility;
     }
 }

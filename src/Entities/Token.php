@@ -4,117 +4,114 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use Stringable;
 use Symplicity\Outlook\Interfaces\Entity\TokenInterface;
 
-class Token implements TokenInterface
+class Token implements TokenInterface, Stringable
 {
-    protected $emailAddress;
-    protected $displayName;
-    protected $type;
-    protected $accessToken;
-    protected $refreshToken;
-    protected $expiresIn;
-    protected $idToken;
-    protected $tokenReceivedOn;
-
-    public function __construct(array $data)
-    {
-        if (isset($data['userInfo'])) {
-            $this->setEmailAddress($data['userInfo']['EmailAddress']);
-            $this->setDisplayName($data['userInfo']['DisplayName']);
-        }
-        $this->setType($data['token_type']);
-        $this->setAccessToken($data['access_token']);
-        $this->setRefreshToken($data['refresh_token']);
-        $this->setExpiresIn($data['expires_in']);
-        $this->setIdToken($data['id_token']);
-        $this->setTokenReceivedOn();
-    }
+    protected string $accessToken;
+    protected ?string $refreshToken = null;
+    protected ?int $expiresIn = null;
+    protected ?string $idToken = null;
+    protected DateTimeImmutable $tokenReceivedOn;
+    protected ?string $type = null;
+    protected ?string $emailAddress = null;
+    protected ?string $displayName = null;
 
     // Mutator
-    private function setEmailAddress(?string $emailAddress) : void
+    public function setEmailAddress(?string $emailAddress): Token
     {
         $this->emailAddress = $emailAddress;
+        return $this;
     }
 
-    private function setDisplayName(?string $displayName) : void
+    public function setDisplayName(?string $displayName): Token
     {
         $this->displayName = $displayName;
+        return $this;
     }
 
-    private function setType(string $type) : void
+    public function setType(?string $type): Token
     {
         $this->type = $type;
+        return $this;
     }
 
-    private function setAccessToken(string $accessToken) : void
+    public function setAccessToken(string $accessToken): Token
     {
         $this->accessToken = $accessToken;
+        return $this;
     }
 
-    private function setRefreshToken(string $refreshToken) : void
+    public function setRefreshToken(?string $refreshToken): Token
     {
         $this->refreshToken = $refreshToken;
+        return $this;
     }
 
-    private function setExpiresIn(int $expiresIn) : void
+    public function setExpiresIn(?int $expiresIn): Token
     {
         $this->expiresIn = $expiresIn;
+        return $this;
     }
 
-    public function setIdToken(string $idToken): void
+    public function setIdToken(?string $idToken): Token
     {
         $this->idToken = $idToken;
+        return $this;
     }
 
-    public function setTokenReceivedOn(): void
+    public function setTokenReceivedOn(): Token
     {
-        $this->tokenReceivedOn = new \DateTimeImmutable('now');
+        $this->tokenReceivedOn = new DateTimeImmutable('now');
+        return $this;
     }
 
     // Mark Accessors
-    public function getEmailAddress() : ?string
+    public function getEmailAddress(): ?string
     {
         return $this->emailAddress;
     }
 
-    public function getDisplayName() : ?string
+    public function getDisplayName(): ?string
     {
         return $this->displayName;
     }
 
-    public function getType() : string
+    public function getType(): ?string
     {
         return $this->type;
     }
 
-    public function getAccessToken() : string
+    public function getAccessToken(): string
     {
         return $this->accessToken;
     }
 
-    public function getRefreshToken() : string
+    public function getRefreshToken(): ?string
     {
         return $this->refreshToken;
     }
 
-    public function getExpiresIn() : int
+    public function getExpiresIn(): ?int
     {
         return $this->expiresIn;
     }
 
-    public function getIdToken() : string
+    public function getIdToken(): ?string
     {
         return $this->idToken;
     }
 
-    public function tokenReceivedOn() : \DateTimeInterface
+    public function tokenReceivedOn(): DateTimeInterface
     {
         return $this->tokenReceivedOn;
     }
 
-    public function __toString() : string
+    public function __toString(): string
     {
-        return $this->getDisplayName();
+        return $this->getDisplayName() ?? '';
     }
 }

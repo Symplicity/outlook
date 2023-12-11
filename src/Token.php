@@ -4,112 +4,139 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook;
 
-use Psr\Log\LoggerInterface;
+use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+use League\OAuth2\Client\Provider\GenericProvider;
+use Microsoft\Graph\Core\GraphConstants;
+use Microsoft\Kiota\Authentication\Cache\AccessTokenCache;
+use Microsoft\Kiota\Authentication\Cache\InMemoryAccessTokenCache;
+use Microsoft\Kiota\Authentication\Oauth\ProviderFactory;
+use Microsoft\Kiota\Authentication\PhpLeagueAccessTokenProvider;
 use Symplicity\Outlook\Entities\Token as TokenEntity;
-use Symplicity\Outlook\Http\Connection;
-use Symplicity\Outlook\Http\RequestOptions;
+use Symplicity\Outlook\Exception\AccessTokenMissingException;
+use Symplicity\Outlook\Exception\IllegalAccessTokenException;
 use Symplicity\Outlook\Interfaces\Entity\TokenInterface as TokenEntityInterface;
-use Symplicity\Outlook\Interfaces\Http\ConnectionInterface;
 use Symplicity\Outlook\Interfaces\TokenInterface;
-use Symplicity\Outlook\Utilities\RequestType;
-use Symplicity\Outlook\Utilities\ResponseHandler;
 
 class Token implements TokenInterface
 {
-    protected const VERSION = 'v2.0';
-    protected const AUTHORITY = 'https://login.microsoftonline.com';
-    protected const COMMON = 'common/oauth2';
-    protected const TOKEN_URL = 'token';
-    protected const AUTHORIZE = 'authorize';
+    use AuthorizationContextTrait;
 
-    private $clientId;
-    private $clientSecret;
+    public const TENANT_ID = 'common';
 
-    protected $args = [];
+    protected const OAUTH_AUTHORIZE = 'authorize';
+    protected const OAUTH_TOKEN = 'token';
+    protected const OAUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
+    protected const OAUTH_USER_INFO_URL = 'https://graph.microsoft.com/oidc/userinfo';
 
-    protected $scopes = [
+    /** @var String[] $scopes */
+    protected array $scopes = [
         'openid',
         'offline_access',
-        'https://outlook.office.com/calendars.readwrite'
+        'https://graph.microsoft.com/calendars.readwrite'
     ];
 
-    public function __construct(string $clientId, string $clientSecret, array $args = [])
+    protected ?string $email = null;
+    protected ?string $displayName = null;
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    public function __construct(private readonly string $clientId, private readonly string $clientSecret, protected array $args = [])
     {
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
-        $this->args = $args;
     }
 
-    public function request(string $code, string $redirectUrl) : TokenEntityInterface
+    /**
+     * @throws \Exception
+     */
+    public function request(string $code, string $redirectUrl, ?AccessTokenCache $tokenCache = null, ?AbstractProvider $provider = null): TokenEntityInterface
     {
-        $requestData = $this->queryParams('authorization_code', $code, $redirectUrl);
-        $url = static::AUTHORITY . DIRECTORY_SEPARATOR . static::COMMON . DIRECTORY_SEPARATOR . static::VERSION . DIRECTORY_SEPARATOR . static::TOKEN_URL;
-        $requestOptions = new RequestOptions($url, RequestType::Post(), ['body' => $requestData]);
+        $tokenRequestContext = $this->getAuthorizationCodeContext($code, $redirectUrl);
+        $tokenCache ??= new InMemoryAccessTokenCache();
+        $provider ??= ProviderFactory::create($tokenRequestContext);
 
-        $response = $this->getConnectionHandler()
-            ->createClient()
-            ->request($requestOptions->getMethod(), $url, [
-                'headers' => $requestOptions->getHeaders(),
-                'query' => $requestOptions->getQueryParams(),
-                'form_params' => $requestOptions->getBody()
-            ]);
+        $tokenProvider = new PhpLeagueAccessTokenProvider(
+            tokenRequestContext: $tokenRequestContext,
+            scopes: $this->scopes,
+            oauthProvider: $provider,
+            accessTokenCache: $tokenCache
+        );
 
-        return new TokenEntity(ResponseHandler::toArray($response));
-    }
-
-    public function refresh(string $refreshToken, string $redirectUrl) : TokenEntityInterface
-    {
-        $requestData = $this->queryParams('refresh_token', $refreshToken, $redirectUrl);
-        $requestData['refresh_token'] = $refreshToken;
-
-        $url = static::AUTHORITY . DIRECTORY_SEPARATOR . static::COMMON . DIRECTORY_SEPARATOR . static::VERSION . DIRECTORY_SEPARATOR . static::TOKEN_URL;
-        $requestOptions = new RequestOptions($url, RequestType::Post(), ['body' => $requestData]);
-        $response = $this->getConnectionHandler()
-            ->createClient()
-            ->request(RequestType::Post, $url, [
-                'headers' => $requestOptions->getHeaders(),
-                'query' => $requestOptions->getQueryParams(),
-                'form_params' => $requestOptions->getBody()
-            ]);
-
-        return new TokenEntity(ResponseHandler::toArray($response));
-    }
-
-    protected function queryParams(string $grantType, string $code, string $redirectUrl) : array
-    {
-        return [
-            'grant_type' => $grantType,
-            'code' => $code,
-            'redirect_uri' => $redirectUrl,
-            'scope' => implode(" ", $this->scopes),
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret
-        ];
-    }
-
-    public function getAuthorizationUrl(array $state, string $redirectUrl) : string
-    {
-        $queryParams = [
-            'client_id' => $this->clientId,
-            'redirect_uri' => $redirectUrl,
-            'response_type' => 'code',
-            'scope' => implode(" ", $this->scopes),
-            'state' => json_encode($state)
-        ];
-
-        $authorizeUrl = static::AUTHORITY . DIRECTORY_SEPARATOR . static::COMMON . DIRECTORY_SEPARATOR . static::VERSION . DIRECTORY_SEPARATOR . static::AUTHORIZE;
-        $authorizeUrl .= '?' . http_build_query($queryParams);
-        return $authorizeUrl;
-    }
-
-    protected function getConnectionHandler(): ConnectionInterface
-    {
-        $logger = $this->args['logger'] ?? null;
-
-        if (!$logger instanceof LoggerInterface) {
-            throw new \InvalidArgumentException('Missing logger parameter in args');
+        $token = $tokenProvider->getAuthorizationTokenAsync(GraphConstants::REST_ENDPOINT)->wait();
+        if (empty($token)) {
+            throw new AccessTokenMissingException();
         }
 
-        return new Connection($logger);
+        $key = $this->getCacheKey($token);
+        $identifiers = $tokenCache->getAccessToken($key);
+
+        return (new TokenEntity())
+            ->setAccessToken($token)
+            ->setRefreshToken($identifiers?->getRefreshToken())
+            ->setExpiresIn($identifiers?->getExpires())
+            ->setIdToken($identifiers?->getToken())
+            ->setEmailAddress($this->email)
+            ->setDisplayName($this->displayName)
+            ->setTokenReceivedOn();
+    }
+
+    /**
+     * @throws IdentityProviderException
+     */
+    public function refresh(string $refreshToken, string $redirectUrl, ?AbstractProvider $oauthProvider = null): TokenEntityInterface
+    {
+        $tokenRequestContext = $this->getClientCredentialContext();
+        $params = $tokenRequestContext->getRefreshTokenParams($refreshToken);
+
+        $oauthProvider ??= ProviderFactory::create($tokenRequestContext);
+        $response = $oauthProvider->getAccessToken('refresh_token', $params);
+        $this->getCacheKey($response->getToken());
+
+        return (new TokenEntity())
+            ->setAccessToken($response->getToken())
+            ->setRefreshToken($response->getRefreshToken())
+            ->setExpiresIn($response->getExpires())
+            ->setIdToken($response->getToken())
+            ->setEmailAddress($this->email)
+            ->setDisplayName($this->displayName)
+            ->setTokenReceivedOn();
+    }
+
+    /** @param array<string, string> $state */
+    public function getAuthorizationUrl(array $state, string $redirectUrl): string
+    {
+        $tokenAuthorizationProvider = new GenericProvider([
+            'clientId' => $this->clientId,
+            'clientSecret' => $this->clientSecret,
+            'redirectUri' => $redirectUrl,
+            'scope' => $this->scopes,
+            'scopeSeparator' => ' ',
+            'urlAuthorize' => static::OAUTH_URL . static::OAUTH_AUTHORIZE,
+            'urlAccessToken' => static::OAUTH_URL . static::OAUTH_TOKEN,
+            'urlResourceOwnerDetails' => static::OAUTH_USER_INFO_URL
+        ]);
+
+        $state = \json_encode($state);
+        return $tokenAuthorizationProvider->getAuthorizationUrl([
+            'state' => $state,
+            'scope' => $this->scopes
+        ]);
+    }
+
+    private function getCacheKey(string $accessToken): string
+    {
+        $tokenParts = explode('.', $accessToken);
+        if (count($tokenParts) === 3) {
+            $payload = json_decode(base64_decode($tokenParts[1]), true);
+            $this->email = $payload['upn'] ?? null;
+            $this->displayName = $payload['name'] ?? null;
+            if (is_array($payload)
+                && array_key_exists('sub', $payload)
+                && ($subject = $payload['sub'])) {
+                return sprintf('common-%s-%s', $this->clientId, $subject);
+            }
+        }
+
+        throw new IllegalAccessTokenException();
     }
 }

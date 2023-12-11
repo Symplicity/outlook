@@ -1,38 +1,38 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Symplicity\Outlook\Interfaces\Notification;
 
-use RuntimeException;
-use Symplicity\Outlook\Interfaces\Entity\SubscriptionEntityInterface;
-use Symplicity\Outlook\Interfaces\Entity\SubscriptionResponseEntityInterface;
+use Microsoft\Graph\Generated\Models\Subscription as MsSubscription;
+use Symplicity\Outlook\Exception\SubscribeFailedException;
 
 interface SubscriptionInterface
 {
     /**
      * Subscribe to items
-     * @param SubscriptionEntityInterface $subscriptionEntity
-     * @param string $accessToken
-     * @return SubscriptionResponseEntityInterface
-     * @throws RuntimeException
+     * @param MsSubscription $subscriptionEntity
+     * @param array<string, mixed> $args
+     * @return MsSubscription|null
+     * @throws SubscribeFailedException
      */
-    public function subscribe(SubscriptionEntityInterface $subscriptionEntity, string $accessToken): SubscriptionResponseEntityInterface;
+    public function subscribe(MsSubscription $subscriptionEntity, array $args = []): ?MsSubscription;
 
     /**
      * Renew subscription
      * @param string $subscriptionId
-     * @param string $accessToken
-     * @param array $args
-     * @return SubscriptionResponseEntityInterface
-     * @throws RuntimeException
+     * @param \DateTime $expiration
+     * @param array<string, mixed> $args
+     * @return MsSubscription|null
+     * @throws SubscribeFailedException
      */
-    public function renew(string $subscriptionId, string $accessToken, array $args = []): SubscriptionResponseEntityInterface;
+    public function renew(string $subscriptionId, \DateTime $expiration, array $args = []): ?MsSubscription;
 
     /**
      * Delete any subscription
      * @param string $subscriptionId
-     * @param string $accessToken
-     * @return bool
+     * @param array<string, mixed> $args
+     * @throws SubscribeFailedException
      */
-    public function delete(string $subscriptionId, string $accessToken): bool;
+    public function delete(string $subscriptionId, array $args = []): void;
 }

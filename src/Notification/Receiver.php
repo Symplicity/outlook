@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Notification;
 
+use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\NotificationReaderEntity;
 use Symplicity\Outlook\Exception\MissingResourceURLException;
@@ -14,34 +15,29 @@ use Symplicity\Outlook\Interfaces\Notification\ReceiverInterface;
 
 abstract class Receiver implements ReceiverInterface
 {
-    protected $context;
-    protected $state;
-
-    /** @var array $entities */
-    protected $entities = [];
+    /** @var array<NotificationReaderEntity> $entities */
+    protected array $entities = [];
 
     public function hydrate(array $data = []): ReceiverInterface
     {
-        $this->context = $data['@odata.context'] ?? null;
-        $this->state = $data['state'] ?? null;
-        $this->setEntities($data['value']);
+        $this->setEntities($data);
         return $this;
     }
 
-    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = [])
+    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = [], array $args = []): void
     {
-        /** @var NotificationReaderEntity $notificationEntity */
         foreach ($this->entities as $notificationEntity) {
             try {
-                $this->validate($calendar, $logger, $notificationEntity);
+                $this->validate($notificationEntity);
                 $this->willWrite($calendar, $logger, $notificationEntity, $params);
 
-                $url = $notificationEntity->getResource();
-                if ($url === null) {
-                    throw new MissingResourceURLException;
+                $id = $notificationEntity->getId();
+                if ($id === null) {
+                    throw new MissingResourceURLException();
                 }
 
-                $outlookEntity = $calendar->getEvent($url, $params);
+                $queryParameters = $this->getEventQueryParameters($params);
+                $outlookEntity = $calendar->getEventBy($id, $queryParameters, args: $args);
                 $args = ['token' => $params['token'] ?? []];
                 $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity, $args);
             } catch (\Exception $e) {
@@ -53,12 +49,15 @@ abstract class Receiver implements ReceiverInterface
                 ];
 
                 $this->eventWriteFailed($calendar, $logger, $eventInfo);
-                $logger->warning('Event did not process successfully', $eventInfo);
+                $logger->error('Event did not process successfully', $eventInfo);
             }
         }
     }
 
-    public function setEntities(array $entities): ReceiverInterface
+    /**
+     * @param array<string, mixed | NotificationReaderEntity> $entities
+     */
+    public function setEntities(array $entities): void
     {
         foreach ($entities as $entity) {
             if ($entity instanceof NotificationReaderEntity) {
@@ -67,8 +66,6 @@ abstract class Receiver implements ReceiverInterface
                 $this->entities[] = new NotificationReaderEntity($entity);
             }
         }
-
-        return $this;
     }
 
     public function getEntities(): array
@@ -76,27 +73,50 @@ abstract class Receiver implements ReceiverInterface
         return $this->entities;
     }
 
-    public function getState(): ?string
-    {
-        return $this->state;
-    }
-
     // Mark Protected
-    protected function validate(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $entity): bool
+
+    /**
+     * @throws ValidationException
+     */
+    protected function validate(NotificationReaderEntity $entity): bool
     {
         if ($entity->has('resource')
             && $entity->has('subscriptionId')
             && $entity->has('id')) {
-            $this->validateSequenceNumber($calendar, $logger, $entity);
             return true;
         }
 
         throw new ValidationException('Missing resource/subscription-id/id');
     }
 
-    // Mark abstract
-    abstract protected function validateSequenceNumber(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $entity): void;
+    /**
+     * @param array<string, string[]> $args
+     */
+    protected function getEventQueryParameters(array $args = []): EventItemRequestBuilderGetQueryParameters
+    {
+        $queryParameters = new EventItemRequestBuilderGetQueryParameters();
+        $queryParameters->expand = $args['expand'] ?? [];
+        $queryParameters->select = $args['select'] ?? [];
+        return $queryParameters;
+    }
+
+    /**
+     * @param CalendarInterface $calender
+     * @param LoggerInterface $logger
+     * @param array<string, ?string> $info
+     */
     abstract protected function eventWriteFailed(CalendarInterface $calender, LoggerInterface $logger, array $info): void;
+
+    /**
+     * @param CalendarInterface $calendar
+     * @param LoggerInterface $logger
+     * @param NotificationReaderEntity $notificationReaderEntity
+     * @param array<string, ?string> $params
+     */
     abstract protected function willWrite(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $notificationReaderEntity, array &$params = []): void;
+
+    /**
+     * @param array<string, ?string> $args
+     */
     abstract protected function didWrite(CalendarInterface $calendar, LoggerInterface $logger, ?ReaderEntityInterface $entity, NotificationReaderEntity $notificationReaderEntity, array $args = []): void;
 }

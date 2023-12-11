@@ -9,42 +9,38 @@ use Symplicity\Outlook\Utilities\ChangeType;
 
 class NotificationReaderEntity implements \JsonSerializable, NotificationReaderEntityInterface
 {
-    protected $type;
-    protected $outlookId;
-    protected $subscriptionId;
-    protected $subscriptionExpirationDateTime;
-    protected $sequenceNumber;
-    /** @var ChangeType */
-    protected $changeType;
-    protected $resource;
-    protected $oDataType;
-    protected $oDataId;
-    protected $etag;
-    protected $id;
+    protected ?string $subscriptionId = null;
+    protected ?string $subscriptionExpirationDateTime = null;
+    protected ?ChangeType $changeType = null;
+    protected ?string $resource = null;
+    protected ?string $oDataType = null;
+    protected ?string $oDataId = null;
+    protected ?string $eTag = null;
+    protected ?string $id = null;
+    protected ?string $tenantId = null;
 
+    /** @param array<string, mixed> $data */
     public function __construct(array $data = [])
     {
-        $this->type = $data['@odata.type'] ?? null;
-        $this->outlookId = $data['Id'] ?? null;
-        $this->subscriptionId = $data['SubscriptionId'] ?? null;
-        $this->subscriptionExpirationDateTime = $data['SubscriptionExpirationDateTime'] ?? null;
-        $this->sequenceNumber = $data['SequenceNumber'] ?? null;
-        $this->resource = $data['Resource'] ?? null;
-        $this->oDataType = $data['ResourceData']['@odata.type'] ?? null;
-        $this->oDataId = $data['ResourceData']['@odata.id'] ?? null;
-        $this->etag = $data['ResourceData']['@odata.etag'] ?? null;
-        $this->id = $data['ResourceData']['Id'] ?? null;
-        $this->setChangeType($data['ChangeType'] ?? null);
+        $this->subscriptionId = $data['subscriptionId'] ?? null;
+        $this->subscriptionExpirationDateTime = $data['subscriptionExpirationDateTime'] ?? null;
+        $this->resource = $data['resource'] ?? null;
+        $this->oDataType = $data['resourceData']['@odata.type'] ?? null;
+        $this->oDataId = $data['resourceData']['@odata.id'] ?? null;
+        $this->eTag = $data['resourceData']['@odata.etag'] ?? null;
+        $this->id = $data['resourceData']['id'] ?? null;
+        $this->tenantId = $data['tenantId'] ?? null;
+        $this->setChangeType($data['changeType'] ?? null);
     }
 
+    /** @return array<string, string | ChangeType | null> */
     public function jsonSerialize(): array
     {
         return [
             'res' => $this->resource,
             'id' => $this->id,
             'subId' => $this->subscriptionId,
-            'cT' => $this->changeType,
-            'seq' => $this->sequenceNumber
+            'cT' => $this->changeType
         ];
     }
 
@@ -63,11 +59,11 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
         return $this;
     }
 
-    public function setChangeType(?string $changeType): NotificationReaderEntityInterface
+    public function setChangeType(?string $changeType = null): NotificationReaderEntityInterface
     {
-        $this->changeType = ChangeType::unknown();
-        if ($value = ChangeType::search($changeType)) {
-            $this->changeType = ChangeType::$value();
+        $this->changeType = ChangeType::UNKNOWN;
+        if (isset($changeType) && ($value = ChangeType::tryFrom($changeType))) {
+            $this->changeType = $value;
         }
 
         return $this;
@@ -85,23 +81,7 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
         return $this;
     }
 
-    public function setSequenceNumber(?int $sequenceNumber): NotificationReaderEntityInterface
-    {
-        $this->sequenceNumber = $sequenceNumber;
-        return $this;
-    }
-
     // Mark Getters
-    public function getType(): ?string
-    {
-        return $this->type;
-    }
-
-    public function getOutlookId(): ?string
-    {
-        return $this->outlookId;
-    }
-
     public function getSubscriptionId(): ?string
     {
         return $this->subscriptionId;
@@ -112,14 +92,9 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
         return $this->subscriptionExpirationDateTime;
     }
 
-    public function getSequenceNumber(): ?int
+    public function getChangeType(): ?ChangeType
     {
-        return $this->sequenceNumber;
-    }
-
-    public function getChangeType(): ?string
-    {
-        return $this->changeType->getValue();
+        return $this->changeType;
     }
 
     public function getResource(): ?string
@@ -139,11 +114,16 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
 
     public function getEtag(): ?string
     {
-        return $this->etag;
+        return $this->eTag;
     }
 
     public function getId(): ?string
     {
         return $this->id;
+    }
+
+    public function getTenantId(): ?string
+    {
+        return $this->tenantId;
     }
 }

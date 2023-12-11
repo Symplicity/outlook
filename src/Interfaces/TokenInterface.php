@@ -24,7 +24,7 @@ interface TokenInterface
 
     /**
      * Get AuthorizationUrl.
-     * @param array $state
+     * @param array<string, string> $state
      * @param string $redirectUrl
      * @return string
      */
