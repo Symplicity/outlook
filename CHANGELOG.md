@@ -1,3 +1,88 @@
+[5.0.0-alpha]
+
+### Calendar changes
+
+- Calendar construct will now require clientId, clientSecret and token as required readonly parameters
+
+```php
+public function __construct(
+    private readonly string $clientId,
+    private readonly string $clientSecret,
+    private readonly string $token,
+    array $args = []
+)
+```
+
+- Sync method is removed. Call push/pull to send and receive events from outlook
+
+
+- Get event and get event instances will require outlook id instead of url
+
+```php
+public function getEventBy(
+    string $id,
+    ?EventItemRequestBuilderGetQueryParameters $params = null,
+    ?Closure $beforeReturn = null,
+    array $args = []
+): ?ReaderEntityInterface
+
+public function getEventInstances(
+    string $id,
+    ?InstancesRequestBuilderGetQueryParameters $params = null,
+    array $args = []
+): void
+```
+
+- Writer/Delete entities are removed and are replaced by outlook model Event
+
+- Delete method will not return any response except a 204 status code
+
+
+- Batch push events will now return a generator instead of Batch Response entity
+
+```php
+public function handleBatchResponse(?Generator $responses = null): void;
+```
+
+### Token Changes
+
+- None or very limited changes to Token handler
+
+### Subscription Changes
+
+- construct now requires clientId, clientSecret and token as required readonly parameters
+
+```php
+public function __construct(
+    private readonly string $clientId,
+    private readonly string $clientSecret,
+    private readonly string $token,
+    array $args = []
+)
+```
+
+- Subscription entity will not be available anymore. The graph api sdk Subscription model and entity is used instead
+
+```php
+public function subscribe(
+    Microsoft\Graph\Generated\Models\Subscription $subscriptionEntity, array $args = []
+): ?Microsoft\Graph\Generated\Models\Subscription
+```
+
+- Renew subscription will only update the expiry date of the token.
+
+```php
+public function renew(
+    string $subscriptionId,
+    \DateTime $expiration,
+    array $args = []
+): ?Microsoft\Graph\Generated\Models\Subscription
+```
+
+### Notification Changes
+
+- With the new graph api the sequence number will not be available. Call the event api to get the changes and validate it.
+
 ## [2.0.0]
 
 ### Added
