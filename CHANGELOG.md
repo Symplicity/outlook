@@ -43,7 +43,11 @@ public function getEventInstances(
 ```php
 public function handleBatchResponse(?Generator $responses = null): void;
 ```
+- Update deleteEventLocal type declaration to ?string
 
+```php
+public function deleteEventLocal(?string $eventId): void
+```
 ### Token Changes
 
 - None or very limited changes to Token handler
