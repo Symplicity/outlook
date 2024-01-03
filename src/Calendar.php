@@ -61,7 +61,7 @@ abstract class Calendar implements CalendarInterface
         $this->logger = $args['logger'] ?? null;
     }
 
-    public function __get(string $property): ?GraphServiceEvent
+    public function __get(string $property): mixed
     {
         if ($property === 'graphService') {
             $this->graphService = new GraphServiceEvent(
