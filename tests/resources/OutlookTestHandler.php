@@ -107,6 +107,7 @@ class OutlookTestHandler extends Calendar
     public function handleBatchResponse(?Generator $responses = null): void
     {
         foreach ($responses as $resp) {
+            $this->testCase->assertArrayHasKey('guid', $resp['info']);
             if ($resp['info']['status'] === 204) {
                 $this->testCase->assertEmpty($resp['event']);
                 $this->testCase->assertSame('123-del', $resp['info']['id']);

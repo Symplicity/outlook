@@ -10,6 +10,7 @@ use Http\Promise\Promise;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\BatchRequestBuilder;
 use Microsoft\Graph\Core\Requests\BatchRequestContent;
+use Microsoft\Graph\Core\Requests\BatchRequestItem;
 use Microsoft\Graph\Core\Requests\BatchResponseContent;
 use Microsoft\Graph\Core\Requests\BatchResponseItem;
 use Microsoft\Graph\Generated\Models\Event as GraphEvent;
@@ -24,9 +25,9 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQ
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
-use Microsoft\Kiota\Abstractions\RequestInformation;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Symplicity\Outlook\Entities\Occurrence;
 use Symplicity\Outlook\Entities\Reader;
 use Symplicity\Outlook\Exception\ReadError;
@@ -245,6 +246,7 @@ abstract class Calendar implements CalendarInterface
         $eventsToWrite = $this->getLocalEvents();
         $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
         $batch = [];
+        $batchCorrelationIds = [];
 
         foreach ($chunks as $chunk) {
             /** @var Event $event */
@@ -261,6 +263,7 @@ abstract class Calendar implements CalendarInterface
                         $postRequestConfiguration,
                         $patchRequestConfiguration,
                         $deleteRequestConfiguration,
+                        $batchCorrelationIds,
                         $args
                     );
                 }
@@ -275,7 +278,7 @@ abstract class Calendar implements CalendarInterface
                     ->wait();
             }
 
-            $newResponses = $this->prepareBatchResponse($responses);
+            $newResponses = $this->prepareBatchResponse($responses, $batchCorrelationIds);
             $this->handleBatchResponse($newResponses);
         }
     }
@@ -317,19 +320,21 @@ abstract class Calendar implements CalendarInterface
             ->wait();
     }
 
-    protected function prepareBatchResponse(?BatchResponseContent $response = null): \Generator
+    protected function prepareBatchResponse(?BatchResponseContent $response = null, array $correlationIds = []): \Generator
     {
         foreach ($response?->getResponses() ?? [] as $response) {
             if ($response instanceof BatchResponseItem) {
                 if (in_array($response->getStatusCode(), [200, 201])) {
-                    yield $this->createFromDiscriminatorValue($response);
+                    yield $this->createFromDiscriminatorValue($response, $correlationIds);
                 } else {
+                    $correlationId = $response->getId();
                     yield [
                         'event' => null,
                         'info' => [
                             'status' => $response->getStatusCode(),
                             'location' => $response->getHeaders()['Location'] ?? null,
-                            'id' => $response->getId()
+                            'id' => $correlationId,
+                            'guid' => $correlationIds[$correlationId] ?? null
                         ]
                     ];
                 }
@@ -340,10 +345,11 @@ abstract class Calendar implements CalendarInterface
     /**
      * @return array<string, mixed> $args
      */
-    protected function createFromDiscriminatorValue(BatchResponseItem $response): array
+    protected function createFromDiscriminatorValue(BatchResponseItem $response, array $correlationIds = []): array
     {
         $item = [];
         $body = $response->getBody()?->getContents();
+        $correlationId = $response->getId();
         if (!empty($body)) {
             $data = \json_decode($body, true);
             if (JSON_ERROR_NONE === json_last_error()) {
@@ -354,7 +360,8 @@ abstract class Calendar implements CalendarInterface
                         'info' => [
                             'status' => $response->getStatusCode(),
                             'location' => $response->getHeaders()['Location'] ?? null,
-                            'id' => $response->getId()
+                            'id' => $correlationId,
+                            'guid' => $correlationIds[$correlationId] ?? null
                         ]
                     ];
                     // @codeCoverageIgnoreStart
@@ -364,7 +371,8 @@ abstract class Calendar implements CalendarInterface
                         'info' => [
                             'status' => $response->getStatusCode(),
                             'location' => $response->getHeaders()['Location'] ?? null,
-                            'id' => $response->getId(),
+                            'id' => $correlationId,
+                            'guid' => $correlationIds[$correlationId] ?? null,
                             'error' => $error->getMessage()
                         ]
                     ];
@@ -388,7 +396,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @param array<string, mixed> $args
      */
-    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array $args = []): RequestInformation
+    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array &$batchCorrelationIds = [], array $args = []): BatchRequestItem
     {
         $me = $this->graphService
             ->client($args)
@@ -409,7 +417,9 @@ abstract class Calendar implements CalendarInterface
                 ->toPostRequestInformation($event, $postRequestConfiguration);
         }
 
-        return $request;
+        $correlationId = Uuid::uuid4()->toString();
+        $batchCorrelationIds[$correlationId] = $eventId ?? null;
+        return new BatchRequestItem($request, $correlationId);
     }
 
     /**
