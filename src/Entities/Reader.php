@@ -59,7 +59,7 @@ class Reader implements ReaderEntityInterface
         $this->setId($event?->getId());
         $this->setEventType($event?->getType());
         $this->setWebLink($event?->getWebLink());
-        $this->setETag($event?->getAdditionalData()['@odata.etag'] ?? null);
+        $this->setETag($event?->getAdditionalData()[static::ODATA_ETAG_KEY] ?? null);
         $this->setTitle($event?->getSubject());
         $this->setDescription($event?->getBodyPreview());
         $this->setBody($event?->getBody());

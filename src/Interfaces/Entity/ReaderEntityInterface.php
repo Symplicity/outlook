@@ -16,6 +16,8 @@ use Microsoft\Graph\Generated\Models\Sensitivity;
 
 interface ReaderEntityInterface
 {
+    public const ODATA_ETAG_KEY = '@odata.etag';
+
     public function hydrate(?Event $event = null): ReaderEntityInterface;
 
     public function getId(): ?string;
