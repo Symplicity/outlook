@@ -320,6 +320,9 @@ abstract class Calendar implements CalendarInterface
             ->wait();
     }
 
+    /**
+     * @param array<string, ?string> $correlationIds
+     */
     protected function prepareBatchResponse(?BatchResponseContent $response = null, array $correlationIds = []): \Generator
     {
         foreach ($response?->getResponses() ?? [] as $response) {
@@ -343,6 +346,7 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
+     * @param array<string, ?string> $correlationIds
      * @return array<string, mixed> $args
      */
     protected function createFromDiscriminatorValue(BatchResponseItem $response, array $correlationIds = []): array
@@ -394,6 +398,7 @@ abstract class Calendar implements CalendarInterface
     }
 
     /**
+     * @param array<string, ?string> $batchCorrelationIds
      * @param array<string, mixed> $args
      */
     protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array &$batchCorrelationIds = [], array $args = []): BatchRequestItem
