@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Entities;
 
+use JsonSerializable;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Stringable;
 use Symplicity\Outlook\Interfaces\Entity\TokenInterface;
 
-class Token implements TokenInterface, Stringable
+class Token implements TokenInterface, Stringable, JsonSerializable
 {
     protected string $accessToken;
     protected ?string $refreshToken = null;
@@ -113,5 +114,22 @@ class Token implements TokenInterface, Stringable
     public function __toString(): string
     {
         return $this->getDisplayName() ?? '';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'accessToken' => $this->accessToken,
+            'refreshToken' => $this->refreshToken,
+            'expiresIn' => $this->expiresIn,
+            'idToken' => $this->idToken,
+            'tokenReceivedOn' => $this->tokenReceivedOn,
+            'type' => $this->type,
+            'emailAddress' => $this->emailAddress,
+            'displayName' => $this->displayName
+        ];
     }
 }

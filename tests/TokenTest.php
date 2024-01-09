@@ -62,6 +62,9 @@ class TokenTest extends TestCase
         $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
         $this->assertNotEmpty($token->getIdToken());
         $this->assertEquals('Foo Bar', (string) $token);
+
+        $serializer = \json_encode($token);
+        $this->assertMatchesRegularExpression('/"type":null,"emailAddress":"foobar@bar.com","displayName":"Foo Bar"}$/', $serializer);
     }
 
     /**
