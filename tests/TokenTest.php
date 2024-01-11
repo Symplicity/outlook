@@ -100,6 +100,9 @@ class TokenTest extends TestCase
 
         $authUrl = $this->tokenHandler->getAuthorizationUrl(['123'], 'test.com');
         $this->assertEquals('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=%5B%22123%22%5D&scope=openid%20offline_access%20https%3A%2F%2Fgraph.microsoft.com%2Fcalendars.readwrite&response_type=code&approval_prompt=auto&redirect_uri=test.com&client_id=foo', $authUrl);
+
+        $authUrl = $this->tokenHandler->getAuthorizationUrl('abc123333', 'test.com');
+        $this->assertEquals('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?state=abc123333&scope=openid%20offline_access%20https%3A%2F%2Fgraph.microsoft.com%2Fcalendars.readwrite&response_type=code&approval_prompt=auto&redirect_uri=test.com&client_id=foo', $authUrl);
     }
 
     private function getProvider(MockHandler $mock): AbstractProvider

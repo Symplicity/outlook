@@ -102,8 +102,10 @@ class Token implements TokenInterface
             ->setTokenReceivedOn();
     }
 
-    /** @param array<string, string> $state */
-    public function getAuthorizationUrl(array $state, string $redirectUrl): string
+    /**
+     * @param array<string, string>|string $state
+     */
+    public function getAuthorizationUrl(array|string $state, string $redirectUrl): string
     {
         $tokenAuthorizationProvider = new GenericProvider([
             'clientId' => $this->clientId,
@@ -116,7 +118,10 @@ class Token implements TokenInterface
             'urlResourceOwnerDetails' => static::OAUTH_USER_INFO_URL
         ]);
 
-        $state = \json_encode($state);
+        if (\is_array($state)) {
+            $state = \json_encode($state);
+        }
+
         return $tokenAuthorizationProvider->getAuthorizationUrl([
             'state' => $state,
             'scope' => $this->scopes
