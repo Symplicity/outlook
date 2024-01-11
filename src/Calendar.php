@@ -49,7 +49,7 @@ abstract class Calendar implements CalendarInterface
     use RequestConfigurationTrait;
 
     // Maximum events allowed for graph batch api
-    public const BATCH_BY = 20;
+    public const BATCH_BY = 19;
 
     protected ?LoggerInterface $logger = null;
 
@@ -83,7 +83,7 @@ abstract class Calendar implements CalendarInterface
      *  Set prefer headers like odata.maxpagesize and timezone to control the data received
      *  Calls saveEventLocal/deleteEventLocal methods
      * @param array<string, mixed> $args
-     * @throws ReadError
+     * @throws ReadError|\Throwable
      */
     public function pull(CalendarViewParamsInterface $params, ?Closure $deltaLinkStore = null, array $args = []): void
     {
@@ -135,7 +135,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * Get Event by event id (extract extension as well)
      * @param array<string, mixed> $args
-     * @throws ReadError
+     * @throws ReadError|\Throwable
      */
     public function getEventBy(string $id, ?EventItemRequestBuilderGetQueryParameters $params = null, ?Closure $beforeReturn = null, array $args = []): ?ReaderEntityInterface
     {
@@ -178,7 +178,7 @@ abstract class Calendar implements CalendarInterface
 
     /**
      * @param array<string, mixed> $args
-     * @throws ReadError
+     * @throws ReadError|\Throwable
      */
     public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void
     {
@@ -229,7 +229,7 @@ abstract class Calendar implements CalendarInterface
      * @param array<string, string> $params
      * @param array<string, mixed> $args
      * @throws \JsonException
-     * @throws \Exception
+     * @throws \Exception|\Throwable
      */
     public function push(array $params = [], array $args = []): void
     {
@@ -245,10 +245,11 @@ abstract class Calendar implements CalendarInterface
 
         $eventsToWrite = $this->getLocalEvents();
         $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
-        $batch = [];
-        $batchCorrelationIds = [];
 
         foreach ($chunks as $chunk) {
+            $batch = [];
+            $batchCorrelationIds = [];
+
             /** @var Event $event */
             foreach ($chunk as $event) {
                 if ($event instanceof Event) {
@@ -285,7 +286,7 @@ abstract class Calendar implements CalendarInterface
 
     /**
      * @param array<string, mixed> $args
-     * @throws \Exception
+     * @throws \Exception|\Throwable
      */
     public function upsert(Event $event, array $args = []): ?GraphEvent
     {
@@ -304,7 +305,7 @@ abstract class Calendar implements CalendarInterface
 
     /**
      * @param array<string, mixed> $args
-     * @throws \Exception
+     * @throws \Exception|\Throwable
      */
     public function delete(string $id, array $args = []): void
     {
