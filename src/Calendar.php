@@ -51,6 +51,8 @@ abstract class Calendar implements CalendarInterface
     // Maximum events allowed for graph batch api
     public const BATCH_BY = 19;
 
+    public const DEFAULT_TIMEZONE = 'Eastern Standard Time';
+
     protected ?LoggerInterface $logger = null;
 
     /**
