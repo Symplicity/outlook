@@ -17,35 +17,23 @@ use Symplicity\Outlook\Exception\SubscribeFailedException;
 use Symplicity\Outlook\Interfaces\Notification\SubscriptionInterface;
 use Symplicity\Outlook\Utilities\EventView\GraphServiceEvent;
 
-/**
- * @property GraphServiceEvent $graphService
- */
 class Subscription implements SubscriptionInterface
 {
     use AuthorizationContextTrait;
     use BearerAuthorizationTrait;
 
     private ?LoggerInterface $logger;
+    protected GraphServiceEvent $graphService;
 
     /** @param array<string, mixed> $args */
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
         $this->logger = $args['logger'] ?? null;
-    }
-
-    public function __get(string $property): ?GraphServiceEvent
-    {
-        if ($property === 'graphService') {
-            $this->graphService = new GraphServiceEvent(
-                $this->clientId,
-                $this->clientSecret,
-                $this->token
-            );
-
-            return $this->graphService;
-        }
-
-        return null;
+        $this->graphService = new GraphServiceEvent(
+            $this->clientId,
+            $this->clientSecret,
+            $this->token
+        );
     }
 
     public function subscribe(MsSubscription $subscriptionEntity, array $args = []): ?MsSubscription

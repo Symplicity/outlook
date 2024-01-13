@@ -39,9 +39,6 @@ use Symplicity\Outlook\Utilities\CalendarView\GraphServiceCalendarView;
 use Symplicity\Outlook\Utilities\CalendarView\PageIterator;
 use Symplicity\Outlook\Utilities\EventView\GraphServiceEvent;
 
-/**
- * @property GraphServiceEvent $graphService
- */
 abstract class Calendar implements CalendarInterface
 {
     use BearerAuthorizationTrait;
@@ -54,6 +51,7 @@ abstract class Calendar implements CalendarInterface
     public const DEFAULT_TIMEZONE = 'Eastern Standard Time';
 
     protected ?LoggerInterface $logger = null;
+    protected GraphServiceEvent $graphService;
 
     /**
      * If you want to use kiota/ms-graph telemetry, extend this class to declare a tracer
@@ -62,21 +60,11 @@ abstract class Calendar implements CalendarInterface
     public function __construct(private readonly string $clientId, private readonly string $clientSecret, private readonly string $token, array $args = [])
     {
         $this->logger = $args['logger'] ?? null;
-    }
-
-    public function __get(string $property): mixed
-    {
-        if ($property === 'graphService') {
-            $this->graphService = new GraphServiceEvent(
-                $this->clientId,
-                $this->clientSecret,
-                $this->token
-            );
-
-            return $this->graphService;
-        }
-
-        return null;
+        $this->graphService = new GraphServiceEvent(
+            $this->clientId,
+            $this->clientSecret,
+            $this->token
+        );
     }
 
     /// MARK: Calendar Event Reads
