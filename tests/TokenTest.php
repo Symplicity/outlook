@@ -68,6 +68,46 @@ class TokenTest extends TestCase
     }
 
     /**
+     * @throws \Exception
+     */
+    public function testMultiAuthRequest()
+    {
+        $response = [
+            'token_type' => 'Bearer',
+            'scope' => 'openid profile email https://graph.microsoft.com/Calendars.ReadWrite',
+            'ext_expires_in' => 4348,
+            'access_token' => 'edc==',
+            'refresh_token' => 'edft==',
+            'expires_in' => 10800,
+            'id_token' => 'abc'
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, [], Utils::streamFor(json_encode($response))),
+        ]);
+
+        $provider = $this->getProvider($mock);
+        $token = $this->tokenHandler->request('123', 'symplicity.com', provider: $provider);
+
+        $this->assertInstanceOf(TokenInterface::class, $token);
+        $this->assertNotEmpty($token->getAccessToken());
+        $this->assertNotEmpty($token->getRefreshToken());
+        $this->assertNotEmpty($token->getExpiresIn());
+        $this->assertNull($token->getEmailAddress());
+        $this->assertNull($token->getDisplayName());
+        $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
+        $this->assertNotEmpty($token->getIdToken());
+
+        $mock = new MockHandler([
+            new Response(400, [], Utils::streamFor('{}'))
+        ]);
+
+        $provider = $this->getProvider($mock);
+        $this->expectExceptionMessage('Required option not passed: "access_token"');
+        $this->tokenHandler->request('123', 'symplicity.com', provider: $provider);
+    }
+
+    /**
      * @dataProvider getTokenPayload
      * @param array $jwt
      * @param \Exception|null $exception
@@ -135,14 +175,14 @@ class TokenTest extends TestCase
         return [
             [
                [
-                    "token_type" => "Bearer",
-                    "scope" => "openid profile email https://graph.microsoft.com/Calendars.ReadWrite",
-                    "ext_expires_in" => 4348,
-                    "access_token" => $jwt,
-                    "refresh_token" => $jwt,
-                    "expires_in" => 10800,
-                    "upn" => "foobar@bar.com",
-                    "id_token" => "abc"
+                    'token_type' => 'Bearer',
+                    'scope' => 'openid profile email https://graph.microsoft.com/Calendars.ReadWrite',
+                    'ext_expires_in' => 4348,
+                    'access_token' => $jwt,
+                    'refresh_token' => $jwt,
+                    'expires_in' => 10800,
+                    'upn' => 'foobar@bar.com',
+                    'id_token' => 'abc'
                ],
                 null
             ],

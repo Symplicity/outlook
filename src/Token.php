@@ -7,6 +7,7 @@ namespace Symplicity\Outlook;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GenericProvider;
+use League\OAuth2\Client\Token\AccessToken;
 use Microsoft\Graph\Core\GraphConstants;
 use Microsoft\Kiota\Authentication\Cache\AccessTokenCache;
 use Microsoft\Kiota\Authentication\Cache\InMemoryAccessTokenCache;
@@ -51,7 +52,7 @@ class Token implements TokenInterface
      */
     public function request(string $code, string $redirectUrl, ?AccessTokenCache $tokenCache = null, ?AbstractProvider $provider = null): TokenEntityInterface
     {
-        $tokenRequestContext = $this->getAuthorizationCodeContext($code, $redirectUrl);
+        $tokenRequestContext = $this->getMultiAuthCodeContext($code, $redirectUrl);
         $tokenCache ??= new InMemoryAccessTokenCache();
         $provider ??= ProviderFactory::create($tokenRequestContext);
 
@@ -68,13 +69,16 @@ class Token implements TokenInterface
         }
 
         $key = $this->getCacheKey($token);
-        $identifiers = $tokenCache->getAccessToken($key);
+        $identifiers = isset($key) ? $tokenCache->getAccessToken($key) : $tokenRequestContext->getReceivedToken();
+        if (!$identifiers instanceof AccessToken) {
+            throw new IllegalAccessTokenException();
+        }
 
         return (new TokenEntity())
             ->setAccessToken($token)
-            ->setRefreshToken($identifiers?->getRefreshToken())
-            ->setExpiresIn($identifiers?->getExpires())
-            ->setIdToken($identifiers?->getToken())
+            ->setRefreshToken($identifiers->getRefreshToken())
+            ->setExpiresIn($identifiers->getExpires())
+            ->setIdToken($identifiers->getToken())
             ->setEmailAddress($this->email)
             ->setDisplayName($this->displayName)
             ->setTokenReceivedOn();
@@ -91,6 +95,10 @@ class Token implements TokenInterface
         $oauthProvider ??= ProviderFactory::create($tokenRequestContext);
         $response = $oauthProvider->getAccessToken('refresh_token', $params);
         $this->getCacheKey($response->getToken());
+
+        if (!$response instanceof AccessToken) {
+            throw new IllegalAccessTokenException();
+        }
 
         return (new TokenEntity())
             ->setAccessToken($response->getToken())
@@ -128,7 +136,7 @@ class Token implements TokenInterface
         ]);
     }
 
-    private function getCacheKey(string $accessToken): string
+    private function getCacheKey(string $accessToken): ?string
     {
         $tokenParts = explode('.', $accessToken);
         if (count($tokenParts) === 3) {
@@ -142,6 +150,6 @@ class Token implements TokenInterface
             }
         }
 
-        throw new IllegalAccessTokenException();
+        return null;
     }
 }
