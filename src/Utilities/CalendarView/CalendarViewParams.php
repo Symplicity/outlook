@@ -17,6 +17,9 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
     private ?string $preferHeaders = null;
     private ?string $timezone = 'Eastern Standard Time';
 
+    /** @var array<string, mixed>  */
+    private array $requestOptions = [];
+
     public function getStartDateTime(): ?string
     {
         return $this->startDateTime;
@@ -79,6 +82,11 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
     public function getPreferHeaders(): ?string
     {
         return $this->preferHeaders ?? 'odata.maxpagesize=50,odata.track-changes,outlook.timezone="' . $this->timezone . '"';
+    }
+
+    public function getRequestOptions(): array
+    {
+        return $this->requestOptions;
     }
 
     public function setStartDateTime(string $startDateTime): CalendarViewParams
@@ -159,6 +167,15 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
     public function setTimezone(?string $timezone): CalendarViewParams
     {
         $this->timezone = $timezone;
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed> $requestOptions
+     */
+    public function setRequestOptions(array $requestOptions): CalendarViewParams
+    {
+        $this->requestOptions = $requestOptions;
         return $this;
     }
 }

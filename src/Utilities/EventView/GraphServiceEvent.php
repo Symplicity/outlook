@@ -21,10 +21,12 @@ class GraphServiceEvent extends GraphServiceCalendarView
             $client = $params['client'];
         } else {
             $handlerStack = GraphClientFactory::getDefaultHandlerStack();
-            $client = GraphClientFactory::createWithConfig(array_merge(
+            $guzzleConfig = array_merge(
                 static::getDefaultConfig(),
+                $params[static::GUZZLE_HTTP_CONFIG_KEY] ?? [],
                 ['handler' => $handlerStack]
-            ));
+            );
+            $client = GraphClientFactory::createWithConfig($guzzleConfig);
         }
 
         $this->requestAdapter = new GraphRequestAdapter(

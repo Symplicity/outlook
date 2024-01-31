@@ -31,6 +31,11 @@ interface CalendarViewParamsInterface
     public function getDeltaToken(): ?string;
 
     /**
+     * @return array<string, mixed>
+     */
+    public function getRequestOptions(): array;
+
+    /**
      * @return array<string, string>|null
      */
     public function getHeaders(): ?array;

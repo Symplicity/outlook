@@ -25,6 +25,7 @@ class GraphServiceCalendarView
     public const BASE_URI = NationalCloud::GLOBAL;
     public const ENABLE_HTTP_ERROR = false;
     public const HTTP_VERIFY = false;
+    public const GUZZLE_HTTP_CONFIG_KEY = 'guzzleConfig';
 
     protected ?RequestAdapter $requestAdapter;
     protected ?Client $httpClient = null;
@@ -45,10 +46,13 @@ class GraphServiceCalendarView
                 'deltaToken' => $params->getDeltaToken()
             ]));
 
-            $client = GraphClientFactory::createWithConfig(array_merge(
+            $guzzleConfig = array_merge(
                 static::getDefaultConfig(),
+                $params->getRequestOptions(),
                 ['handler' => $handlerStack]
-            ));
+            );
+
+            $client = GraphClientFactory::createWithConfig($guzzleConfig);
         }
 
         $this->requestAdapter = new GraphRequestAdapter(
