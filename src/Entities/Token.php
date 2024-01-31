@@ -54,7 +54,11 @@ class Token implements TokenInterface, Stringable, JsonSerializable
 
     public function setExpiresIn(?int $expiresIn): Token
     {
-        $this->expiresIn = $expiresIn;
+        if (isset($expiresIn)) {
+            $tokenExpiryTime = $expiresIn - time();
+            $this->expiresIn = $tokenExpiryTime;
+        }
+
         return $this;
     }
 

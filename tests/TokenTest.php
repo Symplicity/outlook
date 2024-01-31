@@ -57,6 +57,7 @@ class TokenTest extends TestCase
         $this->assertNotEmpty($token->getAccessToken());
         $this->assertNotEmpty($token->getRefreshToken());
         $this->assertNotEmpty($token->getExpiresIn());
+        $this->assertLessThanOrEqual($jwt['expires_in'], $token->getExpiresIn());
         $this->assertEquals('foobar@bar.com', $token->getEmailAddress());
         $this->assertEquals('Foo Bar', $token->getDisplayName());
         $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
@@ -93,6 +94,7 @@ class TokenTest extends TestCase
         $this->assertNotEmpty($token->getAccessToken());
         $this->assertNotEmpty($token->getRefreshToken());
         $this->assertNotEmpty($token->getExpiresIn());
+        $this->assertLessThanOrEqual($response['expires_in'], $token->getExpiresIn());
         $this->assertNull($token->getEmailAddress());
         $this->assertNull($token->getDisplayName());
         $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
