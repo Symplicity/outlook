@@ -40,7 +40,7 @@ class ReceiverTest extends TestCase
         $mock = new MockHandler([
             new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor($event)),
             new Response(200, ['Content-Type' => 'application/json'], Utils::streamFor($event)),
-            new Response(400, [], ''),
+            new Response(400, body: ''),
         ]);
 
         $client = $this->getClientWithTransactionHandler($this->container, $mock);

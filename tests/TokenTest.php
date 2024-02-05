@@ -84,7 +84,7 @@ class TokenTest extends TestCase
         ];
 
         $mock = new MockHandler([
-            new Response(200, [], Utils::streamFor(json_encode($response))),
+            new Response(200, body: Utils::streamFor(json_encode($response))),
         ]);
 
         $provider = $this->getProvider($mock);
@@ -119,7 +119,7 @@ class TokenTest extends TestCase
     {
         $code = $exception ? 400 : 200;
         $mock = new MockHandler([
-            new Response($code, [], Utils::streamFor(json_encode($jwt))),
+            new Response($code, body: Utils::streamFor(json_encode($jwt))),
         ]);
 
         $provider = $this->getProvider($mock);

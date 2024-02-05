@@ -112,7 +112,7 @@ class SubscriptionTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(204, ['Content-Type' => 'application/json'], '{}'),
-            new Response(404, [], ''),
+            new Response(404, body: ''),
         ]);
 
         $client = $this->getClientWithTransactionHandler($this->container, $mock);
