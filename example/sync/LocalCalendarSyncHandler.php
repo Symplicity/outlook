@@ -42,11 +42,12 @@ class LocalCalendarSyncHandler extends Calendar
 
         try {
             $that = $this;
-            // This pulls events from the calendar 50 at a time. Each event is parsed and sent to saveEventLocal method
-            $this->pull($params, fn ($deltaLinkUrl) => $that->saveDeltaToken($deltaLinkUrl));
 
             // Push events to outlook
             $this->push();
+
+            // This pulls events from the calendar 50 at a time. Each event is parsed and sent to saveEventLocal method
+            $this->pull($params, fn ($deltaLinkUrl) => $that->saveDeltaToken($deltaLinkUrl));
         } catch (Exception $e) {
             $this->logger?->error('Getting/Pushing events from/to outlook failed', [
                 $e->getMessage(),
