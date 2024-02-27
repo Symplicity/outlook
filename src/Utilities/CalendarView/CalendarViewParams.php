@@ -66,6 +66,14 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
         return $this->select;
     }
 
+    /**
+     * @return string[]|null
+     */
+    public function getExpand(): ?array
+    {
+        return $this->expand;
+    }
+
     public function getDeltaToken(): ?string
     {
         return $this->deltaToken;
@@ -104,6 +112,15 @@ class CalendarViewParams extends CalendarViewRequestBuilderGetQueryParameters im
     public function setFilter(?string $filter): CalendarViewParams
     {
         $this->filter = $filter;
+        return $this;
+    }
+
+    /**
+     * @param string[]|null $expand
+     */
+    public function setExpand(?array $expand): CalendarViewParams
+    {
+        $this->expand = $expand;
         return $this;
     }
 

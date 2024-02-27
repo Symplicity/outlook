@@ -8,12 +8,12 @@ use GuzzleHttp\Client;
 use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAuthenticationProvider;
 use Microsoft\Graph\Core\GraphClientFactory;
 use Microsoft\Graph\GraphRequestAdapter;
-use Microsoft\Graph\GraphServiceClient as MSGraphServiceClient;
 use Symplicity\Outlook\Utilities\CalendarView\GraphServiceCalendarView;
+use Symplicity\Outlook\Utilities\CalendarView\GraphServiceClient;
 
 class GraphServiceEvent extends GraphServiceCalendarView
 {
-    public function client(mixed $params = null): MSGraphServiceClient
+    public function client(mixed $params = null): GraphServiceClient
     {
         $tokenRequestContext = $this->getClientCredentialContext();
 
@@ -34,7 +34,7 @@ class GraphServiceEvent extends GraphServiceCalendarView
             $client
         );
 
-        return new MSGraphServiceClient(
+        return new GraphServiceClient(
             tokenRequestContext: $tokenRequestContext,
             requestAdapter: $this->requestAdapter
         );
