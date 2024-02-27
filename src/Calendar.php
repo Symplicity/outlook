@@ -350,13 +350,14 @@ abstract class Calendar implements CalendarInterface
             if (JSON_ERROR_NONE === json_last_error()) {
                 try {
                     $parser = new JsonParseNode($data);
+                    $event = $parser->getObjectValue([Event::class, 'createFromDiscriminatorValue']);
                     $item = [
-                        'event' => $parser->getObjectValue([Event::class, 'createFromDiscriminatorValue']),
+                        'event' => $event,
                         'info' => [
                             'status' => $response->getStatusCode(),
                             'location' => $response->getHeaders()['Location'] ?? null,
                             'id' => $correlationId,
-                            'guid' => $correlationIds[$correlationId] ?? null
+                            'guid' => $correlationIds[$correlationId] ?? $event?->getId() ?? null
                         ]
                     ];
                     // @codeCoverageIgnoreStart
