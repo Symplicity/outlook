@@ -357,7 +357,7 @@ abstract class Calendar implements CalendarInterface
                             'status' => $response->getStatusCode(),
                             'location' => $response->getHeaders()['Location'] ?? null,
                             'id' => $correlationId,
-                            'guid' => $correlationIds[$correlationId] ?? $event->getId() ?? null
+                            'guid' => $correlationIds[$correlationId] ?? $event?->getId() ?? null
                         ]
                     ];
                     // @codeCoverageIgnoreStart
