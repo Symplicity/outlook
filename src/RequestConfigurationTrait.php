@@ -7,7 +7,6 @@ namespace Symplicity\Outlook;
 use GuzzleHttp\RequestOptions;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Microsoft\Graph\Core\Requests\BatchRequestBuilderPostRequestConfiguration;
-use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaRequestBuilderGetRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\EventsRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDeleteRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
@@ -16,6 +15,7 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatc
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetRequestConfiguration;
 use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
+use Symplicity\Outlook\Utilities\CalendarView\Delta\DeltaRequestBuilderGetRequestConfiguration;
 
 trait RequestConfigurationTrait
 {
@@ -115,6 +115,7 @@ trait RequestConfigurationTrait
         $queryParameters->orderby = $params->getOrderBy();
         $queryParameters->top = $params->getTop();
         $queryParameters->select = $params->getSelect();
+        $queryParameters->expand = $params->getExpand();
         $requestConfiguration->queryParameters = $queryParameters;
         $requestConfiguration->headers = array_merge(
             $this->getAuthorizationHeaders($this->token),

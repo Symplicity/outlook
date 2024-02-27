@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Symplicity\Outlook\Utilities\CalendarView;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\RequestOptions as GuzzleHttpOptions;
 use Microsoft\Graph\Core\Authentication\GraphPhpLeagueAuthenticationProvider;
 use Microsoft\Graph\Core\GraphClientFactory;
 use Microsoft\Graph\Core\NationalCloud;
 use Microsoft\Graph\GraphRequestAdapter;
-use Microsoft\Graph\GraphServiceClient as MSGraphServiceClient;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Symplicity\Outlook\AuthorizationContextTrait;
 use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
@@ -34,7 +34,7 @@ class GraphServiceCalendarView
     {
     }
 
-    public function client(CalendarViewParamsInterface $params): MSGraphServiceClient
+    public function client(CalendarViewParamsInterface $params): GraphServiceClient
     {
         $tokenRequestContext = $this->getClientCredentialContext();
 
@@ -60,7 +60,7 @@ class GraphServiceCalendarView
             $client
         );
 
-        return new MSGraphServiceClient(
+        return new GraphServiceClient(
             tokenRequestContext: $tokenRequestContext,
             requestAdapter: $this->requestAdapter
         );

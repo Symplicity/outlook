@@ -28,6 +28,11 @@ interface CalendarViewParamsInterface
      */
     public function getSelect(): ?array;
 
+    /**
+     * @return string[]|null
+     */
+    public function getExpand(): ?array;
+
     public function getDeltaToken(): ?string;
 
     /**
