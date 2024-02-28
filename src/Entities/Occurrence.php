@@ -38,6 +38,8 @@ class Occurrence implements ReaderEntityInterface
     /** @var array<Extension> */
     protected array $extensions = [];
 
+    private \Closure|Event|null $originalEvent = null;
+
     public function hydrate(?Event $event = null): ReaderEntityInterface
     {
         $this->setEventType($event?->getType());
@@ -56,7 +58,14 @@ class Occurrence implements ReaderEntityInterface
         ]);
 
         $this->setExtensions($event?->getExtensions() ?? []);
+        $this->originalEvent = fn() => $event;
         return $this;
+    }
+
+    public function getOriginalEvent(): Event
+    {
+        $originalEvent = $this->originalEvent?->bindTo($this); // @phpstan-ignore-line
+        return $originalEvent(); // @phpstan-ignore-line
     }
 
     public function getId(): ?string

@@ -54,4 +54,6 @@ interface ReaderEntityInterface
 
     /** @return array<Extension> | null */
     public function getExtensions(): ?array;
+
+    public function getOriginalEvent(): Event;
 }

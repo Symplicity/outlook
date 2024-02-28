@@ -54,6 +54,8 @@ class Reader implements ReaderEntityInterface
     /** @var array<Extension> $extensions */
     protected ?array $extensions = [];
 
+    private \Closure|Event|null $originalEvent = null;
+
     public function hydrate(?Event $event = null): ReaderEntityInterface
     {
         $this->setId($event?->getId());
@@ -79,6 +81,7 @@ class Reader implements ReaderEntityInterface
             'modified' => $event?->getLastModifiedDateTime()?->format(DateEntity::DEFAULT_DATETIME_FORMAT)
         ]);
 
+        $this->originalEvent = fn() => $event;
         return $this;
     }
 
@@ -178,6 +181,12 @@ class Reader implements ReaderEntityInterface
     public function getFreeBusyStatus(): ?FreeBusyStatus
     {
         return $this->freeBusy;
+    }
+
+    public function getOriginalEvent(): Event
+    {
+        $originalEvent = $this->originalEvent?->bindTo($this); // @phpstan-ignore-line
+        return $originalEvent(); // @phpstan-ignore-line
     }
 
     // Mark: Setters

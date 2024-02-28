@@ -57,6 +57,12 @@ class ReaderTest extends TestCase
         $this->assertEquals('foo@bar.com', $reader->getOrganizer()?->getEmailAddress()?->getAddress());
         $this->assertEquals('Outlook Test', $reader->getOrganizer()?->getEmailAddress()?->getName());
         $this->assertTrue(is_array($reader->toArray()));
+
+
+        $originalEvent = $reader->getOriginalEvent();
+        $this->assertInstanceOf(Event::class, $originalEvent);
+        $this->assertSame(FreeBusyStatus::BUSY, $originalEvent->getShowAs()->value());
+        $this->assertSame(EventType::SINGLE_INSTANCE, $originalEvent->getType()->value());
     }
 
     public function testHydrateRecurringInstance()

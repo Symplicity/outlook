@@ -7,6 +7,7 @@ namespace Symplicity\Outlook\Tests\Entities;
 use Generator;
 use Microsoft\Graph\Generated\Models\Event;
 use Microsoft\Graph\Generated\Models\EventType;
+use Microsoft\Graph\Generated\Models\FreeBusyStatus;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\Occurrence;
@@ -45,6 +46,10 @@ class OccurrenceTest extends TestCase
         $this->assertEmpty($occurrence->getRecurrence());
         $this->assertEmpty($occurrence->getOrganizer());
         $this->assertEquals(EventType::OCCURRENCE, $occurrence->getEventType()?->value());
+
+        $originalEvent = $occurrence->getOriginalEvent();
+        $this->assertInstanceOf(Event::class, $originalEvent);
+        $this->assertSame(EventType::OCCURRENCE, $originalEvent->getType()->value());
     }
 
     public static function getOccurrences(): Generator
