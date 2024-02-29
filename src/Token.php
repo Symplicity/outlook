@@ -29,6 +29,7 @@ class Token implements TokenInterface
     protected const OAUTH_TOKEN = 'token';
     protected const OAUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
     protected const OAUTH_USER_INFO_URL = 'https://graph.microsoft.com/oidc/userinfo';
+    protected const CALENDAR_READ_WRITE_SCOPE = 'https://graph.microsoft.com/calendars.readwrite';
 
     /** @var String[] $scopes */
     protected array $scopes = [
@@ -91,7 +92,7 @@ class Token implements TokenInterface
     {
         $tokenRequestContext = $this->getClientCredentialContext();
         $params = $tokenRequestContext->getRefreshTokenParams($refreshToken);
-
+        $params['scope'] ??= self::CALENDAR_READ_WRITE_SCOPE;
         $oauthProvider ??= ProviderFactory::create($tokenRequestContext);
         $response = $oauthProvider->getAccessToken('refresh_token', $params);
         $this->getCacheKey($response->getToken());
