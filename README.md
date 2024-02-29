@@ -12,6 +12,7 @@ $ composer require symplicity/outlook "^5.0"
 - [Starting](docs/calendar-usage.md)
 - [Token Handling](docs/token-usage.md)
 - [Events Handling](docs/event-usage.md)
+- [Migration](docs/migration.md)
 
 
 
