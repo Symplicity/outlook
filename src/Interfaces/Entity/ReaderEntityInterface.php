@@ -52,6 +52,8 @@ interface ReaderEntityInterface
 
     public function getFreeBusyStatus(): ?FreeBusyStatus;
 
+    public function isCancelled(): bool;
+
     /** @return array<Extension> | null */
     public function getExtensions(): ?array;
 
