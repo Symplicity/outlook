@@ -74,7 +74,7 @@ class Reader implements ReaderEntityInterface
         $this->setOrganizer($event?->getOrganizer());
         $this->setSeriesMasterId($event?->getSeriesMasterId());
         $this->setFreeBusy($event?->getShowAs());
-        $this->setCancelled($event?->getIsCancelled());
+        $this->setCancelled($event?->getIsCancelled() ?? false);
         $this->setExtensions($event?->getExtensions());
         $this->setRecurrence($event);
         $this->setDate([
