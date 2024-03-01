@@ -51,6 +51,8 @@ class Reader implements ReaderEntityInterface
 
     protected ?FreeBusyStatus $freeBusy;
 
+    protected bool $cancelled = false;
+
     /** @var array<Extension> $extensions */
     protected ?array $extensions = [];
 
@@ -72,6 +74,7 @@ class Reader implements ReaderEntityInterface
         $this->setOrganizer($event?->getOrganizer());
         $this->setSeriesMasterId($event?->getSeriesMasterId());
         $this->setFreeBusy($event?->getShowAs());
+        $this->setCancelled($event?->getIsCancelled() ?? false);
         $this->setExtensions($event?->getExtensions());
         $this->setRecurrence($event);
         $this->setDate([
@@ -183,6 +186,11 @@ class Reader implements ReaderEntityInterface
         return $this->freeBusy;
     }
 
+    public function isCancelled(): bool
+    {
+        return $this->cancelled;
+    }
+
     public function getOriginalEvent(): Event
     {
         $originalEvent = $this->originalEvent?->bindTo($this); // @phpstan-ignore-line
@@ -272,6 +280,11 @@ class Reader implements ReaderEntityInterface
     public function setFreeBusy(?FreeBusyStatus $freeBusy): void
     {
         $this->freeBusy = $freeBusy;
+    }
+
+    public function setCancelled(bool $cancelled): void
+    {
+        $this->cancelled = $cancelled;
     }
 
     /** @param Extension[] $extensions */

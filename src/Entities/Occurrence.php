@@ -37,6 +37,8 @@ class Occurrence implements ReaderEntityInterface
 
     /** @var array<Extension> */
     protected array $extensions = [];
+    
+    protected bool $cancelled = false;
 
     private \Closure|Event|null $originalEvent = null;
 
@@ -56,7 +58,7 @@ class Occurrence implements ReaderEntityInterface
             'end' => $event?->getEnd()?->getDateTime(),
             'timezone' => $event?->getOriginalStartTimeZone(),
         ]);
-
+        $this->setCancelled($event?->getIsCancelled() ?? false);
         $this->setExtensions($event?->getExtensions() ?? []);
         $this->originalEvent = fn() => $event;
         return $this;
@@ -154,6 +156,11 @@ class Occurrence implements ReaderEntityInterface
         return $this->extensions;
     }
 
+    public function isCancelled(): bool
+    {
+        return $this->cancelled;
+    }
+
     public function setSeriesMasterId(?string $seriesMasterId): void
     {
         $this->seriesMasterId = $seriesMasterId;
@@ -204,5 +211,10 @@ class Occurrence implements ReaderEntityInterface
     private function setAllDay(bool $allDay): void
     {
         $this->allDay = $allDay;
+    }
+
+    public function setCancelled(bool $cancelled): void
+    {
+        $this->cancelled = $cancelled;
     }
 }
