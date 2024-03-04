@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Notification;
 
+use Closure;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Psr\Log\LoggerInterface;
 use Symplicity\Outlook\Entities\NotificationReaderEntity;
@@ -24,7 +25,7 @@ abstract class Receiver implements ReceiverInterface
         return $this;
     }
 
-    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = [], array $args = []): void
+    public function exec(CalendarInterface $calendar, LoggerInterface $logger, array $params = [], array $args = [], ?Closure $beforeReturn = null): void
     {
         foreach ($this->entities as $notificationEntity) {
             try {
@@ -37,7 +38,7 @@ abstract class Receiver implements ReceiverInterface
                 }
 
                 $queryParameters = $this->getEventQueryParameters($params);
-                $outlookEntity = $calendar->getEventBy($id, $queryParameters, args: $args);
+                $outlookEntity = $calendar->getEventBy($id, $queryParameters, beforeReturn: $beforeReturn, args: $args);
                 $args = ['token' => $params['token'] ?? []];
                 $this->didWrite($calendar, $logger, $outlookEntity, $notificationEntity, $args);
             } catch (\Exception $e) {
