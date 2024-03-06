@@ -14,6 +14,7 @@ use Microsoft\Graph\Core\Requests\BatchRequestItem;
 use Microsoft\Graph\Core\Requests\BatchResponseContent;
 use Microsoft\Graph\Core\Requests\BatchResponseItem;
 use Microsoft\Graph\Generated\Models\Event as GraphEvent;
+use Microsoft\Graph\Generated\Models\EventCollectionResponse;
 use Microsoft\Graph\Generated\Models\EventType;
 use Microsoft\Graph\Generated\Models\ODataErrors\MainError;
 use Microsoft\Graph\Generated\Models\ODataErrors\ODataError;
@@ -173,21 +174,7 @@ abstract class Calendar implements CalendarInterface
     public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void
     {
         try {
-            $this->logger?->info('Getting instances of recurring event ...', [
-                'id' => $id
-            ]);
-
-            $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
-
-            $events = $this->graphService
-                ->client($args)
-                ->me()
-                ->events()
-                ->byEventId($id)
-                ->instances()
-                ->get($requestConfiguration)
-                ->wait();
-
+            $events = $this->getInstancesCollection($id, $params, $args);
             foreach ($events?->getValue() ?? [] as $event) {
                 if (null === $event) {
                     continue;
@@ -211,6 +198,28 @@ abstract class Calendar implements CalendarInterface
         } catch (\Exception $e) {
             $this->convertToReadableError($e);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     * @throws ReadError|\Throwable
+     */
+    public function getInstancesCollection(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): ?EventCollectionResponse
+    {
+        $this->logger?->info('Getting instances of recurring event ...', [
+            'id' => $id
+        ]);
+
+        $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
+
+        return $this->graphService
+            ->client($args)
+            ->me()
+            ->events()
+            ->byEventId($id)
+            ->instances()
+            ->get($requestConfiguration)
+            ->wait();
     }
 
     // MARK: Event writes

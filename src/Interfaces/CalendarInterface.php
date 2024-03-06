@@ -6,6 +6,7 @@ namespace Symplicity\Outlook\Interfaces;
 
 use Closure;
 use Generator;
+use Microsoft\Graph\Generated\Models\EventCollectionResponse;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Symplicity\Outlook\Exception\ReadError;
@@ -59,6 +60,15 @@ interface CalendarInterface
      * @param array<string, mixed> $args
      */
     public function getEventInstances(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): void;
+
+    /**
+     * Method to get all instances of a series master as a collection response
+     * @param string $id
+     * @param InstancesRequestBuilderGetQueryParameters|null $params
+     * @param array<string, mixed> $args
+     * @return EventCollectionResponse|null
+     */
+    public function getInstancesCollection(string $id, ?InstancesRequestBuilderGetQueryParameters $params = null, array $args = []): ?EventCollectionResponse;
 
     /**
      * Individual push event handler method, use this if you dont want to use sync
