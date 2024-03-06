@@ -1,3 +1,20 @@
+[5.0.0-rc4]
+
+- Add new method `getInstancesCollection` to get instances of a series master in collection format.
+
+[5.0.0-rc3]
+
+- Restrict kiota-authentication-phpleague to 1.0.*
+
+[5.0.0-rc2]
+
+- Restrict graph-core to 2.0.*
+- Restrict graph-sdk to 2.2.*
+
+[5.0.0-rc1]
+
+- Graph API release candidate
+
 [5.0.0-alpha]
 
 ### Calendar changes
