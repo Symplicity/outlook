@@ -1,3 +1,8 @@
+[5.0.0-rc5]
+
+- Allow header & options in `getInstancesViewRequestConfiguration`
+- Replace original timezone to startDate timezone in occurrence date method
+
 [5.0.0-rc4]
 
 - Add new method `getInstancesCollection` to get instances of a series master in collection format.

@@ -56,7 +56,7 @@ class Occurrence implements ReaderEntityInterface
         $this->setDate([
             'start' => $event?->getStart()?->getDateTime(),
             'end' => $event?->getEnd()?->getDateTime(),
-            'timezone' => $event?->getStart()->getTimeZone(),
+            'timezone' => $event?->getStart()?->getTimeZone(),
         ]);
         $this->setCancelled($event?->getIsCancelled() ?? false);
         $this->setExtensions($event?->getExtensions() ?? []);
