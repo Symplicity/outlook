@@ -210,7 +210,11 @@ abstract class Calendar implements CalendarInterface
             'id' => $id
         ]);
 
-        $requestConfiguration = $this->getInstancesViewRequestConfiguration($params);
+        $requestConfiguration = $this->getInstancesViewRequestConfiguration(
+            $params,
+            headers: $args['headers'] ?? [],
+            options: $args['options'] ?? []
+        );
 
         return $this->graphService
             ->client($args)

@@ -37,7 +37,7 @@ class Occurrence implements ReaderEntityInterface
 
     /** @var array<Extension> */
     protected array $extensions = [];
-    
+
     protected bool $cancelled = false;
 
     private \Closure|Event|null $originalEvent = null;
@@ -56,7 +56,7 @@ class Occurrence implements ReaderEntityInterface
         $this->setDate([
             'start' => $event?->getStart()?->getDateTime(),
             'end' => $event?->getEnd()?->getDateTime(),
-            'timezone' => $event?->getOriginalStartTimeZone(),
+            'timezone' => $event?->getStart()->getTimeZone(),
         ]);
         $this->setCancelled($event?->getIsCancelled() ?? false);
         $this->setExtensions($event?->getExtensions() ?? []);
