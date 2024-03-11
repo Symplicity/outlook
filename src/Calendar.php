@@ -236,6 +236,12 @@ abstract class Calendar implements CalendarInterface
      */
     public function push(array $params = [], array $args = []): void
     {
+        $eventsToWrite = $this->getLocalEvents();
+        $this->batchPush($eventsToWrite, $params, $args);
+    }
+
+    protected function batchPush(array $eventsToWrite, array $params = [], array $args = []): void
+    {
         $this->logger?->info('Pushing batch events to outlook ...', [
             'params' => http_build_query($params)
         ]);
@@ -246,7 +252,6 @@ abstract class Calendar implements CalendarInterface
 
         $batchRequestConfiguration = $this->getEventPostBatchRequestConfiguration();
 
-        $eventsToWrite = $this->getLocalEvents();
         $chunks = array_chunk($eventsToWrite, static::BATCH_BY);
 
         foreach ($chunks as $chunk) {
