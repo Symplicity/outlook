@@ -240,6 +240,13 @@ abstract class Calendar implements CalendarInterface
         $this->batchPush($eventsToWrite, $params, $args);
     }
 
+ /**
+     * @param Event[] $eventsToWrite
+     * @param array<string, string> $params
+     * @param array<string, mixed> $args
+     * @throws \JsonException
+     * @throws \Exception|\Throwable
+     */
     protected function batchPush(array $eventsToWrite, array $params = [], array $args = []): void
     {
         $this->logger?->info('Pushing batch events to outlook ...', [
