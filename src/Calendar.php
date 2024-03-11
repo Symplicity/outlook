@@ -240,7 +240,7 @@ abstract class Calendar implements CalendarInterface
         $this->batchPush($eventsToWrite, $params, $args);
     }
 
- /**
+     /**
      * @param Event[] $eventsToWrite
      * @param array<string, string> $params
      * @param array<string, mixed> $args
