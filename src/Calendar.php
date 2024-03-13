@@ -112,7 +112,8 @@ abstract class Calendar implements CalendarInterface
                 $events,
                 $requestAdapter,
                 $requestConfiguration,
-                $deltaLinkStore
+                $deltaLinkStore,
+                $args
             );
 
             $this->logger?->info('All events received...', [
@@ -236,7 +237,7 @@ abstract class Calendar implements CalendarInterface
      */
     public function push(array $params = [], array $args = []): void
     {
-        $eventsToWrite = $this->getLocalEvents();
+        $eventsToWrite = $this->getLocalEvents($params);
         $this->batchPush($eventsToWrite, $params, $args);
     }
 
@@ -469,7 +470,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws \Exception
      */
-    protected function iterateThrough(DeltaGetResponse $events, RequestAdapter $requestAdapter, DeltaRequestBuilderGetRequestConfiguration $requestConfiguration, ?Closure $deltaLinkStore = null): void
+    protected function iterateThrough(DeltaGetResponse $events, RequestAdapter $requestAdapter, DeltaRequestBuilderGetRequestConfiguration $requestConfiguration, ?Closure $deltaLinkStore = null, array $args = []): void
     {
         $iterator = new PageIterator(
             $events,
@@ -478,7 +479,7 @@ abstract class Calendar implements CalendarInterface
 
         $iterator->setHeaders($requestConfiguration->headers);
 
-        $iterator->iterate(function (?GraphEvent $event) {
+        $iterator->iterate(function (?GraphEvent $event) use ($args) {
             if (null === $event) {
                 return true;
             }
@@ -497,7 +498,7 @@ abstract class Calendar implements CalendarInterface
                 return true;
             }
 
-            $this->saveEventLocal($this->getEntity($event));
+            $this->saveEventLocal($this->getEntity($event), $args);
 
             $this->logger?->info('Completed event processing', [
                 'event_id' => $event->getId(),
