@@ -14,6 +14,7 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
 use Microsoft\Graph\Generated\Models\DateTimeTimeZone;
 use Microsoft\Graph\Generated\Models\Event as MsEvent;
+use Microsoft\Graph\Generated\Models\OpenTypeExtension;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -241,6 +242,29 @@ class CalendarTest extends TestCase
         $client = self::getClientWithTransactionHandler($container, $mock);
 
         $this->stub->push(args: ['client' => $client]);
+    }
+
+    public function testPatchExtension()
+    {
+        $jsonBody = '{"@odata.context":"https://graph.microsoft.com/v1.0/$metadata#users(\'foo\')/events(\'abc==\')/extensions/$entity","@odata.type":"#microsoft.graph.openTypeExtension","id":"Microsoft.OutlookServices.OpenTypeExtension.foo.bar","extensionName":"foo.bar","internalId":"123"}';
+
+        $stream = Utils::streamFor($jsonBody);
+
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], $stream),
+        ]);
+
+        $container = [];
+        $client = self::getClientWithTransactionHandler($container, $mock);
+
+        $extension = new OpenTypeExtension();
+        $extension->setExtensionName('foo.bar');
+        $extension->setAdditionalData([
+            'id' => 'foo'
+        ]);
+
+        $actual = $this->stub->patchExtensionForEvent('abc==', $extension, ['client' => $client]);
+        $this->assertTrue($actual);
     }
 
     protected function getEvents(): array
