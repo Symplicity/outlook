@@ -92,7 +92,7 @@ class Token implements TokenInterface
     {
         $tokenRequestContext = $this->getClientCredentialContext();
         $params = $tokenRequestContext->getRefreshTokenParams($refreshToken);
-        $params['scope'] ??= self::CALENDAR_READ_WRITE_SCOPE;
+        $params['scope'] ??= implode(' ', $this->scopes);
         $oauthProvider ??= ProviderFactory::create($tokenRequestContext);
         $response = $oauthProvider->getAccessToken('refresh_token', $params);
         $this->getCacheKey($response->getToken());

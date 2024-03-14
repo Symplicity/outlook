@@ -12,15 +12,18 @@ class MigrationService
     {
         $migrate = false;
         [, $payload,] = \explode('.', $accessToken);
-        $payloadString = \base64_decode($payload);
-        if ($payloadString) {
-            $tokenArray = \json_decode($payloadString, true);
-            if (json_last_error() === \JSON_ERROR_NONE
-                && isset($tokenArray['aud'])
-                && $tokenArray['aud'] !== static::VALID_AUDIENCE_ENDPOINT) {
-                $migrate = true;
+        if (\is_string($payload)) {
+            $payloadString = \base64_decode($payload);
+            if ($payloadString) {
+                $tokenArray = \json_decode($payloadString, true);
+                if (json_last_error() === \JSON_ERROR_NONE
+                    && isset($tokenArray['aud'])
+                    && $tokenArray['aud'] !== static::VALID_AUDIENCE_ENDPOINT) {
+                    $migrate = true;
+                }
             }
         }
+
         return $migrate;
     }
 }
