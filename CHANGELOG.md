@@ -1,3 +1,11 @@
+[5.0.0-rc7]
+
+- Update scopes when migrating from outlook v1 rest apis to graph ([4cdb0e1](https://github.com/Symplicity/outlook/commit/4cdb0e19eb36f9787fed64caf0b204f113f2c694))
+
+[5.0.0-rc6]
+
+- Factor out batchPush vs push ([f157b49](https://github.com/Symplicity/outlook/commit/f157b49a161e55688379b8bac1a88dc5ff7bac1b))
+
 [5.0.0-rc5]
 
 - Allow header & options in `getInstancesViewRequestConfiguration`
