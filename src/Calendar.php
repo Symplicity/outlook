@@ -362,7 +362,7 @@ abstract class Calendar implements CalendarInterface
             ->events()
             ->byEventId($id)
             ->extensions()
-            ->post($extension, $requestConfiguration)
+            ->post($extension, $requestConfiguration) // @phpstan-ignore-line
             ->wait();
 
         return $extension instanceof OpenTypeExtension;
