@@ -18,11 +18,13 @@ use Microsoft\Graph\Generated\Models\EventCollectionResponse;
 use Microsoft\Graph\Generated\Models\EventType;
 use Microsoft\Graph\Generated\Models\ODataErrors\MainError;
 use Microsoft\Graph\Generated\Models\ODataErrors\ODataError;
+use Microsoft\Graph\Generated\Models\OpenTypeExtension;
 use Microsoft\Graph\Generated\Users\Item\CalendarView\Delta\DeltaGetResponse;
 use Microsoft\Graph\Generated\Users\Item\Events\EventsRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDeleteRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\Extensions\ExtensionsRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
@@ -334,6 +336,36 @@ abstract class Calendar implements CalendarInterface
             ->byEventId($id)
             ->delete($requestConfiguration)
             ->wait();
+    }
+
+    /**
+     * @param OpenTypeExtension $extension
+     * @param string $id
+     * @param array<string, mixed> $args
+     * @return bool
+     * @throws \Exception
+     */
+    public function patchExtensionForEvent(string $id, OpenTypeExtension $extension, array $args = []): bool
+    {
+        $headers = $args['headers'] ?? [];
+        $options = $args['options'] ?? [];
+        $requestConfiguration = new ExtensionsRequestBuilderPostRequestConfiguration($headers, $options);
+        $requestConfiguration = $this->generateRequestConfiguration(
+            $requestConfiguration,
+            $headers,
+            $options
+        );
+
+        $extension = $this->graphService
+            ->client($args)
+            ->me()
+            ->events()
+            ->byEventId($id)
+            ->extensions()
+            ->post($extension, $requestConfiguration) // @phpstan-ignore-line
+            ->wait();
+
+        return $extension instanceof OpenTypeExtension;
     }
 
     /**

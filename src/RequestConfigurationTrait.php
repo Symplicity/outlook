@@ -12,6 +12,7 @@ use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDele
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\Extensions\ExtensionsRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetRequestConfiguration;
 use Symplicity\Outlook\Interfaces\Utilities\CalendarView\CalendarViewParamsInterface;
@@ -130,7 +131,7 @@ trait RequestConfigurationTrait
      * @param array<string, string> $headers
      * @param RequestOptions[] | null $options
      */
-    private function generateRequestConfiguration(InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration $configuration, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration
+    private function generateRequestConfiguration(InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration | ExtensionsRequestBuilderPostRequestConfiguration $configuration, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration | ExtensionsRequestBuilderPostRequestConfiguration
     {
         $configuration->headers = array_merge(
             $headers,
