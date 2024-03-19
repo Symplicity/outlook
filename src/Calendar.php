@@ -554,7 +554,7 @@ abstract class Calendar implements CalendarInterface
     /**
      * @throws ReadError
      */
-    private function convertToReadableError(\Exception $e): never
+    protected function convertToReadableError(\Exception $e): never
     {
         $message = null;
         if ($e instanceof ODataError) {
