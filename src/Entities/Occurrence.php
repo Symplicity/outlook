@@ -166,6 +166,12 @@ class Occurrence implements ReaderEntityInterface
         $this->seriesMasterId = $seriesMasterId;
     }
 
+    /** @param Extension[] $extensions */
+    public function setExtensions(array $extensions = []): void
+    {
+        $this->extensions = $extensions;
+    }
+
     private function setEventType(?EventType $type): void
     {
         $this->eventType = $type;
@@ -200,12 +206,6 @@ class Occurrence implements ReaderEntityInterface
     protected function setDescription(?string $description): void
     {
         $this->description = $description;
-    }
-
-    /** @param Extension[] $extensions */
-    private function setExtensions(array $extensions = []): void
-    {
-        $this->extensions = $extensions;
     }
 
     private function setAllDay(bool $allDay): void

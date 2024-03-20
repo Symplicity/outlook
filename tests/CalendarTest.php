@@ -267,6 +267,25 @@ class CalendarTest extends TestCase
         $this->assertTrue($actual);
     }
 
+    public function testGetExtensionBy()
+    {
+        $jsonBody = '{"@odata.context":"https://graph.microsoft.com/v1.0/$metadata#users(\'foo_bar\')/events(\'abc==\')/extensions/$entity","@odata.type":"#microsoft.graph.openTypeExtension","id":"Microsoft.OutlookServices.OpenTypeExtension.symplicity.test","extensionName":"symplicity.test","id":"123","series_master":true}';
+
+        $stream = Utils::streamFor($jsonBody);
+
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], $stream),
+        ]);
+
+        $container = [];
+        $client = self::getClientWithTransactionHandler($container, $mock);
+
+        $extension = $this->stub->getExtensionBy('symplicity.test', 'abc==', args: ['client' => $client]);
+        $this->assertInstanceOf(OpenTypeExtension::class, $extension);
+        $this->assertTrue($extension->getAdditionalData()['series_master']);
+        $this->assertSame('123', $extension->getId());
+    }
+
     protected function getEvents(): array
     {
         return [

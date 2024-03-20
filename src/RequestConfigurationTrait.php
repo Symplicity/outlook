@@ -131,7 +131,7 @@ trait RequestConfigurationTrait
      * @param array<string, string> $headers
      * @param RequestOptions[] | null $options
      */
-    private function generateRequestConfiguration(InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration | ExtensionsRequestBuilderPostRequestConfiguration $configuration, array $headers = [], array $options = []): InstancesRequestBuilderGetRequestConfiguration | EventsRequestBuilderPostRequestConfiguration | EventItemRequestBuilderPatchRequestConfiguration | BatchRequestBuilderPostRequestConfiguration | EventItemRequestBuilderDeleteRequestConfiguration | ExtensionsRequestBuilderPostRequestConfiguration
+    private function generateRequestConfiguration(mixed $configuration, array $headers = [], array $options = []): mixed
     {
         $configuration->headers = array_merge(
             $headers,

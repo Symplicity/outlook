@@ -24,6 +24,7 @@ use Microsoft\Graph\Generated\Users\Item\Events\EventsRequestBuilderPostRequestC
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderDeleteRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderPatchRequestConfiguration;
+use Microsoft\Graph\Generated\Users\Item\Events\Item\Extensions\Item\ExtensionItemRequestBuilderGetRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Extensions\ExtensionsRequestBuilderPostRequestConfiguration;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\Instances\InstancesRequestBuilderGetQueryParameters;
 use Microsoft\Kiota\Abstractions\RequestAdapter;
@@ -347,25 +348,65 @@ abstract class Calendar implements CalendarInterface
      */
     public function patchExtensionForEvent(string $id, OpenTypeExtension $extension, array $args = []): bool
     {
+        try {
+            $headers = $args['headers'] ?? [];
+            $options = $args['options'] ?? [];
+            $requestConfiguration = new ExtensionsRequestBuilderPostRequestConfiguration($headers, $options);
+            $requestConfiguration = $this->generateRequestConfiguration(
+                $requestConfiguration,
+                $headers,
+                $options
+            );
+
+            $extension = $this->graphService
+                ->client($args)
+                ->me()
+                ->events()
+                ->byEventId($id)
+                ->extensions()
+                ->post($extension, $requestConfiguration)
+                ->wait();
+
+            return $extension instanceof OpenTypeExtension;
+        } catch (\Exception $e) {
+            $this->convertToReadableError($e);
+        }
+    }
+
+    /**
+     * @param string $extensionId
+     * @param string $eventId
+     * @param ExtensionItemRequestBuilderGetRequestConfiguration|null $requestBuilder
+     * @param array<string, mixed> $args
+     * @return OpenTypeExtension|null
+     * @throws ReadError
+     */
+    public function getExtensionBy(string $extensionId, string $eventId, ?ExtensionItemRequestBuilderGetRequestConfiguration $requestBuilder = null, array $args = []): ?OpenTypeExtension
+    {
         $headers = $args['headers'] ?? [];
         $options = $args['options'] ?? [];
-        $requestConfiguration = new ExtensionsRequestBuilderPostRequestConfiguration($headers, $options);
+        $requestBuilder ??= new ExtensionItemRequestBuilderGetRequestConfiguration();
         $requestConfiguration = $this->generateRequestConfiguration(
-            $requestConfiguration,
+            $requestBuilder,
             $headers,
             $options
         );
 
-        $extension = $this->graphService
-            ->client($args)
-            ->me()
-            ->events()
-            ->byEventId($id)
-            ->extensions()
-            ->post($extension, $requestConfiguration) // @phpstan-ignore-line
-            ->wait();
+        try {
+            $extension = $this->graphService
+                ->client($args)
+                ->me()
+                ->events()
+                ->byEventId($eventId)
+                ->extensions()
+                ->byExtensionId($extensionId)
+                ->get($requestConfiguration)
+                ->wait();
 
-        return $extension instanceof OpenTypeExtension;
+            return $extension instanceof OpenTypeExtension ? $extension : null;
+        } catch (\Exception $e) {
+            $this->convertToReadableError($e);
+        }
     }
 
     /**

@@ -288,7 +288,7 @@ class Reader implements ReaderEntityInterface
     }
 
     /** @param Extension[] $extensions */
-    protected function setExtensions(?array $extensions = []): ReaderEntityInterface
+    public function setExtensions(?array $extensions = []): ReaderEntityInterface
     {
         $this->extensions = $extensions;
         return $this;
