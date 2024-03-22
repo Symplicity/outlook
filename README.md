@@ -2,9 +2,7 @@
 
 ### Status
 [![Latest Stable Version](https://poser.pugx.org/symplicity/outlook/v/stable)](https://packagist.org/packages/symplicity/outlook)
-
 [![License](https://poser.pugx.org/symplicity/outlook/license)](https://packagist.org/packages/symplicity/outlook)
-
 [![CI Status](https://github.com/symplicity/outlook/actions/workflows/ci.yml/badge.svg)](https://github.com/Symplicity/outlook/actions)
 
 ## Installation
