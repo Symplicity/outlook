@@ -1,3 +1,7 @@
+[5.0.0]
+
+[Changes](https://github.com/Symplicity/outlook/releases/tag/5.0.0)
+
 [5.0.0-rc7]
 
 - Update scopes when migrating from outlook v1 rest apis to graph ([4cdb0e1](https://github.com/Symplicity/outlook/commit/4cdb0e19eb36f9787fed64caf0b204f113f2c694))
