@@ -81,6 +81,9 @@ class Subscription implements SubscriptionInterface
         }
     }
 
+    /**
+     * @param array<string, mixed> $args
+     */
     public function delete(string $subscriptionId, array $args = []): void
     {
         try {
