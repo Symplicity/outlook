@@ -54,12 +54,12 @@ jobs:
 
       - name: Tests
         run: |
-          mkdir -p ./coverage/
-          vendor/bin/phpunit --coverage-clover ./coverage/clover.xml
+          mkdir -p ./build/logs
+          vendor/bin/phpunit --coverage-clover ./build/logs/clover.xml
 
       - name: Verify coverage file is created
         run: |
-          if [ ! -f ./coverage/clover.xml ]; then
+          if [ ! -f ./build/logs/clover.xml ]; then
             echo "clover.xml file was not created"
             exit 1
           fi
@@ -69,5 +69,5 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           composer global require php-coveralls/php-coveralls
-          php-coveralls --coverage_clover=./coverage/clover.xml -v
+          php-coveralls --coverage_clover=./build/logs/clover.xml -v
 
