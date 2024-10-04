@@ -6,36 +6,6 @@
 
 [Changes](https://github.com/Symplicity/outlook/releases/tag/5.0.0)
 
-[5.0.0-rc7]
-
-- Update scopes when migrating from outlook v1 rest apis to graph ([4cdb0e1](https://github.com/Symplicity/outlook/commit/4cdb0e19eb36f9787fed64caf0b204f113f2c694))
-
-[5.0.0-rc6]
-
-- Factor out batchPush vs push ([f157b49](https://github.com/Symplicity/outlook/commit/f157b49a161e55688379b8bac1a88dc5ff7bac1b))
-
-[5.0.0-rc5]
-
-- Allow header & options in `getInstancesViewRequestConfiguration`
-- Replace original timezone to startDate timezone in occurrence date method
-
-[5.0.0-rc4]
-
-- Add new method `getInstancesCollection` to get instances of a series master in collection format.
-
-[5.0.0-rc3]
-
-- Restrict kiota-authentication-phpleague to 1.0.*
-
-[5.0.0-rc2]
-
-- Restrict graph-core to 2.0.*
-- Restrict graph-sdk to 2.2.*
-
-[5.0.0-rc1]
-
-- Graph API release candidate
-
 [5.0.0-alpha]
 
 ### Calendar changes
