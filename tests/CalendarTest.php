@@ -147,7 +147,7 @@ class CalendarTest extends TestCase
         $contents = $request->getBody()->getContents();
         $this->assertJsonStringEqualsJsonString('{"@odata.type":"#microsoft.graph.event","end":{"dateTime":"2023-12-05 14:00:00","timeZone":"Eastern Standard Time"},"start":{"dateTime":"2023-12-05 13:00:00","timeZone":"Eastern Standard Time"},"subject":"test"}', $contents);
 
-        $this->expectException(RequestException::class);
+        $this->expectException(ReadError::class);
         $this->stub->upsert($event, ['client' => $client]);
     }
 

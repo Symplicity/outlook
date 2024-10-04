@@ -308,17 +308,22 @@ abstract class Calendar implements CalendarInterface
      */
     public function upsert(Event $event, array $args = []): ?GraphEvent
     {
-        $postRequestConfiguration = $this->getEventPostRequestConfiguration();
-        $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
-
-        $eventUpsertRequest = $this->prepareUpsertAsync(
-            $event,
-            $postRequestConfiguration,
-            $patchRequestConfiguration,
-            $args
-        );
-
-        return $eventUpsertRequest->wait();
+        try {
+            $postRequestConfiguration = $this->getEventPostRequestConfiguration();
+            $patchRequestConfiguration = $this->getEventPatchRequestConfiguration();
+    
+            $eventUpsertRequest = $this->prepareUpsertAsync(
+                $event,
+                $postRequestConfiguration,
+                $patchRequestConfiguration,
+                $args
+            );
+            
+            $response = $eventUpsertRequest->wait();
+            return $response;
+        } catch (\Exception $e) {
+            $this->convertToReadableError($e);
+        }
     }
 
     /**
