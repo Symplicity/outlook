@@ -1,3 +1,7 @@
+[5.0.1]
+
+- Update upsert function to throw an Exception in case of any errors during the request
+
 [5.0.0]
 
 [Changes](https://github.com/Symplicity/outlook/releases/tag/5.0.0)
