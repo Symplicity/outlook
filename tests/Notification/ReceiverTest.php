@@ -72,6 +72,7 @@ class ReceiverTest extends TestCase
         $this->assertSame('#Microsoft.Graph.Event', $entity->getODataType());
         $this->assertSame('2023-12-10T18:23:45+00:00', $entity->getSubscriptionExpirationDateTime());
         $this->assertSame('tenant_id_1', $entity->getTenantId());
+        $this->assertSame(ChangeType::UPDATED->value, $entity->getChangeTypeReceivedString());
 
         $this->receiverStub->hydrate([$entity]);
         $this->receiverStub->exec(
@@ -119,6 +120,25 @@ class ReceiverTest extends TestCase
         $this->assertTrue($entity->has('subscriptionId'));
         $this->assertFalse($entity->has('test'));
         $this->assertEquals(ChangeType::UPDATED, $entity->getChangeType());
+    }
+
+    public function testChangeTypeString(): void
+    {
+        $entity = new NotificationReaderEntity();
+        $entity->setResource('test.com')
+            ->setId('123')
+            ->setChangeType(ChangeType::CREATED->value)
+            ->setSubscriptionId('ABC==');
+
+        $this->assertEquals(ChangeType::CREATED->value, $entity->getChangeTypeReceivedString());
+
+        $entity->setChangeType('Changed');
+        $this->assertEquals('Changed', $entity->getChangeTypeReceivedString());
+        $this->assertEquals(ChangeType::UNKNOWN, $entity->getChangeType());
+
+        $entity->setChangeType();
+        $this->assertEquals(null, $entity->getChangeTypeReceivedString());
+        $this->assertEquals(ChangeType::UNKNOWN, $entity->getChangeType());
     }
 
     protected function getOData(): array

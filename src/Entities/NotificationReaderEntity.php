@@ -19,6 +19,8 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
     protected ?string $id = null;
     protected ?string $tenantId = null;
 
+    protected ?string $changeTypeString = null;
+
     /** @param array<string, mixed> $data */
     public function __construct(array $data = [])
     {
@@ -61,6 +63,7 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
 
     public function setChangeType(?string $changeType = null): NotificationReaderEntityInterface
     {
+        $this->setChangeTypeReceivedString($changeType);
         $this->changeType = ChangeType::UNKNOWN;
         if (isset($changeType) && ($value = ChangeType::tryFrom($changeType))) {
             $this->changeType = $value;
@@ -125,5 +128,16 @@ class NotificationReaderEntity implements \JsonSerializable, NotificationReaderE
     public function getTenantId(): ?string
     {
         return $this->tenantId;
+    }
+
+    // MARK: Logging purpose only
+    public function getChangeTypeReceivedString(): ?string
+    {
+        return $this->changeTypeString;
+    }
+
+    protected function setChangeTypeReceivedString(?string $changeType = null): void
+    {
+        $this->changeTypeString = $changeType;
     }
 }
