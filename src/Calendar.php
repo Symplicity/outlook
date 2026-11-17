@@ -425,14 +425,25 @@ abstract class Calendar implements CalendarInterface
                     yield $this->createFromDiscriminatorValue($response, $correlationIds);
                 } else {
                     $correlationId = $response->getId();
+                    $info = [
+                        'status' => $response->getStatusCode(),
+                        'location' => $response->getHeaders()['Location'] ?? null,
+                        'id' => $correlationId,
+                        'guid' => $correlationIds[$correlationId] ?? null
+                    ];
+                    // For 409s keep the headers (incl. request-id) and Graph's error body; id and status are already in $info.
+                    if ($response->getStatusCode() === 409) {
+                        $rawBody = $response->getBody()?->getContents();
+                        $body = $rawBody ? (json_decode($rawBody, true) ?? $rawBody) : null;
+                        $info['error'] = is_array($body) ? ($body['error']['message'] ?? null) : $body;
+                        $info['item'] = [
+                            'headers' => $response->getHeaders(),
+                            'body' => $body,
+                        ];
+                    }
                     yield [
                         'event' => null,
-                        'info' => [
-                            'status' => $response->getStatusCode(),
-                            'location' => $response->getHeaders()['Location'] ?? null,
-                            'id' => $correlationId,
-                            'guid' => $correlationIds[$correlationId] ?? null
-                        ]
+                        'info' => $info
                     ];
                 }
             }

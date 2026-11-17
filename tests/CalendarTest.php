@@ -16,6 +16,8 @@ use Microsoft\Graph\Generated\Models\DateTimeTimeZone;
 use Microsoft\Graph\Generated\Models\Event as MsEvent;
 use Microsoft\Graph\Generated\Models\OpenTypeExtension;
 use Microsoft\Graph\Generated\Users\Item\Events\Item\EventItemRequestBuilderGetQueryParameters;
+use Microsoft\Graph\Core\Requests\BatchResponseContent;
+use Microsoft\Graph\Core\Requests\BatchResponseItem;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -284,6 +286,80 @@ class CalendarTest extends TestCase
         $this->assertInstanceOf(OpenTypeExtension::class, $extension);
         $this->assertTrue($extension->getAdditionalData()['series_master']);
         $this->assertSame('123', $extension->getId());
+    }
+
+    public function testPrepareBatchResponseKeepsErrorDetailsOn409()
+    {
+        $body = '{"error":{"code":"ErrorItemNotFound","message":"conflict"}}';
+        $item = $this->getBatchResponseItem('abc', 409, ['request-id' => 'req-1'], $body);
+
+        $results = $this->prepareBatchResponse([$item], ['abc' => 'guid-1']);
+
+        $this->assertCount(1, $results);
+        $this->assertNull($results[0]['event']);
+        $info = $results[0]['info'];
+        $this->assertSame(409, $info['status']);
+        $this->assertSame('abc', $info['id']);
+        $this->assertSame('guid-1', $info['guid']);
+        $this->assertNull($info['error']);
+        $this->assertSame(['request-id' => 'req-1'], $info['item']['headers']);
+        $this->assertSame(json_decode($body, true), $info['item']['body']);
+    }
+
+    public function testPrepareBatchResponseReturnsRawBodyOn409WhenNotJson()
+    {
+        $item = $this->getBatchResponseItem('abc', 409, [], 'not json');
+
+        $info = $this->prepareBatchResponse([$item])[0]['info'];
+
+        $this->assertSame('not json', $info['item']['body']);
+    }
+
+    public function testPrepareBatchResponseHasNullBodyOn409WhenBodyEmpty()
+    {
+        $item = $this->getBatchResponseItem('abc', 409, [], '');
+
+        $info = $this->prepareBatchResponse([$item])[0]['info'];
+
+        $this->assertNull($info['item']['body']);
+    }
+
+    public function testPrepareBatchResponseOmitsErrorDetailsForOtherFailures()
+    {
+        $item = $this->getBatchResponseItem('abc', 404, ['Location' => 'foo'], '{"error":{}}');
+
+        $info = $this->prepareBatchResponse([$item])[0]['info'];
+
+        $this->assertSame(404, $info['status']);
+        $this->assertSame('foo', $info['location']);
+        $this->assertArrayNotHasKey('error', $info);
+        $this->assertArrayNotHasKey('item', $info);
+    }
+
+    /**
+     * @param BatchResponseItem[] $items
+     * @param array<string, ?string> $correlationIds
+     */
+    protected function prepareBatchResponse(array $items, array $correlationIds = []): array
+    {
+        $content = new BatchResponseContent();
+        $content->setResponses($items);
+
+        $method = new \ReflectionMethod($this->stub, 'prepareBatchResponse');
+        $method->setAccessible(true);
+
+        return iterator_to_array($method->invoke($this->stub, $content, $correlationIds), false);
+    }
+
+    protected function getBatchResponseItem(string $id, int $status, array $headers, string $body): BatchResponseItem
+    {
+        $item = new BatchResponseItem();
+        $item->setId($id);
+        $item->setStatus($status);
+        $item->setHeaders($headers);
+        $item->setBody(Utils::streamFor($body));
+
+        return $item;
     }
 
     protected function getEvents(): array
