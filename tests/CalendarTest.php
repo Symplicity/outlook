@@ -301,7 +301,7 @@ class CalendarTest extends TestCase
         $this->assertSame(409, $info['status']);
         $this->assertSame('abc', $info['id']);
         $this->assertSame('guid-1', $info['guid']);
-        $this->assertNull($info['error']);
+        $this->assertSame('conflict', $info['error']);
         $this->assertSame(['request-id' => 'req-1'], $info['item']['headers']);
         $this->assertSame(json_decode($body, true), $info['item']['body']);
     }
@@ -336,11 +336,54 @@ class CalendarTest extends TestCase
         $this->assertArrayNotHasKey('item', $info);
     }
 
+    public function testPrepareBatchResponseIncludesInternalIdFromEventExtension()
+    {
+        $extension = new OpenTypeExtension();
+        $extension->setAdditionalData(['internalId' => '42', 'internalClass' => 'App\\Meeting']);
+        $event = new Event();
+        $event->setExtensions([$extension]);
+        $item = $this->getBatchResponseItem('abc', 409, [], '{}');
+        $info = $this->prepareBatchResponse([$item], ['abc' => 'guid-1'], ['abc' => $event])[0]['info'];
+        $this->assertSame('42', $info['internalId']);
+        $this->assertSame('App\\Meeting', $info['internalClass']);
+    }
+
+    public function testPrepareBatchResponseSetsNullInternalClassWhenMissing()
+    {
+        $extension = new OpenTypeExtension();
+        $extension->setAdditionalData(['internalId' => '42']);
+        $event = new Event();
+        $event->setExtensions([$extension]);
+        $item = $this->getBatchResponseItem('abc', 404, [], '');
+
+        $info = $this->prepareBatchResponse([$item], [], ['abc' => $event])[0]['info'];
+
+        $this->assertSame('42', $info['internalId']);
+        $this->assertNull($info['internalClass']);
+    }
+
+    public function testPrepareBatchResponseOmitsInternalIdWhenNoMatchingExtension()
+    {
+        $extension = new OpenTypeExtension();
+        $extension->setAdditionalData(['other' => 'x']);
+        $withoutId = new Event();
+        $withoutId->setExtensions([$extension]);
+        $item = $this->getBatchResponseItem('abc', 404, [], '');
+
+        $info = $this->prepareBatchResponse([$item], [], ['abc' => $withoutId])[0]['info'];
+        $this->assertArrayNotHasKey('internalId', $info);
+        $this->assertArrayNotHasKey('internalClass', $info);
+
+        $info = $this->prepareBatchResponse([$item], [], ['other' => new Event()])[0]['info'];
+        $this->assertArrayNotHasKey('internalId', $info);
+    }
+
     /**
      * @param BatchResponseItem[] $items
      * @param array<string, ?string> $correlationIds
+     * @param array<string, Event> $events
      */
-    protected function prepareBatchResponse(array $items, array $correlationIds = []): array
+    protected function prepareBatchResponse(array $items, array $correlationIds = [], array $events = []): array
     {
         $content = new BatchResponseContent();
         $content->setResponses($items);
@@ -348,14 +391,14 @@ class CalendarTest extends TestCase
         $method = new \ReflectionMethod($this->stub, 'prepareBatchResponse');
         $method->setAccessible(true);
 
-        return iterator_to_array($method->invoke($this->stub, $content, $correlationIds), false);
+        return iterator_to_array($method->invoke($this->stub, $content, $correlationIds, $events), false);
     }
 
     protected function getBatchResponseItem(string $id, int $status, array $headers, string $body): BatchResponseItem
     {
         $item = new BatchResponseItem();
         $item->setId($id);
-        $item->setStatus($status);
+        $item->setStatusCode($status);
         $item->setHeaders($headers);
         $item->setBody(Utils::streamFor($body));
 
