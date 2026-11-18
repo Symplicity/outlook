@@ -267,6 +267,7 @@ abstract class Calendar implements CalendarInterface
         foreach ($chunks as $chunk) {
             $batch = [];
             $batchCorrelationIds = [];
+            $batchEvents = [];
 
             /** @var Event $event */
             foreach ($chunk as $event) {
@@ -283,6 +284,7 @@ abstract class Calendar implements CalendarInterface
                         $patchRequestConfiguration,
                         $deleteRequestConfiguration,
                         $batchCorrelationIds,
+                        $batchEvents,
                         $args
                     );
                 }
@@ -297,7 +299,7 @@ abstract class Calendar implements CalendarInterface
                     ->wait();
             }
 
-            $newResponses = $this->prepareBatchResponse($responses, $batchCorrelationIds);
+            $newResponses = $this->prepareBatchResponse($responses, $batchCorrelationIds, $batchEvents);
             $this->handleBatchResponse($newResponses);
         }
     }
@@ -416,8 +418,9 @@ abstract class Calendar implements CalendarInterface
 
     /**
      * @param array<string, ?string> $correlationIds
+     * @param array<string, Event> $events events sent in the batch, keyed by batch item id
      */
-    protected function prepareBatchResponse(?BatchResponseContent $response = null, array $correlationIds = []): \Generator
+    protected function prepareBatchResponse(?BatchResponseContent $response = null, array $correlationIds = [], array $events = []): \Generator
     {
         foreach ($response?->getResponses() ?? [] as $response) {
             if ($response instanceof BatchResponseItem) {
@@ -431,6 +434,16 @@ abstract class Calendar implements CalendarInterface
                         'id' => $correlationId,
                         'guid' => $correlationIds[$correlationId] ?? null
                     ];
+                    if (isset($events[$correlationId])) {
+                        foreach ($events[$correlationId]->getExtensions() ?? [] as $extension) {
+                            $additionalData = $extension->getAdditionalData() ?? [];
+                            if (isset($additionalData['internalId'])) {
+                                $info['internalId'] = $additionalData['internalId'];
+                                $info['internalClass'] = $additionalData['internalClass'] ?? null;
+                                break;
+                            }
+                        }
+                    }
                     // For 409s keep the headers (incl. request-id) and Graph's error body; id and status are already in $info.
                     if ($response->getStatusCode() === 409) {
                         $rawBody = $response->getBody()?->getContents();
@@ -505,9 +518,10 @@ abstract class Calendar implements CalendarInterface
 
     /**
      * @param array<string, ?string> $batchCorrelationIds
+     * @param array<string, Event> $batchEvents
      * @param array<string, mixed> $args
      */
-    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array &$batchCorrelationIds = [], array $args = []): BatchRequestItem
+    protected function prepareBatchUpsert(Event $event, EventsRequestBuilderPostRequestConfiguration $postRequestConfiguration, EventItemRequestBuilderPatchRequestConfiguration $patchRequestConfiguration, EventItemRequestBuilderDeleteRequestConfiguration $deleteRequestConfiguration, array &$batchCorrelationIds = [], array &$batchEvents = [], array $args = []): BatchRequestItem
     {
         $me = $this->graphService
             ->client($args)
@@ -530,6 +544,7 @@ abstract class Calendar implements CalendarInterface
 
         $correlationId = Uuid::uuid4()->toString();
         $batchCorrelationIds[$correlationId] = $eventId ?? null;
+        $batchEvents[$correlationId] = $event;
         return new BatchRequestItem($request, $correlationId);
     }
 
