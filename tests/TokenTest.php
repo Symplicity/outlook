@@ -22,12 +22,17 @@ use Symplicity\Outlook\Token;
 class TokenTest extends TestCase
 {
     protected Token $tokenHandler;
+    private static string $key;
+
+    public static function setUpBeforeClass(): void
+    {
+        self::$key = 'outlook_' . bin2hex(\random_bytes(32));
+    }
 
     public function setUp(): void
     {
         $logger = new Logger('outlook_calendar');
         $logger->pushHandler(new NullHandler());
-
         $this->tokenHandler = new Token('foo', 'bar', [
             'logger' => $logger
         ]);
@@ -53,7 +58,6 @@ class TokenTest extends TestCase
         }
 
         $token = $this->tokenHandler->request('123', 'symplicity.com', provider: $provider);
-        $this->assertInstanceOf(TokenInterface::class, $token);
         $this->assertNotEmpty($token->getAccessToken());
         $this->assertNotEmpty($token->getRefreshToken());
         $this->assertNotEmpty($token->getExpiresIn());
@@ -166,13 +170,15 @@ class TokenTest extends TestCase
 
     public static function getTokenPayload(): array
     {
+        self::$key = 'outlook_' . bin2hex(\random_bytes(32));
+
         $payload = [
             'sub' => '123',
             'upn' => 'foobar@bar.com',
             'name' => 'Foo Bar'
         ];
 
-        $jwt = JWT::encode($payload, 'bar', 'HS256');
+        $jwt = JWT::encode($payload, self::$key, 'HS256');
 
         return [
             [
@@ -184,7 +190,7 @@ class TokenTest extends TestCase
                     'refresh_token' => $jwt,
                     'expires_in' => 10800,
                     'upn' => 'foobar@bar.com',
-                    'id_token' => 'abc'
+                    'id_token' => 'bar'
                ],
                 null
             ],

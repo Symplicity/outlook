@@ -53,7 +53,7 @@ class Token implements TokenInterface
      */
     public function request(string $code, string $redirectUrl, ?AccessTokenCache $tokenCache = null, ?AbstractProvider $provider = null): TokenEntityInterface
     {
-        $tokenRequestContext = $this->getMultiAuthCodeContext($code, $redirectUrl);
+        $tokenRequestContext = $this->getAuthorizationCodeContext($code, $redirectUrl);
         $tokenCache ??= new InMemoryAccessTokenCache();
         $provider ??= ProviderFactory::create($tokenRequestContext);
 
@@ -69,8 +69,9 @@ class Token implements TokenInterface
             throw new AccessTokenMissingException();
         }
 
-        $key = $this->getCacheKey($token);
-        $identifiers = isset($key) ? $tokenCache->getAccessToken($key) : $tokenRequestContext->getReceivedToken();
+        $this->extractIdentity($token);
+        $key = $tokenRequestContext->getCacheKey();
+        $identifiers = isset($key) ? $tokenCache->getAccessToken($key) : null;
         if (!$identifiers instanceof AccessToken) {
             throw new IllegalAccessTokenException();
         }
@@ -95,7 +96,7 @@ class Token implements TokenInterface
         $params['scope'] ??= implode(' ', $this->scopes);
         $oauthProvider ??= ProviderFactory::create($tokenRequestContext);
         $response = $oauthProvider->getAccessToken('refresh_token', $params);
-        $this->getCacheKey($response->getToken());
+        $this->extractIdentity($response->getToken());
 
         if (!$response instanceof AccessToken) {
             throw new IllegalAccessTokenException();
@@ -137,20 +138,13 @@ class Token implements TokenInterface
         ]);
     }
 
-    private function getCacheKey(string $accessToken): ?string
+    private function extractIdentity(string $accessToken): void
     {
         $tokenParts = explode('.', $accessToken);
         if (count($tokenParts) === 3) {
             $payload = json_decode(base64_decode($tokenParts[1]), true);
             $this->email = $payload['upn'] ?? null;
             $this->displayName = $payload['name'] ?? null;
-            if (is_array($payload)
-                && array_key_exists('sub', $payload)
-                && ($subject = $payload['sub'])) {
-                return sprintf('common-%s-%s', $this->clientId, $subject);
-            }
         }
-
-        return null;
     }
 }

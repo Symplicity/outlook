@@ -18,7 +18,8 @@ class MigrationServiceTest extends TestCase
      */
     public function testIsTokenInvalid(string $audience, bool $expected)
     {
-        $jwt = JWT::encode(['aud' => $audience, 'sub' => '123'], '123', 'HS256');
+        $key = 'outlook_' . bin2hex(\random_bytes(32));
+        $jwt = JWT::encode(['aud' => $audience, 'sub' => '123'], $key, 'HS256');
         $isMigrationRequired = MigrationService::isTokenInvalid($jwt);
         $this->assertSame($expected, $isMigrationRequired);
     }

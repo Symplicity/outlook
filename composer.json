@@ -10,7 +10,7 @@
         "php": "^8.1",
         "microsoft/microsoft-graph": "2.2.*",
         "microsoft/microsoft-graph-core": "2.0.*",
-        "microsoft/kiota-authentication-phpleague": "1.0.*",
+        "microsoft/kiota-authentication-phpleague": "1.5.*",
         "monolog/monolog" : "^2.3"
     },
     "require-dev": {
@@ -32,7 +32,8 @@
     },
     "config": {
         "allow-plugins": {
-            "php-http/discovery": false
+            "php-http/discovery": false,
+            "tbachert/spi": false
         }
     }
 }
