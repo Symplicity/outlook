@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "ext-json": "*",
-        "php": "^8.1",
+        "php": ">=8.4",
         "microsoft/microsoft-graph": "2.2.*",
         "microsoft/microsoft-graph-core": "2.0.*",
         "microsoft/kiota-authentication-phpleague": "1.5.*",
