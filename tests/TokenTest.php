@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use Exception;
+use DateTimeInterface;
+use InvalidArgumentException;
 use Firebase\JWT\JWT;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -39,12 +43,12 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @dataProvider getTokenPayload
      * @param array $jwt
-     * @param \Exception|null $exception
-     * @throws \Exception
+     * @param Exception|null $exception
+     * @throws Exception
      */
-    public function testRequest(array $jwt, ?\Exception $exception)
+    #[DataProvider('getTokenPayload')]
+    public function testRequest(array $jwt, ?Exception $exception)
     {
         $code = $exception ? 400 : 200;
         $mock = new MockHandler([
@@ -64,7 +68,7 @@ class TokenTest extends TestCase
         $this->assertLessThanOrEqual($jwt['expires_in'], $token->getExpiresIn());
         $this->assertEquals('foobar@bar.com', $token->getEmailAddress());
         $this->assertEquals('Foo Bar', $token->getDisplayName());
-        $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
+        $this->assertInstanceOf(DateTimeInterface::class, $token->tokenReceivedOn());
         $this->assertNotEmpty($token->getIdToken());
         $this->assertEquals('Foo Bar', (string) $token);
 
@@ -73,7 +77,7 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testMultiAuthRequest()
     {
@@ -101,7 +105,7 @@ class TokenTest extends TestCase
         $this->assertLessThanOrEqual($response['expires_in'], $token->getExpiresIn());
         $this->assertNull($token->getEmailAddress());
         $this->assertNull($token->getDisplayName());
-        $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
+        $this->assertInstanceOf(DateTimeInterface::class, $token->tokenReceivedOn());
         $this->assertNotEmpty($token->getIdToken());
 
         $mock = new MockHandler([
@@ -114,12 +118,12 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @dataProvider getTokenPayload
      * @param array $jwt
-     * @param \Exception|null $exception
+     * @param Exception|null $exception
      * @throws IdentityProviderException
      */
-    public function testRefresh(array $jwt, ?\Exception $exception)
+    #[DataProvider('getTokenPayload')]
+    public function testRefresh(array $jwt, ?Exception $exception)
     {
         $code = $exception ? 400 : 200;
         $mock = new MockHandler([
@@ -196,7 +200,7 @@ class TokenTest extends TestCase
             ],
             [
                 [],
-                new \InvalidArgumentException('Required option not passed: "access_token"')
+                new InvalidArgumentException('Required option not passed: "access_token"')
             ]
         ];
     }

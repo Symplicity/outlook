@@ -2,6 +2,7 @@
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use Exception;
 use Microsoft\Graph\Generated\Models\DayOfWeek;
 use Microsoft\Graph\Generated\Models\Event;
 use Microsoft\Graph\Generated\Models\EventType;
@@ -27,7 +28,7 @@ class ReaderTest extends TestCase
             $event = $this->getSingleInstanceJsonData();
             $reader = new Reader();
             $reader->hydrate($event);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail($e->getMessage());
         }
 
@@ -71,7 +72,7 @@ class ReaderTest extends TestCase
             $event = $this->getRecurringEventData();
             $reader = new Reader();
             $reader->hydrate($event);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail($e->getMessage());
         }
 
@@ -100,7 +101,7 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function getSingleInstanceJsonData(): Event
     {
@@ -110,7 +111,7 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function getRecurringEventData(): Event
     {
