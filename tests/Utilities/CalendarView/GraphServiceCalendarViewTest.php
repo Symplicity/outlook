@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\Utilities\CalendarView;
 
+use ReflectionObject;
+use ReflectionProperty;
 use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Microsoft\Graph\GraphServiceClient;
@@ -50,13 +52,13 @@ class GraphServiceCalendarViewTest extends TestCase
 
     private function getGuzzleConfig(RequestAdapter $requestAdapter, GraphServiceClient $client): mixed
     {
-        $reflection = new \ReflectionObject($requestAdapter);
+        $reflection = new ReflectionObject($requestAdapter);
         $reflectionProperty = $reflection->getParentClass()->getParentClass()->getProperty('guzzleClient');
 
         /** @var Client $guzzleClient */
         $guzzleClient = $reflectionProperty->getValue($client->getRequestAdapter());
 
-        $guzzleConfigProperty = new \ReflectionProperty(Client::class, 'config');
+        $guzzleConfigProperty = new ReflectionProperty(Client::class, 'config');
         return $guzzleConfigProperty->getValue($guzzleClient);
     }
 }

@@ -90,9 +90,6 @@ abstract class Receiver implements ReceiverInterface
         throw new ValidationException('Missing resource/subscription-id/id');
     }
 
-    /**
-     * @param array<string, string[]> $args
-     */
     protected function getEventQueryParameters(array $args = []): EventItemRequestBuilderGetQueryParameters
     {
         $queryParameters = new EventItemRequestBuilderGetQueryParameters();
@@ -115,9 +112,6 @@ abstract class Receiver implements ReceiverInterface
      * @param array<string, ?string> $params
      */
     abstract protected function willWrite(CalendarInterface $calendar, LoggerInterface $logger, NotificationReaderEntity $notificationReaderEntity, array &$params = []): void;
-
-    /**
-     * @param array<string, ?string> $args
-     */
+    
     abstract protected function didWrite(CalendarInterface $calendar, LoggerInterface $logger, ?ReaderEntityInterface $entity, NotificationReaderEntity $notificationReaderEntity, array $args = []): void;
 }

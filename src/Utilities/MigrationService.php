@@ -6,21 +6,19 @@ namespace Symplicity\Outlook\Utilities;
 
 class MigrationService
 {
-    public const VALID_AUDIENCE_ENDPOINT = 'https://graph.microsoft.com';
+    public const string VALID_AUDIENCE_ENDPOINT = 'https://graph.microsoft.com';
 
     public static function isTokenInvalid(string $accessToken): bool
     {
         $migrate = false;
         [, $payload,] = \explode('.', $accessToken);
-        if (\is_string($payload)) {
-            $payloadString = \base64_decode($payload);
-            if ($payloadString) {
-                $tokenArray = \json_decode($payloadString, true);
-                if (json_last_error() === \JSON_ERROR_NONE
-                    && isset($tokenArray['aud'])
-                    && $tokenArray['aud'] !== static::VALID_AUDIENCE_ENDPOINT) {
-                    $migrate = true;
-                }
+        $payloadString = \base64_decode($payload);
+        if ($payloadString) {
+            $tokenArray = \json_decode($payloadString, true);
+            if (json_last_error() === \JSON_ERROR_NONE
+                && isset($tokenArray['aud'])
+                && $tokenArray['aud'] !== static::VALID_AUDIENCE_ENDPOINT) {
+                $migrate = true;
             }
         }
 

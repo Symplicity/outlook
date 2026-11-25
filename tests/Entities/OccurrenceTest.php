@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\Entities;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use Exception;
 use Generator;
 use Microsoft\Graph\Generated\Models\Event;
 use Microsoft\Graph\Generated\Models\EventType;
-use Microsoft\Graph\Generated\Models\FreeBusyStatus;
 use Microsoft\Kiota\Serialization\Json\JsonParseNode;
 use PHPUnit\Framework\TestCase;
 use Symplicity\Outlook\Entities\Occurrence;
@@ -16,15 +17,13 @@ use Symplicity\Outlook\Interfaces\Entity\ReaderEntityInterface;
 
 class OccurrenceTest extends TestCase
 {
-    /**
-     * @dataProvider getOccurrences
-     */
+    #[DataProvider('getOccurrences')]
     public function testHydrate(string $data)
     {
         try {
             $json = new JsonParseNode(json_decode($data, true));
             $event = $json->getObjectValue([Event::class, 'createFromDiscriminatorValue']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail($e->getMessage());
         }
 

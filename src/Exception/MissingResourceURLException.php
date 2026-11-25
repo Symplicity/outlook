@@ -7,7 +7,7 @@ use Throwable;
 
 class MissingResourceURLException extends \RuntimeException
 {
-    public function __construct(Throwable $previous = null)
+    public function __construct(?Throwable $previous = null)
     {
         parent::__construct('Missing resource url', 422, $previous);
     }

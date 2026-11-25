@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use Exception;
+use DateTimeInterface;
+use InvalidArgumentException;
 use Firebase\JWT\JWT;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -22,24 +26,29 @@ use Symplicity\Outlook\Token;
 class TokenTest extends TestCase
 {
     protected Token $tokenHandler;
+    private static string $key;
+
+    public static function setUpBeforeClass(): void
+    {
+        self::$key = 'outlook_' . bin2hex(\random_bytes(32));
+    }
 
     public function setUp(): void
     {
         $logger = new Logger('outlook_calendar');
         $logger->pushHandler(new NullHandler());
-
         $this->tokenHandler = new Token('foo', 'bar', [
             'logger' => $logger
         ]);
     }
 
     /**
-     * @dataProvider getTokenPayload
      * @param array $jwt
-     * @param \Exception|null $exception
-     * @throws \Exception
+     * @param Exception|null $exception
+     * @throws Exception
      */
-    public function testRequest(array $jwt, ?\Exception $exception)
+    #[DataProvider('getTokenPayload')]
+    public function testRequest(array $jwt, ?Exception $exception)
     {
         $code = $exception ? 400 : 200;
         $mock = new MockHandler([
@@ -53,14 +62,13 @@ class TokenTest extends TestCase
         }
 
         $token = $this->tokenHandler->request('123', 'symplicity.com', provider: $provider);
-        $this->assertInstanceOf(TokenInterface::class, $token);
         $this->assertNotEmpty($token->getAccessToken());
         $this->assertNotEmpty($token->getRefreshToken());
         $this->assertNotEmpty($token->getExpiresIn());
         $this->assertLessThanOrEqual($jwt['expires_in'], $token->getExpiresIn());
         $this->assertEquals('foobar@bar.com', $token->getEmailAddress());
         $this->assertEquals('Foo Bar', $token->getDisplayName());
-        $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
+        $this->assertInstanceOf(DateTimeInterface::class, $token->tokenReceivedOn());
         $this->assertNotEmpty($token->getIdToken());
         $this->assertEquals('Foo Bar', (string) $token);
 
@@ -69,7 +77,7 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testMultiAuthRequest()
     {
@@ -97,7 +105,7 @@ class TokenTest extends TestCase
         $this->assertLessThanOrEqual($response['expires_in'], $token->getExpiresIn());
         $this->assertNull($token->getEmailAddress());
         $this->assertNull($token->getDisplayName());
-        $this->assertInstanceOf(\DateTimeInterface::class, $token->tokenReceivedOn());
+        $this->assertInstanceOf(DateTimeInterface::class, $token->tokenReceivedOn());
         $this->assertNotEmpty($token->getIdToken());
 
         $mock = new MockHandler([
@@ -110,12 +118,12 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @dataProvider getTokenPayload
      * @param array $jwt
-     * @param \Exception|null $exception
+     * @param Exception|null $exception
      * @throws IdentityProviderException
      */
-    public function testRefresh(array $jwt, ?\Exception $exception)
+    #[DataProvider('getTokenPayload')]
+    public function testRefresh(array $jwt, ?Exception $exception)
     {
         $code = $exception ? 400 : 200;
         $mock = new MockHandler([
@@ -166,13 +174,15 @@ class TokenTest extends TestCase
 
     public static function getTokenPayload(): array
     {
+        self::$key = 'outlook_' . bin2hex(\random_bytes(32));
+
         $payload = [
             'sub' => '123',
             'upn' => 'foobar@bar.com',
             'name' => 'Foo Bar'
         ];
 
-        $jwt = JWT::encode($payload, 'bar', 'HS256');
+        $jwt = JWT::encode($payload, self::$key, 'HS256');
 
         return [
             [
@@ -184,13 +194,13 @@ class TokenTest extends TestCase
                     'refresh_token' => $jwt,
                     'expires_in' => 10800,
                     'upn' => 'foobar@bar.com',
-                    'id_token' => 'abc'
+                    'id_token' => 'bar'
                ],
                 null
             ],
             [
                 [],
-                new \InvalidArgumentException('Required option not passed: "access_token"')
+                new InvalidArgumentException('Required option not passed: "access_token"')
             ]
         ];
     }

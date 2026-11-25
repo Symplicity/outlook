@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests\Notification;
 
+use DateTime;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Request;
@@ -55,7 +56,7 @@ class SubscriptionTest extends TestCase
         $this->assertInstanceOf(MsSubscription::class, $subscriptionResponse);
         $this->assertEquals('ABC==', $subscriptionResponse->getId());
         $this->assertNotEmpty($subscriptionResponse->getClientState());
-        $this->assertInstanceOf(\DateTime::class, $subscriptionResponse->getExpirationDateTime());
+        $this->assertInstanceOf(DateTime::class, $subscriptionResponse->getExpirationDateTime());
 
         $this->assertCount(1, $this->container);
 
@@ -84,7 +85,7 @@ class SubscriptionTest extends TestCase
 
         $client = $this->getClientWithTransactionHandler($this->container, $mock);
 
-        $expiration = new \DateTime('2025-04-10');
+        $expiration = new DateTime('2025-04-10');
         $subscriber = new Subscription('foo', 'bar', 'token_foo', ['logger' => $this->logger]);
         $subscriptionResponse = $subscriber->renew('ABC==', $expiration, ['client' => $client]);
         $this->assertInstanceOf(MsSubscription::class, $subscriptionResponse);

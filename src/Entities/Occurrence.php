@@ -40,6 +40,7 @@ class Occurrence implements ReaderEntityInterface
 
     protected bool $cancelled = false;
 
+    /** @phpstan-ignore property.unusedType (Event is assigned dynamically) */
     private \Closure|Event|null $originalEvent = null;
 
     public function hydrate(?Event $event = null): ReaderEntityInterface
@@ -67,7 +68,7 @@ class Occurrence implements ReaderEntityInterface
     public function getOriginalEvent(): Event
     {
         $originalEvent = $this->originalEvent?->bindTo($this); // @phpstan-ignore-line
-        return $originalEvent(); // @phpstan-ignore-line
+        return $originalEvent();
     }
 
     public function getId(): ?string

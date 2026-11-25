@@ -56,6 +56,7 @@ class Reader implements ReaderEntityInterface
     /** @var array<Extension> $extensions */
     protected ?array $extensions = [];
 
+    /** @phpstan-ignore property.unusedType (Event is assigned dynamically) */
     private \Closure|Event|null $originalEvent = null;
 
     public function hydrate(?Event $event = null): ReaderEntityInterface
@@ -194,7 +195,7 @@ class Reader implements ReaderEntityInterface
     public function getOriginalEvent(): Event
     {
         $originalEvent = $this->originalEvent?->bindTo($this); // @phpstan-ignore-line
-        return $originalEvent(); // @phpstan-ignore-line
+        return $originalEvent();
     }
 
     // Mark: Setters

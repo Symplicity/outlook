@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Symplicity\Outlook\Tests;
 
+use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
+use ReflectionMethod;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
@@ -86,6 +87,7 @@ class CalendarTest extends TestCase
         );
     }
 
+    #[DoesNotPerformAssertions]
     public function testGetEventInstances()
     {
         $mock = new MockHandler([
@@ -157,7 +159,7 @@ class CalendarTest extends TestCase
     {
         $mock = new MockHandler([
             new Response(204, ['Content-Type' => 'application/json'], '{}'),
-            new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+            new RequestException('Error Communicating with Server', new GuzzleRequest('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $container = [];
@@ -216,7 +218,7 @@ class CalendarTest extends TestCase
     public function testPullEventsError()
     {
         $mock = new MockHandler([
-            new RequestException('Error Communicating with Server', new Request('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
+            new RequestException('Error Communicating with Server', new GuzzleRequest('GET', 'test'), new Response(500, ['X-Foo' => 'Bar']))
         ]);
 
         $handler = HandlerStack::create($mock);
@@ -234,6 +236,7 @@ class CalendarTest extends TestCase
         );
     }
 
+    #[DoesNotPerformAssertions]
     public function testPushEvents()
     {
         $mock = new MockHandler([
@@ -388,7 +391,7 @@ class CalendarTest extends TestCase
         $content = new BatchResponseContent();
         $content->setResponses($items);
 
-        $method = new \ReflectionMethod($this->stub, 'prepareBatchResponse');
+        $method = new ReflectionMethod($this->stub, 'prepareBatchResponse');
         $method->setAccessible(true);
 
         return iterator_to_array($method->invoke($this->stub, $content, $correlationIds, $events), false);
