@@ -1,12 +1,16 @@
 parameters:
     level: 8
-    checkGenericClassInNonGenericObjectType: false
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        -
+            identifier: missingType.generics
+        -
+            identifier: missingType.iterableValue
     paths:
         - src
-    fileExtensions:
-        - php
     excludePaths:
         analyse:
             - src/Utilities/CalendarView/PageIterator.php
             - src/RequestConfigurationTrait.php
+    fileExtensions:
+        - php
